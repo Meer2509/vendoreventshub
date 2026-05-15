@@ -75,25 +75,18 @@ export default function EventsPage() {
   }, [events, search, eventType, boothPrice, vendorRating]);
 
   function applyQuickFilter(filter: string) {
-    if (filter === "Top Rated") {
-      setVendorRating("4.5 stars & up");
-    }
+    if (filter === "Top Rated") setVendorRating("4.5 stars & up");
+    if (filter === "Under $100 Booth") setBoothPrice("Under $100");
+    if (filter === "Food Vendors") setEventType("Food Truck Event");
+    if (filter === "High Traffic") setSearch("traffic");
+    if (filter === "This Weekend") alert("Weekend date filtering will be added next.");
+  }
 
-    if (filter === "Under $100 Booth") {
-      setBoothPrice("Under $100");
-    }
-
-    if (filter === "Food Vendors") {
-      setEventType("Food Truck Event");
-    }
-
-    if (filter === "High Traffic") {
-      setSearch("visitors");
-    }
-
-    if (filter === "This Weekend") {
-      alert("Weekend date filtering will be added next.");
-    }
+  function clearFilters() {
+    setSearch("");
+    setEventType("All events");
+    setBoothPrice("Any price");
+    setVendorRating("Any rating");
   }
 
   async function saveEvent(eventId: string) {
@@ -122,32 +115,72 @@ export default function EventsPage() {
     alert("Event saved to your dashboard.");
   }
 
-  function clearFilters() {
-    setSearch("");
-    setEventType("All events");
-    setBoothPrice("Any price");
-    setVendorRating("Any rating");
-  }
-
   return (
     <main className="luxuryPage">
+      <section className="vhHero">
+        <div className="vhHeroContent">
+          <p className="goldEyebrow">Event Marketplace</p>
+
+          <h1>Find profitable vendor events before you book a booth.</h1>
+
+          <p className="heroText">
+            Search festivals, fairs, flea markets, craft shows, farmers markets,
+            expos, food truck events, and premium vendor opportunities by
+            location, booth fee, category, and vendor experience.
+          </p>
+
+          <div className="heroActions">
+            <button className="goldBtn" onClick={() => (window.location.href = "/create-event")}>
+              List Your Event
+            </button>
+
+            <button className="outlineBtn" onClick={() => (window.location.href = "/pricing")}>
+              Founding Access
+            </button>
+          </div>
+
+          <div className="vhTrustStrip">
+            <span>Verified Vendor Reviews</span>
+            <span>Booth Fee Transparency</span>
+            <span>Organizer Applications</span>
+          </div>
+        </div>
+
+        <div className="vhHeroPanel">
+          <p className="panelBadge">Founding Organizer Offer</p>
+          <h3>First 50 organizers can list events free forever.</h3>
+
+          <div className="vhScoreCard">
+            <div>
+              <strong>{events.length}</strong>
+              <span>Live events</span>
+            </div>
+            <div>
+              <strong>50</strong>
+              <span>Organizer spots</span>
+            </div>
+            <div>
+              <strong>80</strong>
+              <span>Vendor spots</span>
+            </div>
+            <div>
+              <strong>$49</strong>
+              <span>Ads start</span>
+            </div>
+          </div>
+
+          <button className="goldBtn fullWidth" onClick={() => (window.location.href = "/create-event")}>
+            Claim Organizer Spot
+          </button>
+        </div>
+      </section>
+
       <section className="luxSection">
         <div className="sectionHeader">
           <div>
-            <div className="goldEyebrow">Explore Events</div>
-            <h2>Find vendor events near you.</h2>
-            <p className="muted">
-              Search festivals, fairs, markets, expos, flea markets, food truck
-              events, and premium vendor opportunities.
-            </p>
+            <p className="goldEyebrow">Search Events</p>
+            <h2>Discover vendor opportunities near you.</h2>
           </div>
-
-          <button
-            className="goldBtn"
-            onClick={() => (window.location.href = "/create-event")}
-          >
-            List Your Event
-          </button>
         </div>
 
         <div className="luxSearch eventsSearch">
@@ -156,7 +189,7 @@ export default function EventsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button>Search</button>
+          <button>Search Events</button>
         </div>
 
         <div className="filterRow">
@@ -165,20 +198,16 @@ export default function EventsPage() {
               {filter}
             </button>
           ))}
-
           <button onClick={clearFilters}>Clear Filters</button>
         </div>
 
         <div className="marketplaceLayout">
           <aside className="filterPanel">
-            <h3>Filters</h3>
+            <h3>Refine Search</h3>
 
             <label>
               Event Type
-              <select
-                value={eventType}
-                onChange={(e) => setEventType(e.target.value)}
-              >
+              <select value={eventType} onChange={(e) => setEventType(e.target.value)}>
                 <option>All events</option>
                 <option>Festival</option>
                 <option>Farmers Market</option>
@@ -194,10 +223,7 @@ export default function EventsPage() {
 
             <label>
               Booth Price
-              <select
-                value={boothPrice}
-                onChange={(e) => setBoothPrice(e.target.value)}
-              >
+              <select value={boothPrice} onChange={(e) => setBoothPrice(e.target.value)}>
                 <option>Any price</option>
                 <option>Under $50</option>
                 <option>Under $100</option>
@@ -207,28 +233,37 @@ export default function EventsPage() {
 
             <label>
               Vendor Rating
-              <select
-                value={vendorRating}
-                onChange={(e) => setVendorRating(e.target.value)}
-              >
+              <select value={vendorRating} onChange={(e) => setVendorRating(e.target.value)}>
                 <option>Any rating</option>
                 <option>4.5 stars & up</option>
                 <option>4.8 stars & up</option>
                 <option>5 stars only</option>
               </select>
             </label>
+
+            <div className="sidebarCard sponsorCard">
+              <p>Sponsored Placement</p>
+              <h3>Put your event at the top.</h3>
+              <button className="outlineBtn fullWidth" onClick={() => (window.location.href = "/advertise")}>
+                Advertise
+              </button>
+            </div>
           </aside>
 
           <div className="eventsResults">
             <div className="resultsTop">
-              <h3>{filteredEvents.length} live event listings</h3>
+              <h3>{filteredEvents.length} event opportunities</h3>
               <p>Showing real events submitted by organizers.</p>
             </div>
 
             {loading ? (
               <p className="muted">Loading events...</p>
             ) : filteredEvents.length === 0 ? (
-              <p className="muted">No matching events found.</p>
+              <div className="emptyStateCard">
+                <h3>No matching events found.</h3>
+                <p>Try another location, category, or booth price filter.</p>
+                <button className="goldBtn" onClick={clearFilters}>Reset Search</button>
+              </div>
             ) : (
               <div className="eventsList">
                 {filteredEvents.map((event) => (
@@ -246,10 +281,7 @@ export default function EventsPage() {
                     </div>
 
                     <div className="marketEventBody">
-                      <div className="eventDate">
-                        {event.event_date || "Date coming soon"}
-                      </div>
-
+                      <div className="eventDate">{event.event_date || "Date coming soon"}</div>
                       <h3>{event.title}</h3>
 
                       <p className="muted">
@@ -266,17 +298,12 @@ export default function EventsPage() {
                       <div className="eventActions">
                         <button
                           className="fullBtn"
-                          onClick={() =>
-                            (window.location.href = `/events/${event.id}`)
-                          }
+                          onClick={() => (window.location.href = `/events/${event.id}`)}
                         >
                           View Details
                         </button>
 
-                        <button
-                          className="outlineBtn"
-                          onClick={() => saveEvent(event.id)}
-                        >
+                        <button className="outlineBtn" onClick={() => saveEvent(event.id)}>
                           Save
                         </button>
                       </div>
@@ -285,6 +312,28 @@ export default function EventsPage() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      </section>
+
+      <section className="luxSection">
+        <div className="premiumCta">
+          <p className="goldEyebrow">For Event Organizers</p>
+          <h2>Bring quality vendors to your next festival, fair, or market.</h2>
+          <p>
+            List your event, collect vendor applications, approve attendance, and
+            build trust with verified vendor reviews. First 50 organizers receive
+            founding access free forever.
+          </p>
+
+          <div className="heroActions">
+            <button className="goldBtn" onClick={() => (window.location.href = "/create-event")}>
+              List Your Event
+            </button>
+
+            <button className="outlineBtn" onClick={() => (window.location.href = "/pricing")}>
+              View Founding Offer
+            </button>
           </div>
         </div>
       </section>
