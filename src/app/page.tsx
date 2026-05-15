@@ -3,35 +3,19 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
+const categories = [
+  "Festivals",
+  "Craft Fairs",
+  "Flea Markets",
+  "Farmers Markets",
+  "Food Festivals",
+  "Holiday Markets",
+  "Expos",
+  "Wellness Events",
+];
+
 export default function HomePage() {
   const [ads, setAds] = useState<any[]>([]);
-
-  const events = [
-    {
-      title: "Litchfield Spring Market",
-      location: "Litchfield, CT",
-      date: "May 18, 2026",
-      visitors: "8,500+ Visitors",
-      rating: "4.9 Vendor Rating",
-      booth: "$75 Booth Fee",
-    },
-    {
-      title: "New England Craft Expo",
-      location: "Hartford, CT",
-      date: "June 7, 2026",
-      visitors: "15,000+ Visitors",
-      rating: "4.8 Vendor Rating",
-      booth: "$140 Booth Fee",
-    },
-    {
-      title: "Morris Farmers Market",
-      location: "Morris, CT",
-      date: "Every Saturday",
-      visitors: "Local Premium Traffic",
-      rating: "5.0 Vendor Rating",
-      booth: "$40 Booth Fee",
-    },
-  ];
 
   useEffect(() => {
     async function loadAds() {
@@ -49,82 +33,29 @@ export default function HomePage() {
 
   return (
     <main className="luxuryPage">
-      {/* NAVBAR */}
-      <nav className="luxNav">
-        <div
-          className="luxBrand"
-          onClick={() => (window.location.href = "/")}
-        >
-          VendorEventsHub
-        </div>
+      <section className="startupHero">
+        <div className="startupHeroText">
+          <p className="goldEyebrow">America’s Premium Vendor Event Platform</p>
 
-        <div className="luxLinks">
-          <a onClick={() => (window.location.href = "/events")}>
-            Events
-          </a>
-
-          <a onClick={() => (window.location.href = "/vendors")}>
-            Vendors
-          </a>
-
-          <a onClick={() => (window.location.href = "/manage-events")}>
-            Organizers
-          </a>
-
-          <a onClick={() => (window.location.href = "/advertise")}>
-            Premium Ads
-          </a>
-
-          <a onClick={() => (window.location.href = "/pricing")}>
-            Pricing
-          </a>
-        </div>
-
-        <div className="luxActions">
-          <button
-            className="outlineBtn"
-            onClick={() => (window.location.href = "/login")}
-          >
-            Login
-          </button>
-
-          <button
-            className="goldBtn"
-            onClick={() => (window.location.href = "/create-event")}
-          >
-            List Your Event
-          </button>
-        </div>
-      </nav>
-
-      {/* HERO */}
-      <section className="luxHero">
-        <div>
-          <div className="goldEyebrow">
-            America’s Premium Vendor Event Platform
-          </div>
-
-          <h1>
-            Discover luxury festivals, fairs & profitable vendor events.
-          </h1>
+          <h1>Find profitable vendor events before wasting money on bad shows.</h1>
 
           <p className="heroText">
-            Find the best events before booking your booth. Compare vendor
-            ratings, traffic, pricing, sales potential, reviews, and real
-            vendor experiences across America.
+            Compare vendor reviews, booth fees, attendance, organizer reputation,
+            customer traffic, and real vendor experiences before booking your
+            next festival, fair, flea market, craft show, or farmers market.
           </p>
 
-          <div className="luxSearch">
-            <input placeholder="Search by city, ZIP code, event, market..." />
+          <div className="heroActions">
+            <button className="goldBtn" onClick={() => (window.location.href = "/events")}>
+              Explore Events
+            </button>
 
-            <button
-              onClick={() => (window.location.href = "/events")}
-            >
-              Search Events
+            <button className="outlineBtn" onClick={() => (window.location.href = "/create-event")}>
+              List Your Event
             </button>
           </div>
 
-          <div className="trustRow">
+          <div className="startupTrustBar">
             <span>Verified Vendor Reviews</span>
             <span>Premium Event Discovery</span>
             <span>Vendor Networking</span>
@@ -132,29 +63,21 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="heroPanel">
-          <div className="panelBadge">TOP RATED EVENT</div>
-
+        <div className="startupHeroCard">
+          <p className="panelBadge">Top Rated Event</p>
           <h3>Connecticut Spring Festival</h3>
-
           <div className="score">4.9</div>
-
-          <p>
-            Trusted by hundreds of vendors with premium customer traffic and
-            high ROI potential.
-          </p>
+          <p>Premium crowd, strong vendor ROI, and trusted organizer reputation.</p>
 
           <div className="miniStats">
             <div>
               <strong>22K+</strong>
               <span>Visitors</span>
             </div>
-
             <div>
               <strong>$95</strong>
               <span>Booth Fee</span>
             </div>
-
             <div>
               <strong>420+</strong>
               <span>Vendors</span>
@@ -163,165 +86,127 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* LIVE SPONSORED ADS */}
       {ads.length > 0 && (
         <section className="liveAdsSection">
           <div className="sectionHeader">
             <div>
-              <div className="goldEyebrow">Sponsored Placements</div>
-              <h2>Premium Businesses & Promotions</h2>
+              <p className="goldEyebrow">Sponsored Placements</p>
+              <h2>Premium businesses promoted to vendors.</h2>
             </div>
 
-            <button
-              className="goldBtn"
-              onClick={() => (window.location.href = "/advertise")}
-            >
+            <button className="goldBtn" onClick={() => (window.location.href = "/advertise")}>
               Advertise Here
             </button>
           </div>
 
           <div className="liveAdsGrid">
-            {ads.map((ad) => (
-              <div className="liveAdCard" key={ad.id}>
+            {ads.slice(0, 3).map((ad) => (
+              <article className="liveAdCard" key={ad.id}>
                 <div
                   className="liveAdImage"
                   style={{
-                    backgroundImage: `url(${
-                      ad.image_url ||
-                      "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop"
-                    })`,
+                    backgroundImage: `url(${ad.image_url || "/window.svg"})`,
                   }}
                 >
                   <span>Sponsored</span>
                 </div>
 
                 <div className="liveAdBody">
-                  <p className="goldEyebrow">
-                    {ad.business_name}
-                  </p>
-
+                  <p className="goldEyebrow">{ad.business_name}</p>
                   <h3>{ad.title}</h3>
-
-                  <p className="muted">
-                    {ad.description}
-                  </p>
-
-                  <div className="reviewBadges">
-                    <span>{ad.placement}</span>
-                    <span>Premium Ad</span>
-                  </div>
+                  <p className="muted">{ad.description}</p>
 
                   {ad.link_url && (
-                    <button
-                      className="goldBtn fullWidth"
-                      onClick={() =>
-                        window.open(ad.link_url, "_blank")
-                      }
-                    >
+                    <button className="goldBtn fullWidth" onClick={() => window.open(ad.link_url, "_blank")}>
                       Visit Website
                     </button>
                   )}
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </section>
       )}
 
-      {/* EVENTS */}
       <section className="luxSection">
         <div className="sectionHeader">
           <div>
-            <div className="goldEyebrow">Featured Events</div>
-            <h2>Top Rated Vendor Events</h2>
-          </div>
-
-          <button
-            className="outlineBtn"
-            onClick={() => (window.location.href = "/events")}
-          >
-            View All Events
-          </button>
-        </div>
-
-        <div className="luxEventGrid">
-          {events.map((event, index) => (
-            <div key={index} className="luxEventCard">
-              <div
-                className="eventVisual"
-                style={{
-                  backgroundImage:
-                    index === 0
-                      ? "url('https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop')"
-                      : index === 1
-                      ? "url('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=1400&auto=format&fit=crop')"
-                      : "url('https://images.unsplash.com/photo-1505236858219-8359eb29e329?q=80&w=1400&auto=format&fit=crop')",
-                }}
-              >
-                <div className="eventOverlay">
-                  <span>Featured Event</span>
-                </div>
-              </div>
-
-              <div className="eventBody">
-                <div className="eventDate">{event.date}</div>
-
-                <h3>{event.title}</h3>
-
-                <div className="muted">{event.location}</div>
-
-                <div className="pillGrid">
-                  <span>{event.rating}</span>
-                  <span>{event.booth}</span>
-                  <span>{event.visitors}</span>
-                </div>
-
-                <button className="fullBtn">
-                  View Event
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FEATURES */}
-      <section className="luxSection">
-        <div className="sectionHeader">
-          <div>
-            <div className="goldEyebrow">Platform Features</div>
-            <h2>Built For Serious Vendors</h2>
+            <p className="goldEyebrow">Featured Discovery</p>
+            <h2>Everything vendors need before booking a booth.</h2>
           </div>
         </div>
 
         <div className="featureGrid">
           <div className="featureBox">
-            <h3>Verified Vendor Ratings</h3>
-
-            <p>
-              Only vendors who attended events can leave reviews and ratings.
-              Prevent fake reviews and discover the highest ROI festivals.
-            </p>
+            <h3>Avoid bad events</h3>
+            <p>See real vendor experiences before paying booth fees or traveling.</p>
           </div>
 
           <div className="featureBox">
-            <h3>Vendor Social Network</h3>
-
-            <p>
-              Vendors can upload videos, photos, booth setups, event
-              experiences, and connect with other businesses like a premium
-              event community.
-            </p>
+            <h3>Verified vendor reviews</h3>
+            <p>Only approved or attended vendors can leave trusted reviews.</p>
           </div>
 
           <div className="featureBox">
-            <h3>Luxury Advertising System</h3>
-
-            <p>
-              Festivals, brands, and vendors can purchase sponsored placements,
-              homepage sliders, featured ads, and premium visibility.
-            </p>
+            <h3>Better event ROI</h3>
+            <p>Compare traffic, booth cost, category fit, and profitability signals.</p>
           </div>
+        </div>
+      </section>
+
+      <section className="luxSection">
+        <div className="sectionHeader">
+          <div>
+            <p className="goldEyebrow">Browse By Category</p>
+            <h2>Find the right event for your business.</h2>
+          </div>
+
+          <button className="outlineBtn" onClick={() => (window.location.href = "/events")}>
+            View All Events
+          </button>
+        </div>
+
+        <div className="categoryLuxuryGrid">
+          {categories.map((category) => (
+            <button key={category} onClick={() => (window.location.href = "/events")}>
+              <span>{category}</span>
+              <small>Explore opportunities</small>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="luxSection">
+        <div className="premiumCta">
+          <p className="goldEyebrow">For Organizers & Brands</p>
+          <h2>Advertise directly to vendors looking for profitable opportunities.</h2>
+          <p>
+            Promote festivals, markets, vendor services, food trucks, business
+            tools, booth equipment, and premium event placements.
+          </p>
+
+          <div className="heroActions">
+            <button className="goldBtn" onClick={() => (window.location.href = "/advertise")}>
+              Advertise Your Business
+            </button>
+            <button className="outlineBtn" onClick={() => (window.location.href = "/pricing")}>
+              View Pricing
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="finalStartupCta">
+        <p className="goldEyebrow">Start Growing Smarter</p>
+        <h2>Ready to find better events and grow your vendor business?</h2>
+
+        <div className="heroActions">
+          <button className="goldBtn" onClick={() => (window.location.href = "/events")}>
+            Explore Events
+          </button>
+          <button className="outlineBtn" onClick={() => (window.location.href = "/profile/setup")}>
+            Create Vendor Profile
+          </button>
         </div>
       </section>
     </main>
