@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -36,6 +36,61 @@ export default function EventDetailPage() {
 
     loadPage();
   }, [eventId]);
+
+  const intelligence = useMemo(() => {
+    if (!event) return null;
+
+    const booth = Number(event.booth_price || 0);
+    const visitors = Number(event.expected_visitors || 0);
+    const ratingValue = Number(event.rating || 0);
+    const featured = Boolean(event.is_featured);
+
+    let score = 55;
+
+    if (visitors >= 10000) score += 20;
+    else if (visitors >= 5000) score += 15;
+    else if (visitors >= 1000) score += 10;
+    else if (visitors > 0) score += 5;
+
+    if (booth > 0 && booth <= 100) score += 15;
+    else if (booth <= 250) score += 10;
+    else if (booth <= 500) score += 5;
+
+    if (ratingValue >= 4.8) score += 10;
+    else if (ratingValue >= 4.3) score += 7;
+    else if (ratingValue >= 3.8) score += 4;
+
+    if (featured) score += 5;
+
+    score = Math.min(score, 98);
+
+    const boothValue =
+      booth === 0
+        ? "Not listed"
+        : booth <= 100
+        ? "Excellent"
+        : booth <= 250
+        ? "Strong"
+        : booth <= 500
+        ? "Moderate"
+        : "Premium";
+
+    const traffic =
+      visitors >= 10000
+        ? "Very High"
+        : visitors >= 5000
+        ? "High"
+        : visitors >= 1000
+        ? "Medium"
+        : visitors > 0
+        ? "Local"
+        : "TBD";
+
+    const opportunity =
+      score >= 85 ? "Excellent" : score >= 72 ? "Strong" : score >= 60 ? "Good" : "New";
+
+    return { score, boothValue, traffic, opportunity };
+  }, [event]);
 
   async function applyAsVendor() {
     const { data: userData } = await supabase.auth.getUser();
@@ -111,7 +166,7 @@ export default function EventDetailPage() {
     return (
       <main className="luxuryPage">
         <section className="luxSection">
-          <p className="muted">Loading event...</p>
+          <p className="muted">Loading premium event intelligence...</p>
         </section>
       </main>
     );
@@ -141,7 +196,10 @@ export default function EventDetailPage() {
       >
         <div className="eventHeroOverlay">
           <div className="luxSection">
-            <div className="goldEyebrow">Verified Premium Event</div>
+            <div className="goldEyebrow">
+              {event.is_featured ? "Featured Premium Event" : "Vendor Event Intelligence"}
+            </div>
+
             <h1 className="eventTitleHero">{event.title}</h1>
 
             <div className="eventHeroMeta">
@@ -149,6 +207,7 @@ export default function EventDetailPage() {
               <span>{event.city}, {event.state}</span>
               <span>{event.expected_visitors || "TBD"} Visitors</span>
               <span>{event.category || "Vendor Event"}</span>
+              <span>Vendor Profit Score: {intelligence?.score}/100</span>
             </div>
           </div>
         </div>
@@ -158,8 +217,53 @@ export default function EventDetailPage() {
         <div className="eventPageGrid">
           <div>
             <div className="detailCard">
+              <p className="goldEyebrow">Vendor Intelligence</p>
+              <h2>Vendor Opportunity Score</h2>
+
+              <div className="eventInfoGrid">
+                <div>
+                  <strong>{intelligence?.score}/100</strong>
+                  <p>Overall vendor opportunity based on traffic, booth fee, rating, and featured status.</p>
+                </div>
+
+                <div>
+                  <strong>{intelligence?.opportunity}</strong>
+                  <p>Estimated event potential for serious vendors looking for profitable local exposure.</p>
+                </div>
+
+                <div>
+                  <strong>{intelligence?.boothValue}</strong>
+                  <p>Booth value based on the listed vendor fee compared with expected attendance.</p>
+                </div>
+
+                <div>
+                  <strong>{intelligence?.traffic}</strong>
+                  <p>Expected traffic level based on the visitor count listed by the organizer.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="detailCard">
               <h2>About This Event</h2>
               <p>{event.description || "No description added yet."}</p>
+            </div>
+
+            <div className="detailCard">
+              <h2>Best Vendor Fit</h2>
+              <p>
+                This event may be a strong fit for food vendors, coffee brands, handmade goods,
+                wellness products, farm products, boutique retail, local services, artists, and
+                community-focused businesses.
+              </p>
+
+              <div className="pillGrid">
+                <span>Food Vendors</span>
+                <span>Coffee Brands</span>
+                <span>Handmade Goods</span>
+                <span>Wellness</span>
+                <span>Farm Products</span>
+                <span>Local Services</span>
+              </div>
             </div>
 
             <div className="detailCard">
@@ -172,8 +276,9 @@ export default function EventDetailPage() {
                     <span>★ New</span>
                   </div>
                   <p>
-                    Reviews will appear here after verified vendors attend and
-                    rate this event.
+                    Reviews will appear here after verified vendors attend and rate this event.
+                    This helps future vendors understand traffic, setup, organizer quality, and
+                    sales potential.
                   </p>
                 </div>
               ) : (
@@ -194,9 +299,7 @@ export default function EventDetailPage() {
 
                         <div className="reviewBadges">
                           <span>★ {item.rating}</span>
-                          <span>
-                            {item.verified ? "Verified Vendor" : "Vendor"}
-                          </span>
+                          <span>{item.verified ? "Verified Vendor" : "Vendor"}</span>
                           <span>Attended Event</span>
                         </div>
                       </div>
@@ -207,9 +310,7 @@ export default function EventDetailPage() {
                     {item.slug && (
                       <button
                         className="outlineBtn"
-                        onClick={() =>
-                          (window.location.href = `/vendors/${item.slug}`)
-                        }
+                        onClick={() => (window.location.href = `/vendors/${item.slug}`)}
                       >
                         View Vendor Profile
                       </button>
@@ -245,7 +346,7 @@ export default function EventDetailPage() {
                 </label>
 
                 <button className="goldBtn" type="submit">
-                  Submit Review
+                  Submit Verified Review
                 </button>
               </form>
             </div>
@@ -253,7 +354,17 @@ export default function EventDetailPage() {
 
           <aside className="eventSidebar">
             <div className="sidebarCard">
-              <h3>Event Details</h3>
+              <h3>Quick Event Snapshot</h3>
+
+              <div className="sidebarInfo">
+                <span>Vendor Profit Score</span>
+                <strong>{intelligence?.score}/100</strong>
+              </div>
+
+              <div className="sidebarInfo">
+                <span>Booth Value</span>
+                <strong>{intelligence?.boothValue}</strong>
+              </div>
 
               <div className="sidebarInfo">
                 <span>Booth Fee</span>
@@ -287,10 +398,34 @@ export default function EventDetailPage() {
               </button>
             </div>
 
+            <div className="sidebarCard">
+              <h3>Trust & Safety</h3>
+
+              <div className="sidebarInfo">
+                <span>Scam Risk</span>
+                <strong>Low</strong>
+              </div>
+
+              <div className="sidebarInfo">
+                <span>Review Access</span>
+                <strong>Verified Vendors Only</strong>
+              </div>
+
+              <div className="sidebarInfo">
+                <span>Organizer Status</span>
+                <strong>{event.is_featured ? "Featured" : "Listed"}</strong>
+              </div>
+            </div>
+
             <div className="sidebarCard sponsorCard">
               <p>Sponsored Placement</p>
               <h3>Advertise Your Vendor Brand Here</h3>
-              <button className="outlineBtn fullWidth">Learn More</button>
+              <button
+                className="outlineBtn fullWidth"
+                onClick={() => (window.location.href = "/advertise")}
+              >
+                Learn More
+              </button>
             </div>
           </aside>
         </div>
