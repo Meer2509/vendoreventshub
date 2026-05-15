@@ -1696,3 +1696,203 @@ body {
     font-size: 26px;
   }
 }
+.vhHero {
+  min-height: 88vh;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 48px;
+  align-items: center;
+  padding: 90px 6vw;
+  background:
+    radial-gradient(circle at top right, rgba(199,169,107,.22), transparent 35%),
+    linear-gradient(135deg, #f6f2e8 0%, #ffffff 55%, #eef4ef 100%);
+}
+
+.vhHeroContent h1 {
+  max-width: 780px;
+  font-size: clamp(3.1rem, 7vw, 6.8rem);
+  line-height: .92;
+  letter-spacing: -0.07em;
+  color: #062a21;
+  margin: 16px 0 24px;
+}
+
+.heroText {
+  max-width: 720px;
+  font-size: 1.15rem;
+  line-height: 1.75;
+  color: #4d5a55;
+}
+
+.vhHeroPanel {
+  background: rgba(255,255,255,.72);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(13,91,69,.12);
+  border-radius: 36px;
+  padding: 34px;
+  box-shadow: 0 30px 90px rgba(6,42,33,.14);
+}
+
+.vhHeroPanel h3 {
+  font-size: 2rem;
+  line-height: 1.05;
+  color: #062a21;
+  margin: 12px 0 24px;
+}
+
+.vhScoreCard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.vhScoreCard div {
+  border-radius: 22px;
+  padding: 18px;
+  background: #f6f2e8;
+  border: 1px solid rgba(13,91,69,.1);
+}
+
+.vhScoreCard strong,
+.vhScoreCard span {
+  display: block;
+}
+
+.vhScoreCard strong {
+  color: #062a21;
+  font-size: .95rem;
+}
+
+.vhScoreCard span {
+  margin-top: 6px;
+  color: #68736f;
+  font-size: .8rem;
+}
+
+.vhTrustStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.vhTrustStrip span {
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(13,91,69,.12);
+  color: #0d5b45;
+  font-weight: 700;
+  font-size: .85rem;
+}
+
+.vhProblemSection {
+  padding: 80px 6vw;
+  background: #062a21;
+  color: white;
+}
+
+.vhProblemSection h2 {
+  max-width: 760px;
+  font-size: clamp(2.4rem, 5vw, 4.8rem);
+  line-height: .98;
+  letter-spacing: -0.055em;
+  margin: 14px 0 36px;
+}
+
+.vhProblemGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.vhProblemCard {
+  padding: 26px;
+  border-radius: 28px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+.vhProblemCard span {
+  color: #c7a96b;
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+.vhProblemCard h3 {
+  margin-top: 22px;
+  font-size: 1.2rem;
+}
+
+.stepNumber {
+  display: inline-flex;
+  margin-bottom: 18px;
+  color: #c7a96b;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+@media (max-width: 900px) {
+  .vhHero {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    padding: 54px 22px 42px;
+    gap: 28px;
+  }
+
+  .vhHeroContent h1 {
+    font-size: clamp(3rem, 14vw, 4.4rem);
+    letter-spacing: -0.075em;
+  }
+
+  .heroText {
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .heroActions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .goldBtn,
+  .outlineBtn {
+    width: 100%;
+    min-height: 52px;
+  }
+
+  .vhHeroPanel {
+    border-radius: 28px;
+    padding: 24px;
+  }
+
+  .vhHeroPanel h3 {
+    font-size: 1.55rem;
+  }
+
+  .vhScoreCard {
+    grid-template-columns: 1fr;
+  }
+
+  .vhProblemSection {
+    padding: 56px 22px;
+  }
+
+  .vhProblemGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .categoryLuxuryGrid,
+  .featureGrid,
+  .liveAdsGrid {
+    grid-template-columns: 1fr !important;
+  }
+}
