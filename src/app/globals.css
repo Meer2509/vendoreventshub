@@ -2172,13 +2172,164 @@ body {
     width: 100%;
   }
 }
-.pricingGrid {
+
+/* ==========================
+   SAFE PRICING PAGE ONLY
+   All classes start with vePricing / ve so they do not break other pages.
+========================== */
+
+.vePricingPage {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(15, 61, 46, 0.12), transparent 30%),
+    radial-gradient(circle at 88% 12%, rgba(214, 179, 106, 0.16), transparent 28%),
+    linear-gradient(180deg, #fffaf0 0%, #f7f2e8 45%, #ffffff 100%);
+  color: #0b1f18;
+}
+
+.vePricingHero {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 90px 24px 60px;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 44px;
+  align-items: center;
+}
+
+.vePricingEyebrow {
+  color: #b8872f;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.vePricingHero h1 {
+  font-size: clamp(46px, 7vw, 84px);
+  line-height: 0.94;
+  letter-spacing: -3px;
+  margin: 18px 0;
+}
+
+.vePricingText {
+  max-width: 720px;
+  color: #526058;
+  font-size: 19px;
+  line-height: 1.7;
+}
+
+.vePricingActions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 30px;
+}
+
+.veGoldBtn,
+.veOutlineBtn {
+  border-radius: 999px;
+  padding: 15px 24px;
+  font-weight: 900;
+  text-decoration: none;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.25s ease;
+}
+
+.veGoldBtn {
+  background: linear-gradient(135deg, #0f3d2e, #1f6f54);
+  color: white;
+  box-shadow: 0 16px 40px rgba(15, 61, 46, 0.2);
+}
+
+.veGoldBtn:hover,
+.veOutlineBtn:hover {
+  transform: translateY(-2px);
+}
+
+.veOutlineBtn {
+  color: #0f3d2e;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 61, 46, 0.16);
+}
+
+.vePricingPanel {
+  background: rgba(255,255,255,0.82);
+  border: 1px solid rgba(15,61,46,0.1);
+  border-radius: 38px;
+  padding: 34px;
+  box-shadow: 0 30px 90px rgba(15,61,46,0.13);
+}
+
+.vePricingPanel h3 {
+  font-size: 32px;
+  line-height: 1.08;
+  margin: 14px 0 24px;
+}
+
+.veStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.veStatsGrid div {
+  background: #f7f2e8;
+  border: 1px solid rgba(15,61,46,0.08);
+  border-radius: 22px;
+  padding: 20px;
+}
+
+.veStatsGrid strong {
+  display: block;
+  color: #0f3d2e;
+  font-size: 30px;
+}
+
+.veStatsGrid span {
+  color: #526058;
+  font-size: 13px;
+}
+
+.veTrustRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.veTrustRow span {
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.72);
+  border: 1px solid rgba(15,61,46,0.12);
+  color: #0d5b45;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.vePricingSection {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.vePricingHeader h2 {
+  font-size: clamp(36px, 5vw, 58px);
+  line-height: 1;
+  max-width: 850px;
+  margin: 10px 0 34px;
+}
+
+.vePricingGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 26px;
 }
 
-.pricingCard {
+.vePricingCard {
   background: rgba(255,255,255,0.9);
   border: 1px solid rgba(15,61,46,0.08);
   border-radius: 36px;
@@ -2186,7 +2337,13 @@ body {
   box-shadow: 0 24px 70px rgba(15,61,46,0.09);
 }
 
-.pricingBadge {
+.vePricingCardFeatured {
+  background: linear-gradient(135deg, #0f3d2e, #1f6f54);
+  color: white;
+  transform: translateY(-10px);
+}
+
+.vePlanBadge {
   width: fit-content;
   background: #0f3d2e;
   color: #fffaf0;
@@ -2198,19 +2355,54 @@ body {
   text-transform: uppercase;
 }
 
-.pricingCard h3 {
+.vePricingCardFeatured .vePlanBadge {
+  background: #d6b36a;
   color: #0b1f18;
+}
+
+.vePricingCard h3 {
   font-size: 30px;
   margin: 22px 0 8px;
 }
 
-.pricingCard h2 {
+.vePricingCard h2 {
   color: #0f3d2e;
   font-size: 42px;
-  margin: 0 0 18px;
+  margin: 0 0 6px;
 }
 
-.pricingCard ul {
+.vePricingCardFeatured h2,
+.vePricingCardFeatured h3 {
+  color: white;
+}
+
+.vePlanSub,
+.vePlanDescription {
+  color: #526058;
+  line-height: 1.65;
+}
+
+.vePricingCardFeatured .vePlanSub,
+.vePricingCardFeatured .vePlanDescription,
+.vePricingCardFeatured li {
+  color: #efe7d6;
+}
+
+.veRemaining {
+  margin-top: 18px;
+  padding: 13px 16px;
+  border-radius: 18px;
+  background: #f7f2e8;
+  color: #0f3d2e;
+  font-weight: 900;
+}
+
+.vePricingCardFeatured .veRemaining {
+  background: rgba(255,255,255,0.12);
+  color: white;
+}
+
+.vePricingCard ul {
   list-style: none;
   padding: 0;
   margin: 26px 0;
@@ -2218,13 +2410,88 @@ body {
   gap: 12px;
 }
 
-.pricingCard li {
+.vePricingCard li {
   color: #31473d;
   font-weight: 800;
 }
 
+.vePricingCard .veGoldBtn {
+  width: 100%;
+}
+
+.vePricingCardFeatured .veGoldBtn {
+  background: #d6b36a;
+  color: #0b1f18;
+}
+
+.veWhyGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.veWhyCard {
+  background: rgba(255,255,255,0.84);
+  border: 1px solid rgba(15,61,46,0.08);
+  border-radius: 30px;
+  padding: 28px;
+  box-shadow: 0 20px 55px rgba(15,61,46,0.08);
+}
+
+.veWhyCard h3 {
+  color: #0f3d2e;
+  font-size: 23px;
+}
+
+.veWhyCard p {
+  color: #526058;
+  line-height: 1.6;
+}
+
+.veFinalCta {
+  text-align: center;
+  border-radius: 42px;
+  background: linear-gradient(135deg, #0f3d2e, #1f6f54);
+  color: white;
+  padding: 60px 34px;
+  box-shadow: 0 28px 80px rgba(15,61,46,0.18);
+}
+
+.veFinalCta h2 {
+  font-size: clamp(38px, 5vw, 64px);
+  line-height: 1;
+  margin: 14px auto;
+  max-width: 900px;
+}
+
+.veFinalCta p {
+  color: #efe7d6;
+  max-width: 760px;
+  margin: 0 auto 28px;
+  line-height: 1.7;
+}
+
 @media (max-width: 1000px) {
-  .pricingGrid {
+  .vePricingHero,
+  .vePricingGrid,
+  .veWhyGrid {
     grid-template-columns: 1fr;
+  }
+
+  .vePricingCardFeatured {
+    transform: none;
+  }
+
+  .vePricingHero {
+    padding-top: 56px;
+  }
+
+  .vePricingActions {
+    flex-direction: column;
+  }
+
+  .veGoldBtn,
+  .veOutlineBtn {
+    width: 100%;
   }
 }
