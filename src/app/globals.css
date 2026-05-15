@@ -1578,3 +1578,121 @@ body {
     padding: 34px;
   }
 }
+/* ==========================
+   PREMIUM NAVBAR
+========================== */
+
+.luxNavbarWrap {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  padding: 18px 20px 0;
+  background: rgba(246, 242, 233, 0.75);
+  backdrop-filter: blur(18px);
+}
+
+.luxNav {
+  max-width: 1380px;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.82);
+  border: 1px solid rgba(18,53,36,0.08);
+  box-shadow: 0 20px 60px rgba(18,53,36,0.08);
+  border-radius: 999px;
+  padding: 18px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.luxBrand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+}
+
+.brandLogo {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #123524, #1d6b4f);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brandIcon {
+  color: white;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+}
+
+.brandText strong {
+  color: #123524;
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+
+.brandText small {
+  color: #7c857f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.luxLinks {
+  display: flex;
+  align-items: center;
+  gap: 38px;
+}
+
+.luxLinks a {
+  color: #123524;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.luxActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* MOBILE */
+
+@media (max-width: 1000px) {
+  .luxNav {
+    border-radius: 34px;
+    padding: 22px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 22px;
+  }
+
+  .luxLinks {
+    width: 100%;
+    overflow-x: auto;
+    gap: 22px;
+    padding-bottom: 4px;
+  }
+
+  .luxActions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .luxActions button {
+    width: 100%;
+  }
+
+  .brandText strong {
+    font-size: 26px;
+  }
+}

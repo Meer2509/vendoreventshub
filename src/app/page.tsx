@@ -46,11 +46,17 @@ export default function HomePage() {
           </p>
 
           <div className="heroActions">
-            <button className="goldBtn" onClick={() => (window.location.href = "/events")}>
+            <button
+              className="goldBtn"
+              onClick={() => (window.location.href = "/events")}
+            >
               Explore Events
             </button>
 
-            <button className="outlineBtn" onClick={() => (window.location.href = "/create-event")}>
+            <button
+              className="outlineBtn"
+              onClick={() => (window.location.href = "/create-event")}
+            >
               List Your Event
             </button>
           </div>
@@ -63,26 +69,37 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="startupHeroCard">
-          <p className="panelBadge">Top Rated Event</p>
-          <h3>Connecticut Spring Festival</h3>
-          <div className="score">4.9</div>
-          <p>Premium crowd, strong vendor ROI, and trusted organizer reputation.</p>
+        <div className="startupHeroCard adHeroCard">
+          <p className="panelBadge">Premium Advertising</p>
+
+          <h3>Reach vendors before they book their next event.</h3>
+
+          <p>
+            Promote your festival, market, food truck service, booth equipment,
+            local business, or vendor brand directly to event-ready businesses.
+          </p>
 
           <div className="miniStats">
             <div>
-              <strong>22K+</strong>
-              <span>Visitors</span>
+              <strong>Ads</strong>
+              <span>Homepage</span>
             </div>
             <div>
-              <strong>$95</strong>
-              <span>Booth Fee</span>
+              <strong>Events</strong>
+              <span>Sponsored</span>
             </div>
             <div>
-              <strong>420+</strong>
-              <span>Vendors</span>
+              <strong>Vendors</strong>
+              <span>Targeted</span>
             </div>
           </div>
+
+          <button
+            className="goldBtn fullWidth"
+            onClick={() => (window.location.href = "/advertise")}
+          >
+            Advertise Here
+          </button>
         </div>
       </section>
 
@@ -94,7 +111,10 @@ export default function HomePage() {
               <h2>Premium businesses promoted to vendors.</h2>
             </div>
 
-            <button className="goldBtn" onClick={() => (window.location.href = "/advertise")}>
+            <button
+              className="goldBtn"
+              onClick={() => (window.location.href = "/advertise")}
+            >
               Advertise Here
             </button>
           </div>
@@ -117,7 +137,10 @@ export default function HomePage() {
                   <p className="muted">{ad.description}</p>
 
                   {ad.link_url && (
-                    <button className="goldBtn fullWidth" onClick={() => window.open(ad.link_url, "_blank")}>
+                    <button
+                      className="goldBtn fullWidth"
+                      onClick={() => window.open(ad.link_url, "_blank")}
+                    >
                       Visit Website
                     </button>
                   )}
@@ -161,14 +184,20 @@ export default function HomePage() {
             <h2>Find the right event for your business.</h2>
           </div>
 
-          <button className="outlineBtn" onClick={() => (window.location.href = "/events")}>
+          <button
+            className="outlineBtn"
+            onClick={() => (window.location.href = "/events")}
+          >
             View All Events
           </button>
         </div>
 
         <div className="categoryLuxuryGrid">
           {categories.map((category) => (
-            <button key={category} onClick={() => (window.location.href = "/events")}>
+            <button
+              key={category}
+              onClick={() => (window.location.href = "/events")}
+            >
               <span>{category}</span>
               <small>Explore opportunities</small>
             </button>
@@ -186,10 +215,17 @@ export default function HomePage() {
           </p>
 
           <div className="heroActions">
-            <button className="goldBtn" onClick={() => (window.location.href = "/advertise")}>
+            <button
+              className="goldBtn"
+              onClick={() => (window.location.href = "/advertise")}
+            >
               Advertise Your Business
             </button>
-            <button className="outlineBtn" onClick={() => (window.location.href = "/pricing")}>
+
+            <button
+              className="outlineBtn"
+              onClick={() => (window.location.href = "/pricing")}
+            >
               View Pricing
             </button>
           </div>
@@ -201,10 +237,17 @@ export default function HomePage() {
         <h2>Ready to find better events and grow your vendor business?</h2>
 
         <div className="heroActions">
-          <button className="goldBtn" onClick={() => (window.location.href = "/events")}>
+          <button
+            className="goldBtn"
+            onClick={() => (window.location.href = "/events")}
+          >
             Explore Events
           </button>
-          <button className="outlineBtn" onClick={() => (window.location.href = "/profile/setup")}>
+
+          <button
+            className="outlineBtn"
+            onClick={() => (window.location.href = "/profile/setup")}
+          >
             Create Vendor Profile
           </button>
         </div>
