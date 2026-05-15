@@ -2000,3 +2000,175 @@ body {
     min-height: 48px;
   }
 }
+/* FINAL MOBILE NAVBAR FIX */
+@media (max-width: 900px) {
+  .luxNav {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 14px 16px !important;
+    border-radius: 28px !important;
+  }
+
+  .luxMenu {
+    display: none !important;
+  }
+
+  .luxMenu.open {
+    display: block !important;
+  }
+
+  .luxMenu .luxLinks {
+    display: grid !important;
+    gap: 12px !important;
+  }
+
+  .luxMenu .luxActions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: 100% !important;
+    margin-top: 16px !important;
+  }
+
+  .mobileMenuBtn {
+    display: flex !important;
+  }
+
+  .luxNav > .luxLinks,
+  .luxNav > .luxActions {
+    display: none !important;
+  }
+}
+.vhNavWrap {
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+  padding: 14px 18px 0;
+  background: rgba(246, 242, 233, 0.78);
+  backdrop-filter: blur(18px);
+}
+
+.vhNav {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 14px 18px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(18,53,36,0.08);
+  box-shadow: 0 18px 50px rgba(18,53,36,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.vhBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.vhLogoMark {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #123524, #1d6b4f);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-weight: 950;
+  font-size: 24px;
+}
+
+.vhBrand strong {
+  display: block;
+  color: #123524;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.vhBrand small {
+  color: #6d7771;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.vhMenu {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.vhMenu a {
+  color: #123524;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.vhMenuActions {
+  display: flex;
+  gap: 12px;
+}
+
+.vhMenuButton {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .vhNav {
+    border-radius: 26px;
+  }
+
+  .vhBrand strong {
+    font-size: 20px;
+  }
+
+  .vhLogoMark {
+    width: 44px;
+    height: 44px;
+  }
+
+  .vhMenuButton {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    border: 1px solid rgba(18,53,36,0.12);
+    background: #fffaf0;
+    color: #123524;
+    font-size: 22px;
+    font-weight: 900;
+  }
+
+  .vhMenu {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 12px);
+    background: rgba(255,255,255,0.98);
+    border-radius: 28px;
+    padding: 22px;
+    box-shadow: 0 28px 80px rgba(18,53,36,0.16);
+    border: 1px solid rgba(18,53,36,0.08);
+  }
+
+  .vhMenu.isOpen {
+    display: grid;
+    gap: 16px;
+  }
+
+  .vhMenuActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .vhMenuActions button {
+    width: 100%;
+  }
+}

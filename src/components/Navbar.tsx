@@ -7,39 +7,32 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="luxNavbarWrap">
-      <nav className="luxNav">
-        <Link href="/" className="luxBrand" onClick={() => setOpen(false)}>
-          <div className="brandLogo">
-            <span className="brandIcon">V</span>
-          </div>
-
-          <div className="brandText">
+    <header className="vhNavWrap">
+      <nav className="vhNav">
+        <Link href="/" className="vhBrand" onClick={() => setOpen(false)}>
+          <span className="vhLogoMark">V</span>
+          <span>
             <strong>VendorEventsHub</strong>
             <small>Premium Vendor Platform</small>
-          </div>
+          </span>
         </Link>
 
         <button
-          className="mobileMenuBtn"
+          className="vhMenuButton"
           onClick={() => setOpen(!open)}
           aria-label="Open menu"
         >
-          <span></span>
-          <span></span>
-          <span></span>
+          ☰
         </button>
 
-        <div className={`luxMenu ${open ? "open" : ""}`}>
-          <div className="luxLinks">
-            <Link href="/events" onClick={() => setOpen(false)}>Explore</Link>
-            <Link href="/vendors" onClick={() => setOpen(false)}>Vendors</Link>
-            <Link href="/pricing" onClick={() => setOpen(false)}>Pricing</Link>
-            <Link href="/advertise" onClick={() => setOpen(false)}>Advertise</Link>
-            <Link href="/about" onClick={() => setOpen(false)}>About</Link>
-          </div>
+        <div className={`vhMenu ${open ? "isOpen" : ""}`}>
+          <Link href="/events" onClick={() => setOpen(false)}>Explore</Link>
+          <Link href="/vendors" onClick={() => setOpen(false)}>Vendors</Link>
+          <Link href="/pricing" onClick={() => setOpen(false)}>Pricing</Link>
+          <Link href="/advertise" onClick={() => setOpen(false)}>Advertise</Link>
+          <Link href="/about" onClick={() => setOpen(false)}>About</Link>
 
-          <div className="luxActions">
+          <div className="vhMenuActions">
             <Link href="/login" onClick={() => setOpen(false)}>
               <button className="outlineBtn">Log In</button>
             </Link>
