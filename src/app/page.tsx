@@ -76,6 +76,57 @@ function getBoothValue(event: any) {
   return "Premium Booth Fee";
 }
 
+const fallbackEvents = [
+  {
+    id: "fallback-1",
+    title: "Premium Vendor Event Listings Coming Soon",
+    city: "Connecticut",
+    state: "USA",
+    zip_code: "",
+    category: "Vendor Event",
+    booth_price: 100,
+    expected_visitors: 2500,
+    rating: 4.8,
+    is_featured: true,
+    event_date: "New events being added",
+    image_url:
+      "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop",
+    fallback: true,
+  },
+  {
+    id: "fallback-2",
+    title: "List Your Festival, Fair, Market, or Expo",
+    city: "Northeast",
+    state: "USA",
+    zip_code: "",
+    category: "Organizer Opportunity",
+    booth_price: 75,
+    expected_visitors: 1500,
+    rating: 4.7,
+    is_featured: true,
+    event_date: "Founder listings open now",
+    image_url:
+      "https://images.unsplash.com/photo-1505236858219-8359eb29e329?q=80&w=1400&auto=format&fit=crop",
+    fallback: true,
+  },
+  {
+    id: "fallback-3",
+    title: "Founding Vendors Can Join Free",
+    city: "America",
+    state: "USA",
+    zip_code: "",
+    category: "Founding Access",
+    booth_price: 0,
+    expected_visitors: 1000,
+    rating: 5,
+    is_featured: true,
+    event_date: "Limited access available",
+    image_url:
+      "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1400&auto=format&fit=crop",
+    fallback: true,
+  },
+];
+
 export default function HomePage() {
   const [ads, setAds] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
@@ -101,7 +152,9 @@ export default function HomePage() {
   }, []);
 
   const trendingEvents = useMemo(() => {
-    return [...events]
+    const sourceEvents = events.length > 0 ? events : fallbackEvents;
+
+    return [...sourceEvents]
       .sort((a, b) => {
         if (a.is_featured && !b.is_featured) return -1;
         if (!a.is_featured && b.is_featured) return 1;
@@ -174,72 +227,76 @@ export default function HomePage() {
         </div>
       </section>
 
-      {trendingEvents.length > 0 && (
-        <section className="luxSection">
-          <div className="sectionHeader">
-            <div>
-              <p className="goldEyebrow">Trending Vendor Events</p>
-              <h2>Live opportunities vendors can compare before booking.</h2>
-            </div>
-
-            <button className="outlineBtn" onClick={() => (window.location.href = "/events")}>
-              View All Events
-            </button>
+      <section className="luxSection">
+        <div className="sectionHeader">
+          <div>
+            <p className="goldEyebrow">Trending Vendor Events</p>
+            <h2>
+              {events.length > 0
+                ? "Live opportunities vendors can compare before booking."
+                : "Vendor opportunities are being added now."}
+            </h2>
           </div>
 
-          <div className="luxEventGrid">
-            {trendingEvents.map((event) => (
-              <article className="luxEventCard" key={event.id}>
-                <div
-                  className="eventVisual"
-                  style={{
-                    backgroundImage: `url(${
-                      event.image_url ||
-                      "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop"
-                    })`,
-                  }}
+          <button className="outlineBtn" onClick={() => (window.location.href = "/events")}>
+            View All Events
+          </button>
+        </div>
+
+        <div className="luxEventGrid">
+          {trendingEvents.map((event) => (
+            <article className="luxEventCard" key={event.id}>
+              <div
+                className="eventVisual"
+                style={{
+                  backgroundImage: `url(${
+                    event.image_url ||
+                    "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop"
+                  })`,
+                }}
+              >
+                <div className="eventOverlay">
+                  <span>{getVendorScore(event)}/100 Vendor Score</span>
+                </div>
+              </div>
+
+              <div className="eventBody">
+                <div className="eventDate">{event.event_date || "Date coming soon"}</div>
+
+                <h3>{event.title}</h3>
+
+                <p className="muted">
+                  {event.city}, {event.state} {event.zip_code}
+                </p>
+
+                <div className="pillGrid">
+                  <span>{getTrafficLabel(event)}</span>
+                  <span>{getBoothValue(event)}</span>
+                  <span>★ {event.rating || "New"}</span>
+                  {event.is_featured && <span>Featured</span>}
+                </div>
+
+                <div className="pillGrid">
+                  {bestFitBadges.map((badge) => (
+                    <span key={badge}>Best for {badge}</span>
+                  ))}
+                </div>
+
+                <button
+                  className="fullBtn"
+                  onClick={() =>
+                    event.fallback
+                      ? (window.location.href = "/events")
+                      : (window.location.href = `/events/${event.id}`)
+                  }
                 >
-                  <div className="eventOverlay">
-                    <span>{getVendorScore(event)}/100 Vendor Score</span>
-                  </div>
-                </div>
-
-                <div className="eventBody">
-                  <div className="eventDate">
-                    {event.event_date || "Date coming soon"}
-                  </div>
-
-                  <h3>{event.title}</h3>
-
-                  <p className="muted">
-                    {event.city}, {event.state} {event.zip_code}
-                  </p>
-
-                  <div className="pillGrid">
-                    <span>{getTrafficLabel(event)}</span>
-                    <span>{getBoothValue(event)}</span>
-                    <span>★ {event.rating || "New"}</span>
-                    {event.is_featured && <span>Featured</span>}
-                  </div>
-
-                  <div className="pillGrid">
-                    {bestFitBadges.map((badge) => (
-                      <span key={badge}>Best for {badge}</span>
-                    ))}
-                  </div>
-
-                  <button
-                    className="fullBtn"
-                    onClick={() => (window.location.href = `/events/${event.id}`)}
-                  >
-                    View Event Intelligence
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
+                  {event.fallback ? "Explore Events" : "View Event Intelligence"}
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
       {ads.length > 0 && (
         <section className="liveAdsSection">
@@ -270,7 +327,10 @@ export default function HomePage() {
                   <p className="muted">{ad.description}</p>
 
                   {ad.link_url && (
-                    <button className="goldBtn fullWidth" onClick={() => window.open(ad.link_url, "_blank")}>
+                    <button
+                      className="goldBtn fullWidth"
+                      onClick={() => window.open(ad.link_url, "_blank")}
+                    >
                       Visit Website
                     </button>
                   )}
@@ -293,19 +353,28 @@ export default function HomePage() {
           <div className="featureBox">
             <span className="stepNumber">01</span>
             <h3>Search events</h3>
-            <p>Browse festivals, fairs, flea markets, farmers markets, expos, and pop-ups by category and location.</p>
+            <p>
+              Browse festivals, fairs, flea markets, farmers markets, expos, and
+              pop-ups by category and location.
+            </p>
           </div>
 
           <div className="featureBox">
             <span className="stepNumber">02</span>
             <h3>Compare the opportunity</h3>
-            <p>Review booth fees, expected traffic, vendor fit, organizer quality, and profitability signals.</p>
+            <p>
+              Review booth fees, expected traffic, vendor fit, organizer quality,
+              and profitability signals.
+            </p>
           </div>
 
           <div className="featureBox">
             <span className="stepNumber">03</span>
             <h3>Book smarter</h3>
-            <p>Choose events with stronger vendor potential and avoid shows that waste time, money, and inventory.</p>
+            <p>
+              Choose events with stronger vendor potential and avoid shows that
+              waste time, money, and inventory.
+            </p>
           </div>
         </div>
       </section>
