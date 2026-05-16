@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 const categories = [
@@ -28,22 +28,87 @@ const trustStats = [
   ["Organizer Trust", "Know who runs it"],
 ];
 
+const bestFitBadges = ["Coffee", "Food", "Handmade", "Wellness"];
+
+function getVendorScore(event: any) {
+  const booth = Number(event.booth_price || 0);
+  const visitors = Number(event.expected_visitors || 0);
+  const rating = Number(event.rating || 0);
+  const featured = Boolean(event.is_featured);
+
+  let score = 55;
+
+  if (visitors >= 10000) score += 20;
+  else if (visitors >= 5000) score += 15;
+  else if (visitors >= 1000) score += 10;
+  else if (visitors > 0) score += 5;
+
+  if (booth > 0 && booth <= 100) score += 15;
+  else if (booth <= 250) score += 10;
+  else if (booth <= 500) score += 5;
+
+  if (rating >= 4.8) score += 10;
+  else if (rating >= 4.3) score += 7;
+  else if (rating >= 3.8) score += 4;
+
+  if (featured) score += 5;
+
+  return Math.min(score, 98);
+}
+
+function getTrafficLabel(event: any) {
+  const visitors = Number(event.expected_visitors || 0);
+
+  if (visitors >= 10000) return "Very High Traffic";
+  if (visitors >= 5000) return "High Traffic";
+  if (visitors >= 1000) return "Strong Local Traffic";
+  if (visitors > 0) return "Local Opportunity";
+  return "Traffic TBD";
+}
+
+function getBoothValue(event: any) {
+  const booth = Number(event.booth_price || 0);
+
+  if (!booth) return "Booth Fee TBD";
+  if (booth <= 100) return "Excellent Booth Value";
+  if (booth <= 250) return "Strong Booth Value";
+  if (booth <= 500) return "Moderate Booth Value";
+  return "Premium Booth Fee";
+}
+
 export default function HomePage() {
   const [ads, setAds] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
 
   useEffect(() => {
-    async function loadAds() {
-      const { data } = await supabase
+    async function loadHomepageData() {
+      const { data: adData } = await supabase
         .from("sponsored_ads")
         .select("*")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      setAds(data || []);
+      const { data: eventData } = await supabase
+        .from("events")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      setAds(adData || []);
+      setEvents(eventData || []);
     }
 
-    loadAds();
+    loadHomepageData();
   }, []);
+
+  const trendingEvents = useMemo(() => {
+    return [...events]
+      .sort((a, b) => {
+        if (a.is_featured && !b.is_featured) return -1;
+        if (!a.is_featured && b.is_featured) return 1;
+        return getVendorScore(b) - getVendorScore(a);
+      })
+      .slice(0, 6);
+  }, [events]);
 
   return (
     <main className="luxuryPage">
@@ -70,9 +135,9 @@ export default function HomePage() {
           </div>
 
           <div className="vhTrustStrip">
-            <span>Built for vendors</span>
-            <span>Event ROI insights</span>
-            <span>Organizer discovery</span>
+            <span>Vendor Profit Scores</span>
+            <span>Booth Fee Transparency</span>
+            <span>Verified Vendor Reviews</span>
           </div>
         </div>
 
@@ -108,6 +173,73 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {trendingEvents.length > 0 && (
+        <section className="luxSection">
+          <div className="sectionHeader">
+            <div>
+              <p className="goldEyebrow">Trending Vendor Events</p>
+              <h2>Live opportunities vendors can compare before booking.</h2>
+            </div>
+
+            <button className="outlineBtn" onClick={() => (window.location.href = "/events")}>
+              View All Events
+            </button>
+          </div>
+
+          <div className="luxEventGrid">
+            {trendingEvents.map((event) => (
+              <article className="luxEventCard" key={event.id}>
+                <div
+                  className="eventVisual"
+                  style={{
+                    backgroundImage: `url(${
+                      event.image_url ||
+                      "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop"
+                    })`,
+                  }}
+                >
+                  <div className="eventOverlay">
+                    <span>{getVendorScore(event)}/100 Vendor Score</span>
+                  </div>
+                </div>
+
+                <div className="eventBody">
+                  <div className="eventDate">
+                    {event.event_date || "Date coming soon"}
+                  </div>
+
+                  <h3>{event.title}</h3>
+
+                  <p className="muted">
+                    {event.city}, {event.state} {event.zip_code}
+                  </p>
+
+                  <div className="pillGrid">
+                    <span>{getTrafficLabel(event)}</span>
+                    <span>{getBoothValue(event)}</span>
+                    <span>★ {event.rating || "New"}</span>
+                    {event.is_featured && <span>Featured</span>}
+                  </div>
+
+                  <div className="pillGrid">
+                    {bestFitBadges.map((badge) => (
+                      <span key={badge}>Best for {badge}</span>
+                    ))}
+                  </div>
+
+                  <button
+                    className="fullBtn"
+                    onClick={() => (window.location.href = `/events/${event.id}`)}
+                  >
+                    View Event Intelligence
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {ads.length > 0 && (
         <section className="liveAdsSection">
