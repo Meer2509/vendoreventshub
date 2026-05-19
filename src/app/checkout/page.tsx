@@ -32,12 +32,24 @@ function CheckoutContent() {
   const placement = searchParams.get("placement") || plan;
   const budget = searchParams.get("budget") || "Premium Plan";
   const linkUrl = searchParams.get("link_url") || "Not provided";
+  const imageUrl = searchParams.get("image_url") || "";
 
   const fetchClientSecret = useCallback(async () => {
     const res = await fetch("/api/create-checkout-session", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        plan,
+        business_name: businessName,
+        title: adTitle,
+        description: adDescription,
+        link_url: linkUrl,
+        image_url: imageUrl,
+        placement,
+        budget,
+      }),
     });
 
     const data = await res.json();
@@ -47,7 +59,16 @@ function CheckoutContent() {
     }
 
     return data.clientSecret;
-  }, [plan]);
+  }, [
+    plan,
+    businessName,
+    adTitle,
+    adDescription,
+    linkUrl,
+    imageUrl,
+    placement,
+    budget,
+  ]);
 
   return (
     <main style={styles.page}>
@@ -68,6 +89,14 @@ function CheckoutContent() {
         <section style={styles.grid}>
           <aside style={styles.card}>
             <h2 style={styles.cardTitle}>Advertising order summary</h2>
+
+            {imageUrl && (
+              <img
+                src={imageUrl}
+                alt="Ad preview"
+                style={styles.previewImage}
+              />
+            )}
 
             <div style={styles.summary}>
               <p>
@@ -118,13 +147,16 @@ function CheckoutContent() {
               <p>✓ Your payment is securely processed by Stripe.</p>
               <p>✓ Your ad request enters review.</p>
               <p>✓ VendorEventsHub activates the placement after approval.</p>
+              <p>✓ Your ad runs for 30 days after approval.</p>
             </div>
           </aside>
 
           <div style={styles.checkoutBox}>
             <div style={styles.checkoutHeader}>
-              <h2>Secure payment</h2>
-              <p>VendorEventsHub never stores your card details.</p>
+              <h2 style={styles.checkoutTitle}>Secure payment</h2>
+              <p style={styles.checkoutText}>
+                VendorEventsHub never stores your card details.
+              </p>
             </div>
 
             <EmbeddedCheckoutProvider
@@ -232,6 +264,14 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.05,
     letterSpacing: "-.04em",
   },
+  previewImage: {
+    width: "100%",
+    height: 210,
+    objectFit: "cover",
+    borderRadius: 22,
+    marginTop: 18,
+    border: "1px solid #e7dcc7",
+  },
   summary: {
     marginTop: 22,
     background: "#f7f3ea",
@@ -239,6 +279,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 22,
     color: "#33433c",
     lineHeight: 1.55,
+    wordBreak: "break-word",
   },
   nextBox: {
     marginTop: 18,
@@ -259,5 +300,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   checkoutHeader: {
     padding: "18px 18px 8px",
+  },
+  checkoutTitle: {
+    margin: 0,
+    fontSize: 28,
+    color: "#10291f",
+  },
+  checkoutText: {
+    marginTop: 8,
+    color: "#5f6b66",
   },
 };

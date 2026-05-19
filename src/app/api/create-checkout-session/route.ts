@@ -5,19 +5,27 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 const priceMap: Record<string, string | undefined> = {
   homepage: process.env.STRIPE_PRICE_HOMEPAGE_AD,
-  vendor: process.env.STRIPE_PRICE_VENDOR_BOOST,
-  organizer: process.env.STRIPE_PRICE_ORGANIZER_PREMIUM,
+  vendor_directory: process.env.STRIPE_PRICE_VENDOR_BOOST,
+  events: process.env.STRIPE_PRICE_ORGANIZER_PREMIUM,
+  event_detail: process.env.STRIPE_PRICE_EVENT_DETAIL,
+  dashboard: process.env.STRIPE_PRICE_DASHBOARD_AD,
+  category_sponsor: process.env.STRIPE_PRICE_CATEGORY_SPONSOR,
 };
+
+function safeMeta(value: unknown, max = 450) {
+  return String(value || "").slice(0, max);
+}
 
 export async function POST(req: Request) {
   try {
-    const { plan } = await req.json();
+    const body = await req.json();
 
-    const priceId = priceMap[plan];
+    const placement = body.placement || body.plan || "homepage";
+    const priceId = priceMap[placement];
 
     if (!priceId) {
       return NextResponse.json(
-        { error: "Invalid plan selected." },
+        { error: "Invalid advertising placement selected." },
         { status: 400 }
       );
     }
@@ -31,19 +39,21 @@ export async function POST(req: Request) {
       process.env.NEXT_PUBLIC_SITE_URL || "https://www.vendoreventshub.com";
 
     const session = await stripe.checkout.sessions.create({
-      // @ts-ignore Stripe API now expects embedded_page for embedded checkout.
+      // @ts-ignore Stripe API expects embedded_page.
       ui_mode: "embedded_page",
       mode,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
       return_url: `${siteUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       metadata: {
         platform: "VendorEventsHub",
-        plan,
+        plan: safeMeta(body.plan || placement),
+        placement: safeMeta(placement),
+        business_name: safeMeta(body.business_name),
+        ad_title: safeMeta(body.title),
+        ad_description: safeMeta(body.description),
+        link_url: safeMeta(body.link_url),
+        image_url: safeMeta(body.image_url),
+        budget: safeMeta(body.budget),
       },
     });
 
