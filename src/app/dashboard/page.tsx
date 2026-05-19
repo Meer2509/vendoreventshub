@@ -5,14 +5,21 @@ import { supabase } from "@/lib/supabase";
 
 type Role = "vendor" | "organizer" | "admin";
 
-const tabs = ["Overview", "Saved", "Applications", "Organizer", "Growth", "Settings"];
+const tabs = [
+  "Overview",
+  "Saved",
+  "Applications",
+  "Organizer",
+  "Vendor Applications",
+  "Growth",
+  "Settings",
+];
 
 function getVendorScore(event: any) {
   const booth = Number(event?.booth_price || 0);
   const visitors = Number(event?.expected_visitors || 0);
   const rating = Number(event?.rating || 0);
   const featured = Boolean(event?.is_featured);
-
   let score = 55;
 
   if (visitors >= 10000) score += 20;
@@ -29,13 +36,11 @@ function getVendorScore(event: any) {
   else if (rating >= 3.8) score += 4;
 
   if (featured) score += 5;
-
   return Math.min(score, 98);
 }
 
 function getBoothValue(event: any) {
   const booth = Number(event?.booth_price || 0);
-
   if (!booth) return "Booth TBD";
   if (booth <= 100) return "Excellent Value";
   if (booth <= 250) return "Strong Value";
@@ -54,6 +59,7 @@ export default function DashboardPage() {
   const [applications, setApplications] = useState<any[]>([]);
   const [myEvents, setMyEvents] = useState<any[]>([]);
   const [recommendedEvents, setRecommendedEvents] = useState<any[]>([]);
+  const [organizerApplications, setOrganizerApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function loadDashboard() {
@@ -102,6 +108,20 @@ export default function DashboardPage() {
 
     setMyEvents(organizerEvents || []);
 
+    const eventIds = (organizerEvents || []).map((event) => event.id);
+
+    if (eventIds.length > 0) {
+      const { data: organizerApplicationData } = await supabase
+        .from("event_attendance")
+        .select("id, status, created_at, vendor_id, events(*)")
+        .in("event_id", eventIds)
+        .order("created_at", { ascending: false });
+
+      setOrganizerApplications(organizerApplicationData || []);
+    } else {
+      setOrganizerApplications([]);
+    }
+
     const { data: recEvents } = await supabase
       .from("events")
       .select("*")
@@ -109,7 +129,6 @@ export default function DashboardPage() {
       .limit(3);
 
     setRecommendedEvents(recEvents || []);
-
     setLoading(false);
   }
 
@@ -126,6 +145,19 @@ export default function DashboardPage() {
     if (profile?.website_url) score += 10;
     return Math.min(score, 100);
   }, [profile]);
+
+  const approvedCount = organizerApplications.filter(
+    (item) => item.status === "approved"
+  ).length;
+
+  const pendingCount = organizerApplications.filter(
+    (item) => item.status === "requested"
+  ).length;
+
+  const estimatedOrganizerRevenue = myEvents.reduce((total, event) => {
+    const booth = Number(event.booth_price || 0);
+    return total + booth * approvedCount;
+  }, 0);
 
   async function logout() {
     await supabase.auth.signOut();
@@ -157,15 +189,27 @@ export default function DashboardPage() {
     });
 
     if (error) {
-      if (error.message.includes("duplicate")) {
-        alert("You already applied for this event.");
-      } else {
-        alert(error.message);
-      }
+      if (error.message.includes("duplicate")) alert("You already applied for this event.");
+      else alert(error.message);
       return;
     }
 
     alert("Application sent.");
+    loadDashboard();
+  }
+
+  async function updateApplicationStatus(applicationId: string, status: string) {
+    const { error } = await supabase
+      .from("event_attendance")
+      .update({ status })
+      .eq("id", applicationId);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    alert(`Application marked as ${status}.`);
     loadDashboard();
   }
 
@@ -178,8 +222,8 @@ export default function DashboardPage() {
             Welcome back{profile?.business_name ? `, ${profile.business_name}` : "."}
           </h1>
           <p className="muted">
-            Manage saved opportunities, applications, vendor intelligence, organizer tools,
-            profile strength, and premium growth from one luxury dashboard.
+            Manage saved opportunities, vendor applications, organizer tools,
+            approvals, profile strength, and premium growth.
           </p>
           <p className="dashboardEmail">{email}</p>
         </div>
@@ -221,18 +265,15 @@ export default function DashboardPage() {
             </div>
 
             <div className="dashboardCard">
-              <h3>Applications</h3>
+              <h3>My Applications</h3>
               <p>Requested, approved, and attended events.</p>
               <strong>{applications.length}</strong>
             </div>
 
             <div className="dashboardCard">
-              <h3>Profile Strength</h3>
-              <p>Complete your profile to build trust.</p>
-              <strong>{profileScore}% complete</strong>
-              <button className="outlineBtn" onClick={() => (window.location.href = "/profile/setup")}>
-                Improve Profile
-              </button>
+              <h3>Organizer Applicants</h3>
+              <p>Vendors applying to your listed events.</p>
+              <strong>{organizerApplications.length}</strong>
             </div>
 
             <div className="dashboardCard premiumCard">
@@ -247,29 +288,50 @@ export default function DashboardPage() {
           <section className="dashboardSavedSection">
             <div className="sectionHeader">
               <div>
-                <p className="goldEyebrow">Next Best Actions</p>
-                <h2>Your smartest next moves.</h2>
+                <p className="goldEyebrow">Recommended Events</p>
+                <h2>Smart opportunities to review next.</h2>
               </div>
             </div>
 
-            <div className="featureGrid">
-              <div className="featureBox">
-                <span className="stepNumber">01</span>
-                <h3>Save 3 events</h3>
-                <p>Build your opportunity shortlist and compare booth value.</p>
-              </div>
+            <div className="luxEventGrid">
+              {recommendedEvents.map((event) => (
+                <article className="luxEventCard" key={event.id}>
+                  <div
+                    className="eventVisual"
+                    style={{
+                      backgroundImage: `url(${
+                        event.image_url ||
+                        "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop"
+                      })`,
+                    }}
+                  >
+                    <div className="eventOverlay">
+                      <span>{getVendorScore(event)}/100 Vendor Score</span>
+                    </div>
+                  </div>
 
-              <div className="featureBox">
-                <span className="stepNumber">02</span>
-                <h3>Complete profile</h3>
-                <p>Vendors and organizers with complete profiles look more trustworthy.</p>
-              </div>
+                  <div className="eventBody">
+                    <div className="eventDate">{event.event_date || "Date coming soon"}</div>
+                    <h3>{event.title}</h3>
+                    <p className="muted">
+                      {event.city}, {event.state} {event.zip_code}
+                    </p>
 
-              <div className="featureBox">
-                <span className="stepNumber">03</span>
-                <h3>Apply smarter</h3>
-                <p>Use Vendor Score, booth fee, traffic, and reviews before applying.</p>
-              </div>
+                    <div className="pillGrid">
+                      <span>${event.booth_price || "TBD"} Booth</span>
+                      <span>{event.expected_visitors || "TBD"} Visitors</span>
+                      <span>{getBoothValue(event)}</span>
+                    </div>
+
+                    <button
+                      className="fullBtn"
+                      onClick={() => (window.location.href = `/events/${event.id}`)}
+                    >
+                      View Intelligence
+                    </button>
+                  </div>
+                </article>
+              ))}
             </div>
           </section>
         </>
@@ -329,11 +391,13 @@ export default function DashboardPage() {
                         <span>${event?.booth_price || "TBD"} booth</span>
                         <span>{event?.expected_visitors || "TBD"} visitors</span>
                         <span>{getBoothValue(event)}</span>
-                        <span>Saved</span>
                       </div>
 
                       <div className="eventActions">
-                        <button className="fullBtn" onClick={() => (window.location.href = `/events/${event?.id}`)}>
+                        <button
+                          className="fullBtn"
+                          onClick={() => (window.location.href = `/events/${event?.id}`)}
+                        >
                           View Intelligence
                         </button>
                         <button className="outlineBtn" onClick={() => applyToEvent(event?.id)}>
@@ -398,7 +462,10 @@ export default function DashboardPage() {
                         <span>{event?.expected_visitors || "TBD"} visitors</span>
                       </div>
 
-                      <button className="fullBtn" onClick={() => (window.location.href = `/events/${event?.id}`)}>
+                      <button
+                        className="fullBtn"
+                        onClick={() => (window.location.href = `/events/${event?.id}`)}
+                      >
                         View Event
                       </button>
                     </div>
@@ -411,63 +478,176 @@ export default function DashboardPage() {
       )}
 
       {activeTab === "Organizer" && (
+        <>
+          <section className="dashboardGrid">
+            <div className="dashboardCard">
+              <h3>My Events</h3>
+              <p>Events you created and manage.</p>
+              <strong>{myEvents.length}</strong>
+            </div>
+
+            <div className="dashboardCard">
+              <h3>Pending Applicants</h3>
+              <p>Vendors waiting for your review.</p>
+              <strong>{pendingCount}</strong>
+            </div>
+
+            <div className="dashboardCard">
+              <h3>Approved Vendors</h3>
+              <p>Vendors accepted into your events.</p>
+              <strong>{approvedCount}</strong>
+            </div>
+
+            <div className="dashboardCard premiumCard">
+              <h3>Booth Revenue Estimate</h3>
+              <p>Estimated from approved vendors and booth fees.</p>
+              <strong>${estimatedOrganizerRevenue}</strong>
+            </div>
+          </section>
+
+          <section className="dashboardSavedSection">
+            <div className="sectionHeader">
+              <div>
+                <p className="goldEyebrow">Organizer Center</p>
+                <h2>Your event portfolio.</h2>
+              </div>
+
+              <button className="goldBtn" onClick={() => (window.location.href = "/create-event")}>
+                Create Event
+              </button>
+            </div>
+
+            {myEvents.length === 0 ? (
+              <div className="emptyStateCard">
+                <h3>No organizer events yet.</h3>
+                <p>Create your first event to manage listings, vendor applications, and visibility.</p>
+              </div>
+            ) : (
+              <div className="eventsList">
+                {myEvents.map((event) => (
+                  <article className="marketEventCard" key={event.id}>
+                    <div
+                      className="marketEventImage"
+                      style={{
+                        backgroundImage: `url(${
+                          event.image_url ||
+                          "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop"
+                        })`,
+                      }}
+                    >
+                      <span>{getVendorScore(event)}/100 Event Score</span>
+                    </div>
+
+                    <div className="marketEventBody">
+                      <div className="eventDate">{event.event_date || "Date coming soon"}</div>
+                      <h3>{event.title}</h3>
+                      <p className="muted">
+                        {event.city}, {event.state} {event.zip_code}
+                      </p>
+
+                      <div className="marketStats">
+                        <span>${event.booth_price || "TBD"} booth</span>
+                        <span>{event.expected_visitors || "TBD"} visitors</span>
+                        <span>{event.is_featured ? "Featured" : "Listed"}</span>
+                      </div>
+
+                      <div className="eventActions">
+                        <button
+                          className="fullBtn"
+                          onClick={() => (window.location.href = `/events/${event.id}`)}
+                        >
+                          View Event
+                        </button>
+                        <button
+                          className="outlineBtn"
+                          onClick={() => setActiveTab("Vendor Applications")}
+                        >
+                          View Applicants
+                        </button>
+                        <button
+                          className="outlineBtn"
+                          onClick={() => (window.location.href = "/advertise")}
+                        >
+                          Boost Event
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      )}
+
+      {activeTab === "Vendor Applications" && (
         <section className="dashboardSavedSection">
           <div className="sectionHeader">
             <div>
-              <p className="goldEyebrow">Organizer Center</p>
-              <h2>{role === "organizer" ? "Your event portfolio." : "Upgrade into organizer tools."}</h2>
+              <p className="goldEyebrow">Vendor Application Center</p>
+              <h2>Approve, reject, or waitlist vendors.</h2>
             </div>
-
-            <button className="goldBtn" onClick={() => (window.location.href = "/create-event")}>
-              Create Event
-            </button>
           </div>
 
-          {myEvents.length === 0 ? (
+          {organizerApplications.length === 0 ? (
             <div className="emptyStateCard">
-              <h3>No organizer events yet.</h3>
-              <p>Create your first event to manage listings, vendor applications, and visibility.</p>
+              <h3>No vendor applications yet.</h3>
+              <p>
+                When vendors apply to your events, they will appear here for approval.
+              </p>
             </div>
           ) : (
-            <div className="eventsList">
-              {myEvents.map((event) => (
-                <article className="marketEventCard" key={event.id}>
-                  <div
-                    className="marketEventImage"
-                    style={{
-                      backgroundImage: `url(${
-                        event.image_url ||
-                        "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop"
-                      })`,
-                    }}
-                  >
-                    <span>{getVendorScore(event)}/100 Event Score</span>
-                  </div>
+            <div className="applicationGrid">
+              {organizerApplications.map((application) => {
+                const event = application.events;
 
-                  <div className="marketEventBody">
-                    <div className="eventDate">{event.event_date || "Date coming soon"}</div>
-                    <h3>{event.title}</h3>
+                return (
+                  <article className="applicationCard" key={application.id}>
+                    <h3>{event?.title || "Event Application"}</h3>
                     <p className="muted">
-                      {event.city}, {event.state} {event.zip_code}
+                      Applied:{" "}
+                      {application.created_at
+                        ? new Date(application.created_at).toLocaleDateString()
+                        : "Recently"}
                     </p>
 
                     <div className="marketStats">
-                      <span>${event.booth_price || "TBD"} booth</span>
-                      <span>{event.expected_visitors || "TBD"} visitors</span>
-                      <span>{event.is_featured ? "Featured" : "Listed"}</span>
+                      <span>Status: {application.status}</span>
+                      <span>Vendor ID: {application.vendor_id?.slice(0, 8)}...</span>
+                      <span>{event?.city}, {event?.state}</span>
                     </div>
 
-                    <div className="eventActions">
-                      <button className="fullBtn" onClick={() => (window.location.href = `/events/${event.id}`)}>
-                        View Event
+                    <div className="applicationActions">
+                      <button
+                        className="goldBtn"
+                        onClick={() =>
+                          updateApplicationStatus(application.id, "approved")
+                        }
+                      >
+                        Approve
                       </button>
-                      <button className="outlineBtn" onClick={() => (window.location.href = "/advertise")}>
-                        Boost Event
+
+                      <button
+                        className="outlineBtn"
+                        onClick={() =>
+                          updateApplicationStatus(application.id, "waitlist")
+                        }
+                      >
+                        Waitlist
+                      </button>
+
+                      <button
+                        className="outlineBtn"
+                        onClick={() =>
+                          updateApplicationStatus(application.id, "rejected")
+                        }
+                      >
+                        Reject
                       </button>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>
