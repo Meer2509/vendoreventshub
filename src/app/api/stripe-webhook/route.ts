@@ -38,6 +38,32 @@ export async function POST(req: Request) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
+    if (meta.renewal === "true" && meta.renewal_ad_id) {
+      const { error } = await supabaseAdmin
+        .from("ad_orders")
+        .update({
+          payment_status: "paid",
+          approval_status: "approved",
+          starts_at: startsAt.toISOString(),
+          expires_at: expiresAt.toISOString(),
+          amount_total: session.amount_total || 0,
+          currency: session.currency || "usd",
+          stripe_session_id: session.id,
+          stripe_payment_intent:
+            typeof session.payment_intent === "string"
+              ? session.payment_intent
+              : null,
+        })
+        .eq("id", meta.renewal_ad_id);
+
+      if (error) {
+        console.error("Supabase ad renewal error:", error);
+        return NextResponse.json({ error: "Renewal save failed" }, { status: 500 });
+      }
+
+      return NextResponse.json({ received: true });
+    }
+
     const { error } = await supabaseAdmin.from("ad_orders").upsert(
       {
         stripe_session_id: session.id,
