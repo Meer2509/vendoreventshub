@@ -117,21 +117,37 @@ export default function AdvertisePage() {
       return;
     }
 
-    const { error } = await supabase.from("sponsored_ads").insert({
-      ...ad,
-      created_by: userData.user.id,
-      is_active: true,
-    });
+    try {
+      const response = await fetch("/api/create-ad-checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...ad,
+          created_by: userData.user.id,
+        }),
+      });
 
-    setLoading(false);
+      const data = await response.json();
 
-    if (error) {
-      alert(error.message);
-      return;
+      if (!response.ok) {
+        alert(data.error || "Checkout failed.");
+        setLoading(false);
+        return;
+      }
+
+      if (!data.url) {
+        alert("Stripe checkout URL was not returned.");
+        setLoading(false);
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      alert("Something went wrong while starting checkout.");
+      setLoading(false);
     }
-
-    alert("Ad request submitted successfully!");
-    window.location.href = "/";
   }
 
   return (
@@ -155,7 +171,7 @@ export default function AdvertisePage() {
               ?.scrollIntoView({ behavior: "smooth" })
           }
         >
-          Submit Ad Request
+          Start Secure Checkout
         </button>
       </section>
 
@@ -191,6 +207,7 @@ export default function AdvertisePage() {
               </p>
 
               <button
+                type="button"
                 className={
                   ad.placement === placement.value ? "goldBtn" : "outlineBtn"
                 }
@@ -279,7 +296,9 @@ export default function AdvertisePage() {
                 {ad.description ||
                   "Your ad description will appear here with a clean premium layout designed for vendor attention."}
               </p>
-              <button className="goldBtn fullWidth">Visit Website</button>
+              <button type="button" className="goldBtn fullWidth">
+                Visit Website
+              </button>
             </div>
           </article>
 
@@ -301,7 +320,9 @@ export default function AdvertisePage() {
                 Perfect for companies that serve vendors before, during, or after
                 event day.
               </p>
-              <button className="outlineBtn fullWidth">Example Ad</button>
+              <button type="button" className="outlineBtn fullWidth">
+                Example Ad
+              </button>
             </div>
           </article>
 
@@ -323,7 +344,9 @@ export default function AdvertisePage() {
                 Sponsored events can appear higher in discovery and attract more
                 qualified vendor applicants.
               </p>
-              <button className="outlineBtn fullWidth">Boost Event</button>
+              <button type="button" className="outlineBtn fullWidth">
+                Boost Event
+              </button>
             </div>
           </article>
         </div>
@@ -333,6 +356,10 @@ export default function AdvertisePage() {
         <div className="formSectionTitle">
           <p className="goldEyebrow">Sponsored Placement Request</p>
           <h2>Create your premium ad request.</h2>
+          <p className="muted">
+            Your payment is securely processed through Stripe. After payment, your
+            ad enters review before approval.
+          </p>
         </div>
 
         <label>
@@ -433,14 +460,16 @@ export default function AdvertisePage() {
           <div>
             <strong>Approval Workflow</strong>
             <p>
-              Your request is submitted for review. Stripe checkout, scheduling,
-              and automatic approvals can be added next.
+              Your payment is securely processed through Stripe. After payment,
+              your ad enters review before approval.
             </p>
           </div>
         </div>
 
         <button className="goldBtn createEventBtn" type="submit" disabled={loading}>
-          {loading ? "Submitting Ad..." : "Submit Premium Ad Request"}
+          {loading
+            ? "Redirecting To Secure Checkout..."
+            : "Continue To Secure Checkout"}
         </button>
       </form>
     </main>
