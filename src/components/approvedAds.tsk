@@ -1,0 +1,170 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+
+type ApprovedAd = {
+  id: string;
+  business_name: string;
+  ad_title: string;
+  ad_description: string;
+  link_url: string;
+  image_url: string;
+  placement: string;
+  budget: string;
+  expires_at: string;
+};
+
+export default function ApprovedAds({
+  placement,
+  title = "Sponsored Partners",
+}: {
+  placement: string;
+  title?: string;
+}) {
+  const [ads, setAds] = useState<ApprovedAd[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadAds() {
+      const now = new Date().toISOString();
+
+      const { data, error } = await supabase
+        .from("ad_orders")
+        .select("*")
+        .eq("payment_status", "paid")
+        .eq("approval_status", "approved")
+        .eq("placement", placement)
+        .gt("expires_at", now)
+        .order("created_at", { ascending: false });
+
+      if (!error) setAds(data || []);
+      setLoading(false);
+    }
+
+    loadAds();
+  }, [placement]);
+
+  if (loading || ads.length === 0) return null;
+
+  return (
+    <section style={styles.section}>
+      <div style={styles.header}>
+        <p style={styles.eyebrow}>Sponsored</p>
+        <h2 style={styles.title}>{title}</h2>
+      </div>
+
+      <div style={styles.grid}>
+        {ads.map((ad) => (
+          <article key={ad.id} style={styles.card}>
+            {ad.image_url && (
+              <div
+                style={{
+                  ...styles.image,
+                  backgroundImage: `url(${ad.image_url})`,
+                }}
+              >
+                <span style={styles.badge}>Sponsored</span>
+              </div>
+            )}
+
+            <div style={styles.body}>
+              <p style={styles.business}>{ad.business_name}</p>
+              <h3 style={styles.adTitle}>{ad.ad_title}</h3>
+              <p style={styles.desc}>{ad.ad_description}</p>
+
+              {ad.link_url && (
+                <a href={ad.link_url} target="_blank" style={styles.button}>
+                  Visit Website →
+                </a>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+const styles: Record<string, React.CSSProperties> = {
+  section: {
+    maxWidth: 1180,
+    margin: "36px auto",
+    padding: "0 18px",
+  },
+  header: {
+    marginBottom: 18,
+  },
+  eyebrow: {
+    color: "#14583f",
+    fontWeight: 900,
+    textTransform: "uppercase",
+    letterSpacing: ".14em",
+    fontSize: 12,
+    margin: 0,
+  },
+  title: {
+    margin: "6px 0 0",
+    fontSize: "clamp(28px, 5vw, 46px)",
+    letterSpacing: "-.05em",
+    color: "#10291f",
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+    gap: 18,
+  },
+  card: {
+    background: "#fff",
+    border: "1px solid #e7dcc7",
+    borderRadius: 28,
+    overflow: "hidden",
+    boxShadow: "0 20px 55px rgba(20, 88, 63, .10)",
+  },
+  image: {
+    height: 210,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    position: "relative",
+  },
+  badge: {
+    position: "absolute",
+    top: 14,
+    left: 14,
+    background: "#10291f",
+    color: "#fff",
+    borderRadius: 999,
+    padding: "7px 12px",
+    fontSize: 12,
+    fontWeight: 900,
+  },
+  body: {
+    padding: 22,
+  },
+  business: {
+    color: "#14583f",
+    fontWeight: 900,
+    margin: 0,
+  },
+  adTitle: {
+    margin: "8px 0",
+    fontSize: 26,
+    lineHeight: 1.05,
+    letterSpacing: "-.04em",
+    color: "#10291f",
+  },
+  desc: {
+    color: "#5f6b66",
+    lineHeight: 1.6,
+  },
+  button: {
+    display: "inline-block",
+    marginTop: 10,
+    background: "#14583f",
+    color: "#fff",
+    borderRadius: 999,
+    padding: "12px 18px",
+    fontWeight: 900,
+    textDecoration: "none",
+  },
+};

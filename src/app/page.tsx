@@ -133,10 +133,15 @@ export default function HomePage() {
 
   useEffect(() => {
     async function loadHomepageData() {
+      const now = new Date().toISOString();
+
       const { data: adData } = await supabase
-        .from("sponsored_ads")
+        .from("ad_orders")
         .select("*")
-        .eq("is_active", true)
+        .eq("payment_status", "paid")
+        .eq("approval_status", "approved")
+        .eq("placement", "homepage")
+        .gt("expires_at", now)
         .order("created_at", { ascending: false });
 
       const { data: eventData } = await supabase
@@ -178,11 +183,17 @@ export default function HomePage() {
           </p>
 
           <div className="heroActions">
-            <button className="goldBtn" onClick={() => (window.location.href = "/events")}>
+            <button
+              className="goldBtn"
+              onClick={() => (window.location.href = "/events")}
+            >
               Find Events
             </button>
 
-            <button className="outlineBtn" onClick={() => (window.location.href = "/create-event")}>
+            <button
+              className="outlineBtn"
+              onClick={() => (window.location.href = "/create-event")}
+            >
               List Your Event
             </button>
           </div>
@@ -207,7 +218,10 @@ export default function HomePage() {
             ))}
           </div>
 
-          <button className="goldBtn fullWidth" onClick={() => (window.location.href = "/signup")}>
+          <button
+            className="goldBtn fullWidth"
+            onClick={() => (window.location.href = "/signup")}
+          >
             Join Free
           </button>
         </div>
@@ -238,7 +252,10 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <button className="outlineBtn" onClick={() => (window.location.href = "/events")}>
+          <button
+            className="outlineBtn"
+            onClick={() => (window.location.href = "/events")}
+          >
             View All Events
           </button>
         </div>
@@ -261,7 +278,9 @@ export default function HomePage() {
               </div>
 
               <div className="eventBody">
-                <div className="eventDate">{event.event_date || "Date coming soon"}</div>
+                <div className="eventDate">
+                  {event.event_date || "Date coming soon"}
+                </div>
 
                 <h3>{event.title}</h3>
 
@@ -303,10 +322,13 @@ export default function HomePage() {
           <div className="sectionHeader">
             <div>
               <p className="goldEyebrow">Sponsored Placements</p>
-              <h2>Premium businesses promoted to vendors.</h2>
+              <h2>Featured Sponsored Partners</h2>
             </div>
 
-            <button className="goldBtn" onClick={() => (window.location.href = "/advertise")}>
+            <button
+              className="goldBtn"
+              onClick={() => (window.location.href = "/advertise")}
+            >
               Advertise Here
             </button>
           </div>
@@ -316,15 +338,23 @@ export default function HomePage() {
               <article className="liveAdCard" key={ad.id}>
                 <div
                   className="liveAdImage"
-                  style={{ backgroundImage: `url(${ad.image_url || "/window.svg"})` }}
+                  style={{
+                    backgroundImage: `url(${ad.image_url || "/window.svg"})`,
+                  }}
                 >
                   <span>Sponsored</span>
                 </div>
 
                 <div className="liveAdBody">
-                  <p className="goldEyebrow">{ad.business_name}</p>
-                  <h3>{ad.title}</h3>
-                  <p className="muted">{ad.description}</p>
+                  <p className="goldEyebrow">
+                    {ad.business_name || "Sponsored Partner"}
+                  </p>
+                  <h3>{ad.ad_title || ad.title || "Premium Sponsored Ad"}</h3>
+                  <p className="muted">
+                    {ad.ad_description ||
+                      ad.description ||
+                      "A premium partner promoted through VendorEventsHub."}
+                  </p>
 
                   {ad.link_url && (
                     <button
@@ -386,14 +416,20 @@ export default function HomePage() {
             <h2>Find the right event for your business.</h2>
           </div>
 
-          <button className="outlineBtn" onClick={() => (window.location.href = "/events")}>
+          <button
+            className="outlineBtn"
+            onClick={() => (window.location.href = "/events")}
+          >
             View All Events
           </button>
         </div>
 
         <div className="categoryLuxuryGrid">
           {categories.map((category) => (
-            <button key={category} onClick={() => (window.location.href = "/events")}>
+            <button
+              key={category}
+              onClick={() => (window.location.href = "/events")}
+            >
               <span>{category}</span>
               <small>Explore opportunities</small>
             </button>
@@ -410,11 +446,17 @@ export default function HomePage() {
         </p>
 
         <div className="heroActions">
-          <button className="goldBtn" onClick={() => (window.location.href = "/advertise")}>
+          <button
+            className="goldBtn"
+            onClick={() => (window.location.href = "/advertise")}
+          >
             Advertise Your Business
           </button>
 
-          <button className="outlineBtn" onClick={() => (window.location.href = "/pricing")}>
+          <button
+            className="outlineBtn"
+            onClick={() => (window.location.href = "/pricing")}
+          >
             View Pricing
           </button>
         </div>
@@ -425,11 +467,17 @@ export default function HomePage() {
         <h2>Build your vendor business with better event intelligence.</h2>
 
         <div className="heroActions">
-          <button className="goldBtn" onClick={() => (window.location.href = "/events")}>
+          <button
+            className="goldBtn"
+            onClick={() => (window.location.href = "/events")}
+          >
             Explore Events
           </button>
 
-          <button className="outlineBtn" onClick={() => (window.location.href = "/profile/setup")}>
+          <button
+            className="outlineBtn"
+            onClick={() => (window.location.href = "/profile/setup")}
+          >
             Create Vendor Profile
           </button>
         </div>
