@@ -9,15 +9,33 @@ const quickFilters = [
   "Food Vendors",
   "High Traffic",
   "Featured Events",
+  "Verified Organizers",
+  "Vendors Wanted",
 ];
 
-const bestFitBadges = ["Coffee", "Food", "Handmade", "Wellness", "Local Retail"];
+const bestFitByCategory: Record<string, string[]> = {
+  Festival: ["Food", "Coffee", "Crafts", "Wellness", "Local Retail"],
+  "Farmers Market": ["Farm Products", "Coffee", "Bakery", "Wellness", "Handmade"],
+  "Craft Fair": ["Jewelry", "Candles", "Art", "Handmade", "Home Decor"],
+  "Flea Market": ["Vintage", "Collectibles", "Food", "Local Retail", "Resale"],
+  "Food Truck Event": ["Food Trucks", "Coffee", "Desserts", "Beverages", "Snacks"],
+  "Holiday Market": ["Gifts", "Candles", "Coffee", "Jewelry", "Handmade"],
+  Expo: ["Services", "Wellness", "Retail", "Food", "Business Brands"],
+  "Community Fair": ["Food", "Coffee", "Local Services", "Handmade", "Family Brands"],
+  "Artisan Market": ["Handmade", "Art", "Jewelry", "Candles", "Wellness"],
+};
+
+function getBestFitBadges(event: any) {
+  return bestFitByCategory[event?.category] || ["Coffee", "Food", "Handmade", "Wellness", "Local Retail"];
+}
 
 function getVendorScore(event: any) {
-  const booth = Number(event.booth_price || 0);
-  const visitors = Number(event.expected_visitors || 0);
-  const rating = Number(event.rating || 0);
-  const featured = Boolean(event.is_featured);
+  const booth = Number(event?.booth_price || 0);
+  const visitors = Number(event?.expected_visitors || 0);
+  const rating = Number(event?.rating || 0);
+  const featured = Boolean(event?.is_featured);
+  const verified = Boolean(event?.verified_organizer);
+  const accepting = event?.accepting_vendors !== false;
 
   let score = 55;
 
@@ -35,12 +53,14 @@ function getVendorScore(event: any) {
   else if (rating >= 3.8) score += 4;
 
   if (featured) score += 5;
+  if (verified) score += 4;
+  if (accepting) score += 2;
 
-  return Math.min(score, 98);
+  return Math.min(score, 99);
 }
 
 function getTrafficLabel(event: any) {
-  const visitors = Number(event.expected_visitors || 0);
+  const visitors = Number(event?.expected_visitors || 0);
 
   if (visitors >= 10000) return "Very High Traffic";
   if (visitors >= 5000) return "High Traffic";
@@ -50,7 +70,7 @@ function getTrafficLabel(event: any) {
 }
 
 function getBoothValue(event: any) {
-  const booth = Number(event.booth_price || 0);
+  const booth = Number(event?.booth_price || 0);
 
   if (!booth) return "Booth Fee TBD";
   if (booth <= 100) return "Excellent Booth Value";
@@ -59,15 +79,33 @@ function getBoothValue(event: any) {
   return "Premium Booth Fee";
 }
 
+function formatDate(date: string) {
+  if (!date) return "Date coming soon";
+
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) return date;
+
+  return parsedDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export default function EventsPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
   const [eventType, setEventType] = useState("All events");
+  const [stateFilter, setStateFilter] = useState("All states");
   const [boothPrice, setBoothPrice] = useState("Any price");
   const [vendorRating, setVendorRating] = useState("Any rating");
   const [sortBy, setSortBy] = useState("Most Profitable");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [vendorsWantedOnly, setVendorsWantedOnly] = useState(false);
+  const [featuredOnly, setFeaturedOnly] = useState(false);
 
   useEffect(() => {
     async function loadEvents() {
@@ -88,9 +126,19 @@ export default function EventsPage() {
     loadEvents();
   }, []);
 
+  const availableStates = useMemo(() => {
+    const states = events
+      .map((event) => event.state)
+      .filter(Boolean)
+      .map((state) => String(state).trim())
+      .filter(Boolean);
+
+    return ["All states", ...Array.from(new Set(states)).sort()];
+  }, [events]);
+
   const filteredEvents = useMemo(() => {
     let results = events.filter((event) => {
-      const searchText = search.toLowerCase();
+      const searchText = search.toLowerCase().trim();
 
       const matchesSearch =
         !searchText ||
@@ -98,18 +146,24 @@ export default function EventsPage() {
         event.city?.toLowerCase().includes(searchText) ||
         event.state?.toLowerCase().includes(searchText) ||
         event.zip_code?.toLowerCase().includes(searchText) ||
-        event.category?.toLowerCase().includes(searchText);
+        event.category?.toLowerCase().includes(searchText) ||
+        event.description?.toLowerCase().includes(searchText);
 
       const matchesType =
         eventType === "All events" || event.category === eventType;
+
+      const matchesState =
+        stateFilter === "All states" || event.state === stateFilter;
 
       const price = Number(event.booth_price || 0);
 
       const matchesPrice =
         boothPrice === "Any price" ||
-        (boothPrice === "Under $50" && price <= 50) ||
-        (boothPrice === "Under $100" && price <= 100) ||
-        (boothPrice === "Under $250" && price <= 250);
+        (boothPrice === "Free / TBD" && price === 0) ||
+        (boothPrice === "Under $50" && price > 0 && price <= 50) ||
+        (boothPrice === "Under $100" && price > 0 && price <= 100) ||
+        (boothPrice === "Under $250" && price > 0 && price <= 250) ||
+        (boothPrice === "$250+" && price >= 250);
 
       const rating = Number(event.rating || 0);
 
@@ -119,10 +173,21 @@ export default function EventsPage() {
         (vendorRating === "4.8 stars & up" && rating >= 4.8) ||
         (vendorRating === "5 stars only" && rating >= 5);
 
-      const matchesFeatured =
-        search !== "featured-events-only" || event.is_featured === true;
+      const matchesFeatured = !featuredOnly || event.is_featured === true;
+      const matchesVerified = !verifiedOnly || event.verified_organizer === true;
+      const matchesVendorsWanted =
+        !vendorsWantedOnly || event.accepting_vendors !== false;
 
-      return matchesSearch && matchesType && matchesPrice && matchesRating && matchesFeatured;
+      return (
+        matchesSearch &&
+        matchesType &&
+        matchesState &&
+        matchesPrice &&
+        matchesRating &&
+        matchesFeatured &&
+        matchesVerified &&
+        matchesVendorsWanted
+      );
     });
 
     results = [...results].sort((a, b) => {
@@ -142,15 +207,42 @@ export default function EventsPage() {
         return Number(b.expected_visitors || 0) - Number(a.expected_visitors || 0);
       }
 
+      if (sortBy === "Recently Added") {
+        return (
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime()
+        );
+      }
+
+      if (sortBy === "Verified First") {
+        return Number(Boolean(b.verified_organizer)) - Number(Boolean(a.verified_organizer));
+      }
+
+      if (sortBy === "Vendors Wanted First") {
+        return Number(b.accepting_vendors !== false) - Number(a.accepting_vendors !== false);
+      }
+
       return 0;
     });
 
     return results;
-  }, [events, search, eventType, boothPrice, vendorRating, sortBy]);
+  }, [
+    events,
+    search,
+    eventType,
+    stateFilter,
+    boothPrice,
+    vendorRating,
+    sortBy,
+    verifiedOnly,
+    vendorsWantedOnly,
+    featuredOnly,
+  ]);
 
   const featuredEvents = useMemo(() => {
     return events
       .filter((event) => event.is_featured)
+      .sort((a, b) => getVendorScore(b) - getVendorScore(a))
       .slice(0, 3);
   }, [events]);
 
@@ -159,15 +251,21 @@ export default function EventsPage() {
     if (filter === "Under $100 Booth") setBoothPrice("Under $100");
     if (filter === "Food Vendors") setEventType("Food Truck Event");
     if (filter === "High Traffic") setSortBy("Highest Traffic");
-    if (filter === "Featured Events") setSearch("featured-events-only");
+    if (filter === "Featured Events") setFeaturedOnly(true);
+    if (filter === "Verified Organizers") setVerifiedOnly(true);
+    if (filter === "Vendors Wanted") setVendorsWantedOnly(true);
   }
 
   function clearFilters() {
     setSearch("");
     setEventType("All events");
+    setStateFilter("All states");
     setBoothPrice("Any price");
     setVendorRating("Any rating");
     setSortBy("Most Profitable");
+    setVerifiedOnly(false);
+    setVendorsWantedOnly(false);
+    setFeaturedOnly(false);
   }
 
   async function saveEvent(eventId: string) {
@@ -196,6 +294,33 @@ export default function EventsPage() {
     alert("Event saved to your dashboard.");
   }
 
+  async function applyToEvent(eventId: string) {
+    const { data: userData } = await supabase.auth.getUser();
+
+    if (!userData.user) {
+      alert("Please login first to apply as a vendor.");
+      window.location.href = "/login";
+      return;
+    }
+
+    const { error } = await supabase.from("event_attendance").insert({
+      event_id: eventId,
+      vendor_id: userData.user.id,
+      status: "requested",
+    });
+
+    if (error) {
+      if (error.message.includes("duplicate")) {
+        alert("You already applied for this event.");
+      } else {
+        alert(error.message);
+      }
+      return;
+    }
+
+    alert("Application request sent successfully.");
+  }
+
   return (
     <main className="luxuryPage">
       <section className="vhHero">
@@ -206,24 +331,25 @@ export default function EventsPage() {
 
           <p className="heroText">
             Compare booth fees, traffic, vendor ratings, organizer trust, and
-            event opportunity before you apply. VendorEventsHub helps vendors
+            opportunity signals before you apply. VendorEventsHub helps vendors
             book smarter and organizers attract better businesses.
           </p>
 
           <div className="heroActions">
-            <button className="goldBtn" onClick={() => (window.location.href = "/create-event")}>
-              List Your Event
+            <button className="goldBtn" onClick={() => (window.location.href = "/events")}>
+              Explore Events
             </button>
 
-            <button className="outlineBtn" onClick={() => (window.location.href = "/pricing")}>
-              Founding Access
+            <button className="outlineBtn" onClick={() => (window.location.href = "/create-event")}>
+              List Your Event
             </button>
           </div>
 
           <div className="vhTrustStrip">
             <span>Vendor Profit Scores</span>
             <span>Booth Fee Transparency</span>
-            <span>Verified Reviews</span>
+            <span>Verified Organizer Signals</span>
+            <span>Vendors Wanted Alerts</span>
           </div>
         </div>
 
@@ -238,20 +364,20 @@ export default function EventsPage() {
             </div>
             <div>
               <strong>{featuredEvents.length}</strong>
-              <span>Featured events</span>
+              <span>Featured</span>
             </div>
             <div>
-              <strong>80</strong>
-              <span>Vendor spots</span>
+              <strong>{events.filter((event) => event.accepting_vendors !== false).length}</strong>
+              <span>Vendors wanted</span>
             </div>
             <div>
-              <strong>$49</strong>
-              <span>Ads start</span>
+              <strong>{events.filter((event) => event.verified_organizer).length}</strong>
+              <span>Verified</span>
             </div>
           </div>
 
           <button className="goldBtn fullWidth" onClick={() => (window.location.href = "/signup")}>
-            Claim Vendor Founder Spot
+            Claim Founder Access
           </button>
         </div>
       </section>
@@ -260,9 +386,13 @@ export default function EventsPage() {
         <section className="luxSection">
           <div className="sectionHeader">
             <div>
-              <p className="goldEyebrow">Trending Events</p>
-              <h2>Featured vendor opportunities.</h2>
+              <p className="goldEyebrow">Featured Opportunities</p>
+              <h2>Premium events vendors should review first.</h2>
             </div>
+
+            <button className="outlineBtn" onClick={() => setFeaturedOnly(true)}>
+              View Featured Only
+            </button>
           </div>
 
           <div className="luxEventGrid">
@@ -283,16 +413,18 @@ export default function EventsPage() {
                 </div>
 
                 <div className="eventBody">
-                  <div className="eventDate">{event.event_date || "Date coming soon"}</div>
+                  <div className="eventDate">{formatDate(event.event_date)}</div>
                   <h3>{event.title}</h3>
                   <p className="muted">
-                    {event.city}, {event.state}
+                    {event.city}, {event.state} {event.zip_code}
                   </p>
 
                   <div className="pillGrid">
+                    <span>Featured</span>
+                    {event.verified_organizer && <span>Verified Organizer</span>}
+                    {event.accepting_vendors !== false && <span>Vendors Wanted</span>}
                     <span>{getTrafficLabel(event)}</span>
                     <span>{getBoothValue(event)}</span>
-                    <span>★ {event.rating || "New"}</span>
                   </div>
 
                   <button
@@ -318,8 +450,8 @@ export default function EventsPage() {
 
         <div className="luxSearch eventsSearch">
           <input
-            placeholder="Search city, ZIP, event name, category, or state..."
-            value={search === "featured-events-only" ? "" : search}
+            placeholder="Search city, ZIP, event name, category, organizer keywords..."
+            value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <button>Search Events</button>
@@ -345,7 +477,18 @@ export default function EventsPage() {
                 <option>Highest Rated</option>
                 <option>Lowest Booth Fee</option>
                 <option>Highest Traffic</option>
-                <option>Newest Events</option>
+                <option>Recently Added</option>
+                <option>Verified First</option>
+                <option>Vendors Wanted First</option>
+              </select>
+            </label>
+
+            <label>
+              State
+              <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)}>
+                {availableStates.map((state) => (
+                  <option key={state}>{state}</option>
+                ))}
               </select>
             </label>
 
@@ -369,9 +512,11 @@ export default function EventsPage() {
               Booth Price
               <select value={boothPrice} onChange={(e) => setBoothPrice(e.target.value)}>
                 <option>Any price</option>
+                <option>Free / TBD</option>
                 <option>Under $50</option>
                 <option>Under $100</option>
                 <option>Under $250</option>
+                <option>$250+</option>
               </select>
             </label>
 
@@ -383,6 +528,36 @@ export default function EventsPage() {
                 <option>4.8 stars & up</option>
                 <option>5 stars only</option>
               </select>
+            </label>
+
+            <label style={{ flexDirection: "row", alignItems: "center" }}>
+              <input
+                type="checkbox"
+                checked={verifiedOnly}
+                onChange={(e) => setVerifiedOnly(e.target.checked)}
+                style={{ width: "18px", height: "18px" }}
+              />
+              Verified organizers only
+            </label>
+
+            <label style={{ flexDirection: "row", alignItems: "center" }}>
+              <input
+                type="checkbox"
+                checked={vendorsWantedOnly}
+                onChange={(e) => setVendorsWantedOnly(e.target.checked)}
+                style={{ width: "18px", height: "18px" }}
+              />
+              Vendors wanted only
+            </label>
+
+            <label style={{ flexDirection: "row", alignItems: "center" }}>
+              <input
+                type="checkbox"
+                checked={featuredOnly}
+                onChange={(e) => setFeaturedOnly(e.target.checked)}
+                style={{ width: "18px", height: "18px" }}
+              />
+              Featured only
             </label>
 
             <div className="sidebarCard sponsorCard">
@@ -397,7 +572,9 @@ export default function EventsPage() {
           <div className="eventsResults">
             <div className="resultsTop">
               <h3>{filteredEvents.length} vendor opportunities</h3>
-              <p>Sorted by real vendor opportunity signals.</p>
+              <p>
+                Sorted by vendor opportunity signals, booth value, trust, and traffic.
+              </p>
             </div>
 
             {loading ? (
@@ -405,65 +582,120 @@ export default function EventsPage() {
             ) : filteredEvents.length === 0 ? (
               <div className="emptyStateCard">
                 <h3>No matching events found.</h3>
-                <p>Try another location, category, booth price, or rating filter.</p>
-                <button className="goldBtn" onClick={clearFilters}>Reset Search</button>
+                <p>
+                  Try another state, category, booth price, or trust filter. You can
+                  also clear filters and explore all available vendor opportunities.
+                </p>
+                <button className="goldBtn" onClick={clearFilters}>
+                  Reset Search
+                </button>
               </div>
             ) : (
               <div className="eventsList">
-                {filteredEvents.map((event) => {
+                {filteredEvents.map((event, index) => {
                   const vendorScore = getVendorScore(event);
+                  const bestFitBadges = getBestFitBadges(event);
 
                   return (
-                    <article className="marketEventCard" key={event.id}>
-                      <div
-                        className="marketEventImage"
-                        style={{
-                          backgroundImage: `url(${
-                            event.image_url ||
-                            "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop"
-                          })`,
-                        }}
-                      >
-                        <span>{vendorScore}/100 Vendor Score</span>
-                      </div>
-
-                      <div className="marketEventBody">
-                        <div className="eventDate">{event.event_date || "Date coming soon"}</div>
-                        <h3>{event.title}</h3>
-
-                        <p className="muted">
-                          {event.city}, {event.state} {event.zip_code}
-                        </p>
-
-                        <div className="marketStats">
-                          <span>★ {event.rating || "New"} Rating</span>
-                          <span>${event.booth_price || "TBD"} Booth</span>
-                          <span>{event.expected_visitors || "TBD"} Visitors</span>
-                          <span>{getTrafficLabel(event)}</span>
-                          <span>{getBoothValue(event)}</span>
-                          {event.is_featured && <span>Featured Event</span>}
-                        </div>
-
-                        <div className="pillGrid">
-                          {bestFitBadges.map((badge) => (
-                            <span key={badge}>Best for {badge}</span>
-                          ))}
-                        </div>
-
-                        <div className="eventActions">
-                          <button
-                            className="fullBtn"
-                            onClick={() => (window.location.href = `/events/${event.id}`)}
+                    <div key={event.id}>
+                      {index > 0 && index % 6 === 0 && (
+                        <article className="marketEventCard">
+                          <div
+                            className="marketEventImage"
+                            style={{
+                              backgroundImage:
+                                "url(https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=1400&auto=format&fit=crop)",
+                            }}
                           >
-                            View Event Intelligence
-                          </button>
+                            <span>Sponsored Partner</span>
+                          </div>
 
-                          <button className="outlineBtn" onClick={() => saveEvent(event.id)}>
-                            Save
-                          </button>
+                          <div className="marketEventBody">
+                            <div className="eventDate">Premium Placement</div>
+                            <h3>Your vendor-focused business could be here.</h3>
+                            <p className="muted">
+                              Reach vendors while they compare events, booth fees,
+                              traffic, and organizer trust.
+                            </p>
+
+                            <div className="marketStats">
+                              <span>Homepage Ads</span>
+                              <span>Event Page Ads</span>
+                              <span>Dashboard Ads</span>
+                              <span>From $49</span>
+                            </div>
+
+                            <div className="eventActions">
+                              <button
+                                className="fullBtn"
+                                onClick={() => (window.location.href = "/advertise")}
+                              >
+                                Advertise Here
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      )}
+
+                      <article className="marketEventCard">
+                        <div
+                          className="marketEventImage"
+                          style={{
+                            backgroundImage: `url(${
+                              event.image_url ||
+                              "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop"
+                            })`,
+                          }}
+                        >
+                          {event.is_featured && <span>Featured</span>}
+                          {!event.is_featured && <span>{vendorScore}/100 Vendor Score</span>}
                         </div>
-                      </div>
-                    </article>
+
+                        <div className="marketEventBody">
+                          <div className="eventDate">{formatDate(event.event_date)}</div>
+                          <h3>{event.title}</h3>
+
+                          <p className="muted">
+                            {event.city}, {event.state} {event.zip_code}
+                          </p>
+
+                          <div className="marketStats">
+                            <span>{vendorScore}/100 Vendor Score</span>
+                            <span>★ {event.rating || "New"} Rating</span>
+                            <span>${event.booth_price || "TBD"} Booth</span>
+                            <span>{event.expected_visitors || "TBD"} Visitors</span>
+                            <span>{getTrafficLabel(event)}</span>
+                            <span>{getBoothValue(event)}</span>
+                            {event.is_featured && <span>Featured Event</span>}
+                            {event.verified_organizer && <span>Verified Organizer</span>}
+                            {event.accepting_vendors !== false && <span>Vendors Wanted</span>}
+                          </div>
+
+                          <div className="pillGrid">
+                            {bestFitBadges.map((badge) => (
+                              <span key={badge}>Best for {badge}</span>
+                            ))}
+                          </div>
+
+                          <div className="eventActions">
+                            <button
+                              className="fullBtn"
+                              onClick={() => (window.location.href = `/events/${event.id}`)}
+                            >
+                              View Details
+                            </button>
+
+                            <button className="outlineBtn" onClick={() => saveEvent(event.id)}>
+                              Save
+                            </button>
+
+                            <button className="outlineBtn" onClick={() => applyToEvent(event.id)}>
+                              Apply
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    </div>
                   );
                 })}
               </div>
@@ -478,8 +710,8 @@ export default function EventsPage() {
           <h2>Bring quality vendors to your next festival, fair, or market.</h2>
           <p>
             List your event, collect vendor applications, approve attendance, and
-            build trust with verified vendor reviews. First 50 organizers receive
-            founding access free forever.
+            build trust with verified vendor reviews. Founding organizers can list
+            and grow early before premium plans begin.
           </p>
 
           <div className="heroActions">
@@ -487,8 +719,8 @@ export default function EventsPage() {
               List Your Event
             </button>
 
-            <button className="outlineBtn" onClick={() => (window.location.href = "/pricing")}>
-              View Founding Offer
+            <button className="outlineBtn" onClick={() => (window.location.href = "/advertise")}>
+              Boost An Event
             </button>
           </div>
         </div>
