@@ -24,18 +24,15 @@ export async function POST(req: Request) {
 
     const price = await stripe.prices.retrieve(priceId);
 
-    const mode =
-      price.type === "recurring"
-        ? "subscription"
-        : "payment";
+    const mode: "payment" | "subscription" =
+      price.type === "recurring" ? "subscription" : "payment";
 
     const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      "https://www.vendoreventshub.com";
+      process.env.NEXT_PUBLIC_SITE_URL || "https://www.vendoreventshub.com";
 
     const session = await stripe.checkout.sessions.create({
-      // @ts-ignore
-      ui_mode: "embedded",
+      // @ts-ignore Stripe API now expects embedded_page for embedded checkout.
+      ui_mode: "embedded_page",
       mode,
       line_items: [
         {
