@@ -18,15 +18,27 @@ const vendorTypes = [
 
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<any[]>([]);
+  const [sponsoredAds, setSponsoredAds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All Vendors");
 
   useEffect(() => {
     async function loadVendors() {
+      const now = new Date().toISOString();
+
       const { data, error } = await supabase
         .from("vendor_profiles")
         .select("*")
+        .order("created_at", { ascending: false });
+
+      const { data: adData } = await supabase
+        .from("ad_orders")
+        .select("*")
+        .eq("payment_status", "paid")
+        .eq("approval_status", "approved")
+        .eq("placement", "vendor_directory")
+        .gt("expires_at", now)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -35,6 +47,7 @@ export default function VendorsPage() {
         setVendors(data || []);
       }
 
+      setSponsoredAds(adData || []);
       setLoading(false);
     }
 
@@ -59,6 +72,48 @@ export default function VendorsPage() {
       return matchesSearch && matchesCategory;
     });
   }, [vendors, search, category]);
+
+  function renderSponsoredVendorAd(ad: any) {
+    return (
+      <article className="vendorCard premiumVendorCard" key={ad.id}>
+        <div
+          className="vendorCardBanner"
+          style={{
+            backgroundImage: `url(${
+              ad.image_url ||
+              "https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=1400&auto=format&fit=crop"
+            })`,
+          }}
+        />
+
+        <div className="vendorCardBody">
+          <p className="goldEyebrow">Sponsored Vendor</p>
+
+          <h3>{ad.business_name || "Featured Vendor Partner"}</h3>
+
+          <p className="muted">
+            {ad.ad_description ||
+              "A premium sponsored vendor featured on VendorEventsHub."}
+          </p>
+
+          <div className="marketStats">
+            <span>Paid Partner</span>
+            <span>30-Day Feature</span>
+            <span>{ad.budget || "Premium Placement"}</span>
+          </div>
+
+          {ad.link_url && (
+            <button
+              className="fullBtn"
+              onClick={() => window.open(ad.link_url, "_blank")}
+            >
+              Visit Website
+            </button>
+          )}
+        </div>
+      </article>
+    );
+  }
 
   return (
     <main className="luxuryPage">
@@ -107,8 +162,8 @@ export default function VendorsPage() {
               <span>Listed vendors</span>
             </div>
             <div>
-              <strong>Local</strong>
-              <span>Business discovery</span>
+              <strong>{sponsoredAds.length}</strong>
+              <span>Featured ads</span>
             </div>
             <div>
               <strong>Events</strong>
@@ -121,6 +176,28 @@ export default function VendorsPage() {
           </div>
         </div>
       </section>
+
+      {sponsoredAds.length > 0 && (
+        <section className="luxSection">
+          <div className="sectionHeader">
+            <div>
+              <p className="goldEyebrow">Featured Sponsored Vendors</p>
+              <h2>Premium vendors and businesses promoted to organizers.</h2>
+            </div>
+
+            <button
+              className="goldBtn"
+              onClick={() => (window.location.href = "/advertise")}
+            >
+              Advertise Here
+            </button>
+          </div>
+
+          <div className="vendorDirectoryGrid">
+            {sponsoredAds.slice(0, 6).map((ad) => renderSponsoredVendorAd(ad))}
+          </div>
+        </section>
+      )}
 
       <section className="luxSection">
         <div className="sectionHeader">
@@ -141,7 +218,15 @@ export default function VendorsPage() {
         </div>
 
         <div className="filterRow">
-          {["All Vendors", "Food & Beverage", "Health & Wellness", "Handmade Goods", "Artisan Products", "Jewelry", "Food Truck"].map((item) => (
+          {[
+            "All Vendors",
+            "Food & Beverage",
+            "Health & Wellness",
+            "Handmade Goods",
+            "Artisan Products",
+            "Jewelry",
+            "Food Truck",
+          ].map((item) => (
             <button key={item} onClick={() => setCategory(item)}>
               {item}
             </button>
