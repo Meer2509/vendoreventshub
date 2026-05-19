@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
+const ADMIN_EMAILS = ["meerhamzakhan2020@gmail.com"];
+
 type AdOrder = {
   id: string;
   business_name: string;
@@ -25,6 +27,26 @@ type AdOrder = {
 export default function AdminAdsPage() {
   const [ads, setAds] = useState<AdOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [allowed, setAllowed] = useState(false);
+
+  async function checkAdmin() {
+    const { data } = await supabase.auth.getUser();
+    const email = data.user?.email || "";
+
+    if (!data.user) {
+      window.location.href = "/login";
+      return;
+    }
+
+    if (!ADMIN_EMAILS.includes(email)) {
+      setAllowed(false);
+      setLoading(false);
+      return;
+    }
+
+    setAllowed(true);
+    loadAds();
+  }
 
   async function loadAds() {
     setLoading(true);
@@ -59,8 +81,26 @@ export default function AdminAdsPage() {
   }
 
   useEffect(() => {
-    loadAds();
+    checkAdmin();
   }, []);
+
+  if (loading) {
+    return <main style={styles.page}>Loading admin ads...</main>;
+  }
+
+  if (!allowed) {
+    return (
+      <main style={styles.page}>
+        <section style={styles.header}>
+          <p style={styles.eyebrow}>Access Denied</p>
+          <h1 style={styles.title}>You are not authorized.</h1>
+          <p style={styles.subtitle}>
+            This admin page is only available to approved VendorEventsHub admins.
+          </p>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main style={styles.page}>
@@ -73,9 +113,7 @@ export default function AdminAdsPage() {
         </p>
       </section>
 
-      {loading ? (
-        <div style={styles.empty}>Loading paid ads...</div>
-      ) : ads.length === 0 ? (
+      {ads.length === 0 ? (
         <div style={styles.empty}>No paid ad orders yet.</div>
       ) : (
         <section style={styles.grid}>
@@ -92,17 +130,13 @@ export default function AdminAdsPage() {
 
               <h2 style={styles.cardTitle}>{ad.ad_title}</h2>
               <p style={styles.business}>{ad.business_name}</p>
-
               <p style={styles.desc}>{ad.ad_description}</p>
 
               <div style={styles.infoBox}>
                 <p><strong>Placement:</strong> {ad.placement}</p>
                 <p><strong>Plan:</strong> {ad.plan}</p>
                 <p><strong>Budget:</strong> {ad.budget}</p>
-                <p>
-                  <strong>Paid:</strong>{" "}
-                  {ad.amount_total ? `$${(ad.amount_total / 100).toFixed(2)}` : "N/A"}
-                </p>
+                <p><strong>Paid:</strong> ${((ad.amount_total || 0) / 100).toFixed(2)}</p>
                 <p><strong>Starts:</strong> {ad.starts_at ? new Date(ad.starts_at).toLocaleDateString() : "N/A"}</p>
                 <p><strong>Expires:</strong> {ad.expires_at ? new Date(ad.expires_at).toLocaleDateString() : "N/A"}</p>
               </div>
@@ -117,11 +151,9 @@ export default function AdminAdsPage() {
                 <button style={styles.approve} onClick={() => updateStatus(ad.id, "approved")}>
                   Approve
                 </button>
-
                 <button style={styles.pause} onClick={() => updateStatus(ad.id, "paused")}>
                   Pause
                 </button>
-
                 <button style={styles.reject} onClick={() => updateStatus(ad.id, "rejected")}>
                   Reject
                 </button>
@@ -161,7 +193,7 @@ const styles: Record<string, React.CSSProperties> = {
   title: {
     margin: 0,
     fontSize: "clamp(38px, 7vw, 72px)",
-    lineHeight: .95,
+    lineHeight: 0.95,
     letterSpacing: "-.06em",
   },
   subtitle: {
