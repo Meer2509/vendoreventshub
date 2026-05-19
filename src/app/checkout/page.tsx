@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { Suspense, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -19,7 +19,7 @@ const planNames: Record<string, string> = {
   organizer: "Organizer Premium Placement",
 };
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan") || "homepage";
   const planName = planNames[plan] || "Premium Advertising Plan";
@@ -43,7 +43,9 @@ export default function CheckoutPage() {
   return (
     <main style={styles.page}>
       <section style={styles.wrap}>
-        <Link href="/pricing" style={styles.back}>← Back to pricing</Link>
+        <Link href="/pricing" style={styles.back}>
+          ← Back to pricing
+        </Link>
 
         <div style={styles.hero}>
           <div style={styles.badge}>VendorEventsHub Premium</div>
@@ -68,9 +70,21 @@ export default function CheckoutPage() {
             </p>
 
             <div style={styles.summary}>
-              <p><strong>Selected Plan</strong><br />{planName}</p>
-              <p><strong>Status</strong><br />Pending secure payment</p>
-              <p><strong>Next Step</strong><br />Ad review and activation</p>
+              <p>
+                <strong>Selected Plan</strong>
+                <br />
+                {planName}
+              </p>
+              <p>
+                <strong>Status</strong>
+                <br />
+                Pending secure payment
+              </p>
+              <p>
+                <strong>Next Step</strong>
+                <br />
+                Ad review and activation
+              </p>
             </div>
           </aside>
 
@@ -85,6 +99,28 @@ export default function CheckoutPage() {
         </section>
       </section>
     </main>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <main style={styles.page}>
+          <section style={styles.wrap}>
+            <div style={styles.hero}>
+              <div style={styles.badge}>VendorEventsHub Premium</div>
+              <h1 style={styles.title}>Loading secure checkout...</h1>
+              <p style={styles.sub}>
+                Preparing your encrypted Stripe payment session.
+              </p>
+            </div>
+          </section>
+        </main>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
   );
 }
 
@@ -128,7 +164,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     maxWidth: 850,
     fontSize: "clamp(38px, 7vw, 76px)",
-    lineHeight: .95,
+    lineHeight: 0.95,
     letterSpacing: "-.06em",
     fontWeight: 950,
   },
