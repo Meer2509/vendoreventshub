@@ -21,8 +21,17 @@ const planNames: Record<string, string> = {
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
+
   const plan = searchParams.get("plan") || "homepage";
   const planName = planNames[plan] || "Premium Advertising Plan";
+
+  const businessName = searchParams.get("business_name") || "Your Business";
+  const adTitle = searchParams.get("title") || "Premium Sponsored Placement";
+  const adDescription =
+    searchParams.get("description") || "Your advertising request";
+  const placement = searchParams.get("placement") || plan;
+  const budget = searchParams.get("budget") || "Premium Plan";
+  const linkUrl = searchParams.get("link_url") || "Not provided";
 
   const fetchClientSecret = useCallback(async () => {
     const res = await fetch("/api/create-checkout-session", {
@@ -43,52 +52,81 @@ function CheckoutContent() {
   return (
     <main style={styles.page}>
       <section style={styles.wrap}>
-        <Link href="/pricing" style={styles.back}>
-          ← Back to pricing
+        <Link href="/advertise" style={styles.back}>
+          ← Back to advertising
         </Link>
 
         <div style={styles.hero}>
-          <div style={styles.badge}>VendorEventsHub Premium</div>
-          <h1 style={styles.title}>{planName}</h1>
+          <div style={styles.badge}>VendorEventsHub Premium Checkout</div>
+          <h1 style={styles.title}>Complete your premium ad placement.</h1>
           <p style={styles.sub}>
-            Complete your secure payment for your premium advertising placement.
+            Review your advertising request below, then complete your secure
+            payment inside VendorEventsHub using Stripe.
           </p>
-
-          <div style={styles.trust}>
-            <span style={styles.pill}>🔒 Stripe Secure</span>
-            <span style={styles.pill}>Encrypted Payment</span>
-            <span style={styles.pill}>Instant Confirmation</span>
-          </div>
         </div>
 
         <section style={styles.grid}>
           <aside style={styles.card}>
-            <h2 style={styles.cardTitle}>Premium placement summary</h2>
-            <p style={styles.text}>
-              Your payment is securely processed by Stripe. VendorEventsHub does
-              not store your card details.
-            </p>
+            <h2 style={styles.cardTitle}>Advertising order summary</h2>
 
             <div style={styles.summary}>
+              <p>
+                <strong>Business Name</strong>
+                <br />
+                {businessName}
+              </p>
+
+              <p>
+                <strong>Ad Headline</strong>
+                <br />
+                {adTitle}
+              </p>
+
+              <p>
+                <strong>Description</strong>
+                <br />
+                {adDescription}
+              </p>
+
+              <p>
+                <strong>Placement</strong>
+                <br />
+                {placement}
+              </p>
+
               <p>
                 <strong>Selected Plan</strong>
                 <br />
                 {planName}
               </p>
+
               <p>
-                <strong>Status</strong>
+                <strong>Budget</strong>
                 <br />
-                Pending secure payment
+                {budget}
               </p>
+
               <p>
-                <strong>Next Step</strong>
+                <strong>Website Link</strong>
                 <br />
-                Ad review and activation
+                {linkUrl}
               </p>
+            </div>
+
+            <div style={styles.nextBox}>
+              <strong>What happens after payment?</strong>
+              <p>✓ Your payment is securely processed by Stripe.</p>
+              <p>✓ Your ad request enters review.</p>
+              <p>✓ VendorEventsHub activates the placement after approval.</p>
             </div>
           </aside>
 
           <div style={styles.checkoutBox}>
+            <div style={styles.checkoutHeader}>
+              <h2>Secure payment</h2>
+              <p>VendorEventsHub never stores your card details.</p>
+            </div>
+
             <EmbeddedCheckoutProvider
               stripe={stripePromise}
               options={{ fetchClientSecret }}
@@ -111,9 +149,6 @@ export default function CheckoutPage() {
             <div style={styles.hero}>
               <div style={styles.badge}>VendorEventsHub Premium</div>
               <h1 style={styles.title}>Loading secure checkout...</h1>
-              <p style={styles.sub}>
-                Preparing your encrypted Stripe payment session.
-              </p>
             </div>
           </section>
         </main>
@@ -132,7 +167,10 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "32px 16px",
     fontFamily: "Inter, system-ui, sans-serif",
   },
-  wrap: { maxWidth: 1180, margin: "0 auto" },
+  wrap: {
+    maxWidth: 1180,
+    margin: "0 auto",
+  },
   back: {
     display: "inline-block",
     marginBottom: 24,
@@ -163,29 +201,21 @@ const styles: Record<string, React.CSSProperties> = {
   title: {
     margin: 0,
     maxWidth: 850,
-    fontSize: "clamp(38px, 7vw, 76px)",
-    lineHeight: 0.95,
+    fontSize: "clamp(36px, 7vw, 72px)",
+    lineHeight: 0.96,
     letterSpacing: "-.06em",
     fontWeight: 950,
   },
   sub: {
-    maxWidth: 680,
+    maxWidth: 700,
     marginTop: 20,
     color: "#5f6b66",
     fontSize: 18,
     lineHeight: 1.7,
   },
-  trust: { display: "flex", flexWrap: "wrap", gap: 10, marginTop: 24 },
-  pill: {
-    background: "#f7f3ea",
-    borderRadius: 999,
-    padding: "10px 14px",
-    fontSize: 14,
-    fontWeight: 800,
-  },
   grid: {
     display: "grid",
-    gridTemplateColumns: "minmax(280px, 400px) 1fr",
+    gridTemplateColumns: "minmax(280px, 420px) 1fr",
     gap: 22,
     alignItems: "start",
   },
@@ -198,25 +228,36 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cardTitle: {
     margin: 0,
-    fontSize: 28,
+    fontSize: 30,
     lineHeight: 1.05,
     letterSpacing: "-.04em",
   },
-  text: { color: "#5f6b66", lineHeight: 1.7 },
   summary: {
     marginTop: 22,
     background: "#f7f3ea",
     borderRadius: 24,
-    padding: 20,
+    padding: 22,
     color: "#33433c",
+    lineHeight: 1.55,
+  },
+  nextBox: {
+    marginTop: 18,
+    background: "#10291f",
+    color: "#ffffff",
+    borderRadius: 24,
+    padding: 22,
     lineHeight: 1.6,
   },
   checkoutBox: {
     background: "#ffffff",
     border: "1px solid #e7dcc7",
     borderRadius: 30,
-    padding: 12,
+    padding: 14,
     boxShadow: "0 24px 70px rgba(20, 88, 63, .14)",
     overflow: "hidden",
+    minHeight: 650,
+  },
+  checkoutHeader: {
+    padding: "18px 18px 8px",
   },
 };
