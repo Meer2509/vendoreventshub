@@ -8,6 +8,7 @@ const placements = [
     name: "Homepage Banner",
     price: "$249/mo",
     value: "homepage",
+    checkoutPlan: "homepage",
     description:
       "Premium visibility on the homepage for brands that want maximum awareness.",
     bestFor: "National brands, vendor tools, premium local businesses",
@@ -16,6 +17,7 @@ const placements = [
     name: "Events Page Sponsored Card",
     price: "$99/mo",
     value: "events",
+    checkoutPlan: "organizer",
     description:
       "Appear where vendors are actively searching for events to attend.",
     bestFor: "Event organizers, services, food trucks, vendor suppliers",
@@ -24,6 +26,7 @@ const placements = [
     name: "Event Detail Sidebar",
     price: "$79/mo",
     value: "event_detail",
+    checkoutPlan: "organizer",
     description:
       "Show your ad when vendors are researching a specific event opportunity.",
     bestFor: "Insurance, tents, POS, packaging, booth supplies",
@@ -32,6 +35,7 @@ const placements = [
     name: "Dashboard Growth Card",
     price: "$149/mo",
     value: "dashboard",
+    checkoutPlan: "homepage",
     description:
       "Reach logged-in vendors while they manage saved events and applications.",
     bestFor: "High-intent vendor business services",
@@ -40,6 +44,7 @@ const placements = [
     name: "Vendor Directory Feature",
     price: "$49/mo",
     value: "vendor_directory",
+    checkoutPlan: "vendor",
     description:
       "Feature your vendor brand or service inside the vendor discovery area.",
     bestFor: "Vendors, caterers, food trucks, artists, local services",
@@ -48,6 +53,7 @@ const placements = [
     name: "Category Sponsor",
     price: "$299/mo",
     value: "category_sponsor",
+    checkoutPlan: "homepage",
     description:
       "Sponsor a category like food festivals, craft fairs, farmers markets, or wellness events.",
     bestFor: "Regional sponsors and category leaders",
@@ -69,11 +75,11 @@ export default function AdvertisePage() {
   });
 
   function updateField(field: string, value: string) {
-    setAd({ ...ad, [field]: value });
+    setAd((prev) => ({ ...prev, [field]: value }));
   }
 
   function selectPlacement(value: string, price: string) {
-    setAd({ ...ad, placement: value, budget: price });
+    setAd((prev) => ({ ...prev, placement: value, budget: price }));
   }
 
   async function uploadAdImage(file: File) {
@@ -118,32 +124,21 @@ export default function AdvertisePage() {
     }
 
     try {
-      const response = await fetch("/api/create-ad-checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...ad,
-          created_by: userData.user.id,
-        }),
+      const selectedPlacement =
+        placements.find((item) => item.value === ad.placement) || placements[0];
+
+      const params = new URLSearchParams({
+        plan: selectedPlacement.checkoutPlan,
+        business_name: ad.business_name,
+        title: ad.title,
+        description: ad.description,
+        link_url: ad.link_url,
+        placement: ad.placement,
+        image_url: ad.image_url || "",
+        budget: ad.budget,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.error || "Checkout failed.");
-        setLoading(false);
-        return;
-      }
-
-      if (!data.url) {
-        alert("Stripe checkout URL was not returned.");
-        setLoading(false);
-        return;
-      }
-
-      window.location.href = data.url;
+      window.location.href = `/checkout?${params.toString()}`;
     } catch (error) {
       alert("Something went wrong while starting checkout.");
       setLoading(false);
@@ -234,8 +229,8 @@ export default function AdvertisePage() {
           <div>
             <strong>Homepage</strong>
             <p>
-              Best for broad visibility. Your brand appears near the highest-traffic
-              entry point of the platform.
+              Best for broad visibility. Your brand appears near the
+              highest-traffic entry point of the platform.
             </p>
           </div>
 
@@ -317,8 +312,8 @@ export default function AdvertisePage() {
               <p className="goldEyebrow">Example</p>
               <h3>Vendor tent, POS, insurance, or supply brand</h3>
               <p className="muted">
-                Perfect for companies that serve vendors before, during, or after
-                event day.
+                Perfect for companies that serve vendors before, during, or
+                after event day.
               </p>
               <button type="button" className="outlineBtn fullWidth">
                 Example Ad
@@ -357,8 +352,9 @@ export default function AdvertisePage() {
           <p className="goldEyebrow">Sponsored Placement Request</p>
           <h2>Create your premium ad request.</h2>
           <p className="muted">
-            Your payment is securely processed through Stripe. After payment, your
-            ad enters review before approval.
+            Your payment is securely processed through Stripe inside
+            VendorEventsHub. After payment, your ad enters review before
+            approval.
           </p>
         </div>
 
@@ -401,8 +397,12 @@ export default function AdvertisePage() {
                 const selected = placements.find(
                   (item) => item.value === e.target.value
                 );
+
                 updateField("placement", e.target.value);
-                if (selected) updateField("budget", selected.price);
+
+                if (selected) {
+                  updateField("budget", selected.price);
+                }
               }}
             >
               {placements.map((placement) => (
@@ -460,16 +460,20 @@ export default function AdvertisePage() {
           <div>
             <strong>Approval Workflow</strong>
             <p>
-              Your payment is securely processed through Stripe. After payment,
-              your ad enters review before approval.
+              Your payment is securely processed inside VendorEventsHub through
+              Stripe. After payment, your ad enters review before approval.
             </p>
           </div>
         </div>
 
-        <button className="goldBtn createEventBtn" type="submit" disabled={loading}>
+        <button
+          className="goldBtn createEventBtn"
+          type="submit"
+          disabled={loading}
+        >
           {loading
-            ? "Redirecting To Secure Checkout..."
-            : "Continue To Secure Checkout"}
+            ? "Opening Premium Checkout..."
+            : "Continue To Premium Checkout"}
         </button>
       </form>
     </main>
