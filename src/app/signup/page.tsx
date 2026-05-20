@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 type AccountType = "vendor" | "organizer" | "both";
@@ -22,6 +22,12 @@ export default function SignupPage() {
     phone: "",
     agree: false,
   });
+
+  const redirectPath = useMemo(() => {
+    if (formData.accountType === "vendor") return "/profile/setup";
+    if (formData.accountType === "organizer") return "/create-event";
+    return "/dashboard";
+  }, [formData.accountType]);
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -72,72 +78,93 @@ export default function SignupPage() {
 
     setLoading(false);
     alert("Account created successfully.");
-    window.location.href = "/dashboard";
+    window.location.href = redirectPath;
   }
 
   return (
-    <main className="signupLuxuryPage">
-      <section className="signupLuxuryCard">
-        <p className="signupEyebrow">FOUNDING MEMBER ACCESS</p>
+    <main className="signupPage">
+      <section className="signupHero">
+        <div>
+          <p className="eyebrow">America’s Vendor Event Platform</p>
+          <h1>Create your VendorEventsHub account.</h1>
+          <p className="heroText">
+            Join the platform built for vendors, organizers, markets, fairs,
+            festivals, expos, and event-ready businesses across America.
+          </p>
 
-        <h1>Create Your VendorEventsHub Account</h1>
+          <div className="trustRow">
+            <span>Vendor Accounts: $0</span>
+            <span>Organizer Accounts: $0</span>
+            <span>Premium Visibility Optional</span>
+          </div>
+        </div>
 
-        <p className="signupIntro">
-          Join the premium event intelligence platform for vendors and organizers.
-          Choose your account type and start discovering smarter event opportunities.
-        </p>
+        <div className="heroPanel">
+          <p className="panelBadge">Start Smarter</p>
+          <h3>
+            {formData.accountType === "vendor" &&
+              "Create your vendor profile after signup."}
+            {formData.accountType === "organizer" &&
+              "List your first event after signup."}
+            {formData.accountType === "both" &&
+              "Access your full command center after signup."}
+          </h3>
+          <p>
+            VendorEventsHub helps vendors discover opportunities and helps
+            organizers reach event-ready businesses.
+          </p>
+        </div>
+      </section>
 
-        <form onSubmit={handleSignup} className="signupForm">
-          <div className="signupField">
-            <label>
-              Account Type <span>*</span>
-            </label>
-
-            <div className="accountTypeGrid">
-              {[
-                {
-                  value: "vendor",
-                  title: "Vendor",
-                  text: "Find events, save opportunities, and apply smarter.",
-                },
-                {
-                  value: "organizer",
-                  title: "Organizer",
-                  text: "List events, attract vendors, and manage applications.",
-                },
-                {
-                  value: "both",
-                  title: "Both",
-                  text: "Use vendor and organizer tools in one account.",
-                },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={
-                    formData.accountType === option.value
-                      ? "accountTypeCard active"
-                      : "accountTypeCard"
-                  }
-                  onClick={() =>
-                    setFormData({
-                      ...formData,
-                      accountType: option.value as AccountType,
-                    })
-                  }
-                >
-                  <strong>{option.title}</strong>
-                  <small>{option.text}</small>
-                </button>
-              ))}
-            </div>
+      <section className="formSection">
+        <form onSubmit={handleSignup} className="signupCard">
+          <div className="sectionHead">
+            <p className="eyebrow">Create Account</p>
+            <h2>Choose how you want to use VendorEventsHub.</h2>
           </div>
 
-          <div className="signupTwoCol">
-            <div className="signupField">
-              <label>
-                Full Name <span>*</span>
-              </label>
+          <div className="accountTypeGrid">
+            {[
+              {
+                value: "vendor",
+                title: "Vendor",
+                text: "Find events, save opportunities, apply smarter, and build your vendor profile.",
+              },
+              {
+                value: "organizer",
+                title: "Organizer",
+                text: "List events, reach vendors, and manage event opportunities.",
+              },
+              {
+                value: "both",
+                title: "Both",
+                text: "Use vendor and organizer tools in one premium command center.",
+              },
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={
+                  formData.accountType === option.value
+                    ? "accountTypeCard active"
+                    : "accountTypeCard"
+                }
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    accountType: option.value as AccountType,
+                  })
+                }
+              >
+                <strong>{option.title}</strong>
+                <small>{option.text}</small>
+              </button>
+            ))}
+          </div>
+
+          <div className="twoCol">
+            <label>
+              Full Name *
               <input
                 type="text"
                 required
@@ -147,12 +174,10 @@ export default function SignupPage() {
                   setFormData({ ...formData, fullName: e.target.value })
                 }
               />
-            </div>
+            </label>
 
-            <div className="signupField">
-              <label>
-                Business / Organization Name <span>*</span>
-              </label>
+            <label>
+              Business / Organization Name *
               <input
                 type="text"
                 required
@@ -162,12 +187,12 @@ export default function SignupPage() {
                   setFormData({ ...formData, businessName: e.target.value })
                 }
               />
-            </div>
+            </label>
           </div>
 
-          <div className="signupTwoCol">
-            <div className="signupField">
-              <label>City</label>
+          <div className="twoCol">
+            <label>
+              City
               <input
                 type="text"
                 placeholder="City"
@@ -176,10 +201,10 @@ export default function SignupPage() {
                   setFormData({ ...formData, city: e.target.value })
                 }
               />
-            </div>
+            </label>
 
-            <div className="signupField">
-              <label>State</label>
+            <label>
+              State
               <input
                 type="text"
                 placeholder="State"
@@ -188,13 +213,11 @@ export default function SignupPage() {
                   setFormData({ ...formData, state: e.target.value })
                 }
               />
-            </div>
+            </label>
           </div>
 
-          <div className="signupField">
-            <label>
-              Email Address <span>*</span>
-            </label>
+          <label>
+            Email Address *
             <input
               type="email"
               required
@@ -204,13 +227,11 @@ export default function SignupPage() {
                 setFormData({ ...formData, email: e.target.value })
               }
             />
-          </div>
+          </label>
 
-          <div className="signupTwoCol">
-            <div className="signupField">
-              <label>
-                Password <span>*</span>
-              </label>
+          <div className="twoCol">
+            <label>
+              Password *
               <input
                 type={showPassword ? "text" : "password"}
                 required
@@ -221,12 +242,10 @@ export default function SignupPage() {
                   setFormData({ ...formData, password: e.target.value })
                 }
               />
-            </div>
+            </label>
 
-            <div className="signupField">
-              <label>
-                Confirm Password <span>*</span>
-              </label>
+            <label>
+              Confirm Password *
               <input
                 type={showPassword ? "text" : "password"}
                 required
@@ -237,20 +256,20 @@ export default function SignupPage() {
                   setFormData({ ...formData, confirmPassword: e.target.value })
                 }
               />
-            </div>
+            </label>
           </div>
 
           <button
             type="button"
-            className="signupGhostBtn"
+            className="ghostBtn"
             onClick={() => setShowPassword(!showPassword)}
           >
             {showPassword ? "Hide Password" : "Show Password"}
           </button>
 
-          <div className="signupTwoCol">
-            <div className="signupField">
-              <label>Website</label>
+          <div className="twoCol">
+            <label>
+              Website
               <input
                 type="url"
                 placeholder="https://yourbusiness.com"
@@ -259,10 +278,10 @@ export default function SignupPage() {
                   setFormData({ ...formData, website: e.target.value })
                 }
               />
-            </div>
+            </label>
 
-            <div className="signupField">
-              <label>Phone</label>
+            <label>
+              Phone
               <input
                 type="tel"
                 placeholder="Phone Number"
@@ -271,10 +290,10 @@ export default function SignupPage() {
                   setFormData({ ...formData, phone: e.target.value })
                 }
               />
-            </div>
+            </label>
           </div>
 
-          <label className="signupCheck">
+          <label className="checkRow">
             <input
               type="checkbox"
               required
@@ -283,249 +302,298 @@ export default function SignupPage() {
                 setFormData({ ...formData, agree: e.target.checked })
               }
             />
-            <span>
-              I agree to the Terms and Privacy Policy <b>*</b>
-            </span>
+            <span>I agree to the Terms and Privacy Policy *</span>
           </label>
 
-          <button type="submit" className="signupSubmit" disabled={loading}>
-            {loading ? "Creating Account..." : "Create Premium Account"}
+          <button type="submit" className="submitBtn" disabled={loading}>
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
 
-          <p className="signupLoginText">
+          <p className="loginText">
             Already have an account? <a href="/login">Login here</a>
           </p>
         </form>
       </section>
 
       <style jsx>{`
-        .signupLuxuryPage {
+        .signupPage {
           min-height: 100vh;
-          padding: 70px 20px;
           background:
-            radial-gradient(circle at top left, rgba(214, 179, 106, 0.18), transparent 30%),
-            linear-gradient(135deg, #fffaf0, #f7f2e8);
-          display: flex;
-          justify-content: center;
-          align-items: flex-start;
+            radial-gradient(circle at top left, rgba(184, 138, 46, 0.18), transparent 34%),
+            radial-gradient(circle at top right, rgba(16, 41, 31, 0.12), transparent 30%),
+            #f7f1e6;
+          color: #10291f;
         }
 
-        .signupLuxuryCard {
-          width: 100%;
-          max-width: 980px;
-          background: rgba(255, 255, 255, 0.88);
-          border: 1px solid rgba(15, 61, 46, 0.1);
-          border-radius: 38px;
-          padding: 56px;
-          box-shadow: 0 28px 85px rgba(15, 61, 46, 0.12);
+        .signupHero,
+        .formSection {
+          max-width: 1180px;
+          margin: 0 auto;
+          padding: 76px 18px;
         }
 
-        .signupEyebrow {
-          color: #b8872f;
-          text-transform: uppercase;
-          letter-spacing: 5px;
+        .signupHero {
+          min-height: 72vh;
+          display: grid;
+          grid-template-columns: 1.1fr 0.9fr;
+          align-items: center;
+          gap: 36px;
+        }
+
+        .eyebrow {
+          color: #b88a2e;
           font-size: 12px;
-          font-weight: 900;
-          margin: 0 0 18px;
+          font-weight: 950;
+          letter-spacing: 0.13em;
+          text-transform: uppercase;
+          margin: 0 0 14px;
         }
 
         h1 {
-          color: #0b1f18;
-          font-size: clamp(42px, 6vw, 64px);
-          line-height: 1;
-          letter-spacing: -2px;
+          font-size: clamp(50px, 8vw, 96px);
+          line-height: 0.88;
+          letter-spacing: -0.08em;
           margin: 0;
         }
 
-        .signupIntro {
-          margin: 24px 0 38px;
-          color: #526058;
-          font-size: 18px;
+        h2 {
+          font-size: clamp(34px, 5vw, 62px);
+          line-height: 0.94;
+          letter-spacing: -0.06em;
+          margin: 0;
+        }
+
+        h3 {
+          font-size: 28px;
+          letter-spacing: -0.045em;
+          line-height: 1.05;
+          margin: 0;
+        }
+
+        .heroText,
+        .heroPanel p,
+        .loginText {
+          color: #5f6b66;
           line-height: 1.7;
-          max-width: 780px;
         }
 
-        .signupForm {
-          display: grid;
-          gap: 24px;
+        .heroText {
+          font-size: 18px;
+          max-width: 760px;
+          margin-top: 24px;
         }
 
-        .signupField {
-          display: grid;
+        .trustRow {
+          display: flex;
+          flex-wrap: wrap;
           gap: 10px;
+          margin-top: 30px;
         }
 
-        .signupField label {
-          color: #0f3d2e;
-          font-weight: 900;
-          font-size: 16px;
+        .trustRow span {
+          background: rgba(255, 255, 255, 0.72);
+          border: 1px solid #ded0b5;
+          border-radius: 999px;
+          padding: 9px 13px;
+          font-size: 13px;
+          font-weight: 850;
         }
 
-        .signupField label span,
-        .signupCheck b {
-          color: #c1121f;
+        .heroPanel,
+        .signupCard {
+          background: rgba(255, 255, 255, 0.88);
+          border: 1px solid #eadfc9;
+          border-radius: 36px;
+          box-shadow: 0 30px 90px rgba(20, 88, 63, 0.13);
+          backdrop-filter: blur(12px);
         }
 
-        .signupField input {
-          width: 100%;
-          height: 62px;
-          border-radius: 18px;
-          border: 1px solid rgba(15, 61, 46, 0.13);
-          background: #fffaf0;
-          padding: 0 20px;
-          font-size: 16px;
-          color: #0b1f18;
-          outline: none;
+        .heroPanel {
+          padding: 36px;
         }
 
-        .signupField input:focus {
-          border-color: #0f3d2e;
-          box-shadow: 0 0 0 4px rgba(15, 61, 46, 0.08);
+        .panelBadge {
+          display: inline-block;
+          background: #10291f;
+          color: white;
+          border-radius: 999px;
+          padding: 8px 13px;
+          font-size: 12px;
+          font-weight: 950;
+          text-transform: uppercase;
+          letter-spacing: 0.09em;
+          margin-bottom: 18px;
         }
 
-        .signupTwoCol {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
+        .signupCard {
+          padding: 48px;
+        }
+
+        .sectionHead {
+          max-width: 780px;
+          margin-bottom: 28px;
         }
 
         .accountTypeGrid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 16px;
+          margin-bottom: 24px;
         }
 
         .accountTypeCard {
-          min-height: 132px;
-          border-radius: 24px;
-          padding: 22px;
+          min-height: 140px;
+          border-radius: 26px;
+          padding: 24px;
           text-align: left;
           cursor: pointer;
           background: #fffaf0;
           border: 1px solid rgba(15, 61, 46, 0.13);
-          color: #0b1f18;
+          color: #10291f;
           transition: 0.25s ease;
         }
 
         .accountTypeCard strong {
           display: block;
-          font-size: 24px;
+          font-size: 25px;
           margin-bottom: 10px;
+          letter-spacing: -0.04em;
         }
 
         .accountTypeCard small {
           display: block;
-          color: #526058;
-          font-size: 14px;
-          line-height: 1.45;
+          color: #5f6b66;
+          line-height: 1.5;
+          font-weight: 750;
         }
 
         .accountTypeCard.active {
-          background: linear-gradient(135deg, #0f3d2e, #1f6f54);
-          color: #fffaf0;
-          border-color: #0f3d2e;
-          box-shadow: 0 20px 45px rgba(15, 61, 46, 0.2);
+          background: #10291f;
+          color: white;
+          border-color: #10291f;
+          box-shadow: 0 20px 50px rgba(16, 41, 31, 0.22);
         }
 
         .accountTypeCard.active small {
-          color: #efe7d6;
+          color: rgba(255, 255, 255, 0.76);
         }
 
-        .signupGhostBtn {
-          width: fit-content;
-          border-radius: 999px;
-          border: 1px solid rgba(15, 61, 46, 0.16);
-          background: #fffaf0;
-          color: #0f3d2e;
-          padding: 13px 22px;
+        .twoCol {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 18px;
+        }
+
+        label {
+          display: grid;
+          gap: 8px;
           font-weight: 900;
-          cursor: pointer;
+          margin-bottom: 18px;
         }
 
-        .signupCheck {
+        input {
+          width: 100%;
+          border: 1px solid #d8ccb5;
+          border-radius: 18px;
+          padding: 15px 16px;
+          font: inherit;
+          background: white;
+          color: #10291f;
+        }
+
+        input:focus {
+          outline: none;
+          border-color: #10291f;
+          box-shadow: 0 0 0 4px rgba(16, 41, 31, 0.08);
+        }
+
+        button {
+          border: 0;
+          background: #10291f;
+          color: white;
+          border-radius: 999px;
+          padding: 15px 24px;
+          font-weight: 950;
+          cursor: pointer;
+          transition: 0.2s ease;
+        }
+
+        button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 16px 34px rgba(16, 41, 31, 0.2);
+        }
+
+        .ghostBtn {
+          width: fit-content;
+          background: rgba(255, 255, 255, 0.65);
+          color: #10291f;
+          border: 1px solid #d8ccb5;
+          margin-bottom: 18px;
+        }
+
+        .checkRow {
           display: flex;
           gap: 12px;
           align-items: flex-start;
-          color: #526058;
-          font-weight: 800;
+          color: #5f6b66;
           line-height: 1.5;
         }
 
-        .signupCheck input {
+        .checkRow input {
           width: 20px;
           height: 20px;
           margin-top: 2px;
         }
 
-        .signupSubmit {
-          height: 64px;
-          border: 0;
-          border-radius: 999px;
-          background: linear-gradient(135deg, #0f3d2e, #1f6f54);
-          color: white;
-          font-weight: 900;
+        .submitBtn {
+          width: 100%;
+          margin-top: 8px;
+          height: 62px;
           font-size: 17px;
-          cursor: pointer;
-          box-shadow: 0 18px 42px rgba(15, 61, 46, 0.2);
         }
 
-        .signupSubmit:disabled {
+        .submitBtn:disabled {
           opacity: 0.65;
           cursor: not-allowed;
         }
 
-        .signupLoginText {
+        .loginText {
           text-align: center;
-          color: #526058;
-          margin: 0;
-          font-weight: 700;
+          font-weight: 800;
+          margin: 20px 0 0;
         }
 
-        .signupLoginText a {
-          color: #0f3d2e;
-          font-weight: 900;
+        .loginText a {
+          color: #10291f;
+          font-weight: 950;
         }
 
-        @media (max-width: 800px) {
-          .signupLuxuryPage {
-            padding: 28px 14px;
-          }
-
-          .signupLuxuryCard {
-            padding: 28px 18px;
-            border-radius: 28px;
-          }
-
-          h1 {
-            font-size: 38px;
-            letter-spacing: -1px;
-          }
-
-          .signupIntro {
-            font-size: 15px;
-            margin-bottom: 28px;
-          }
-
+        @media (max-width: 900px) {
+          .signupHero,
           .accountTypeGrid,
-          .signupTwoCol {
+          .twoCol {
             grid-template-columns: 1fr;
           }
 
-          .accountTypeCard {
+          .signupHero,
+          .formSection {
+            padding: 54px 16px;
+          }
+
+          .signupHero {
             min-height: auto;
-            padding: 20px;
+            padding-top: 44px;
           }
 
-          .accountTypeCard strong {
-            font-size: 22px;
+          h1 {
+            font-size: 54px;
           }
 
-          .signupField input {
-            height: 58px;
+          .signupCard {
+            padding: 30px 18px;
           }
 
-          .signupGhostBtn,
-          .signupSubmit {
+          .ghostBtn {
             width: 100%;
           }
         }
