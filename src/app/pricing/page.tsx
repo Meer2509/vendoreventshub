@@ -1,39 +1,38 @@
 "use client";
+
 import Link from "next/link";
 
-const freePlans = [
+const accessPlans = [
   {
     name: "Vendor Account",
     price: "$0",
-    badge: "Vendor Access",
+    eyebrow: "For vendors",
     description:
-      "Create your vendor profile, discover events, compare opportunities, save favorites, and build trust through reviews.",
+      "Discover better events, compare opportunities, save favorites, leave reviews, and build a trusted vendor profile.",
     cta: "Create Vendor Account",
     link: "/signup",
     features: [
       "Vendor profile",
-      "Event discovery",
-      "Saved opportunities",
-      "Vendor reviews",
-      "Booth fee comparison",
-      "Traffic and opportunity signals",
+      "Save favorite events",
+      "Compare booth fees",
+      "Review event experiences",
+      "Discover festivals, fairs, markets, and expos",
     ],
   },
   {
     name: "Organizer Account",
     price: "$0",
-    badge: "Organizer Access",
+    eyebrow: "For organizers",
     description:
-      "List your festival, fair, market, expo, pop-up, or vendor event and connect with vendors looking for opportunities.",
+      "List your festival, market, fair, expo, or pop-up and reach vendors actively looking for opportunities.",
     cta: "List Your Event",
     link: "/create-event",
     features: [
-      "Event listing",
+      "Event listings",
       "Booth details",
       "Vendor deadlines",
       "Organizer reputation",
-      "Event visibility",
-      "Vendor discovery",
+      "Visibility to vendor businesses",
     ],
   },
 ];
@@ -43,46 +42,50 @@ const adPlans = [
     name: "Vendor Directory Feature",
     price: "$49",
     duration: "30 Days",
-    badge: "Directory",
+    badge: "Entry Visibility",
     description:
-      "Feature your vendor business in the vendor directory for stronger visibility.",
+      "Feature your vendor business inside the vendor directory for stronger discovery.",
+    bestFor: ["Vendor brands", "Local businesses", "Service providers"],
     priceId: "price_1TYtAoCd2ATbUlJglTQSZSl9",
   },
   {
     name: "Event Detail Sidebar Ad",
     price: "$79",
     duration: "30 Days",
-    badge: "Sidebar",
+    badge: "Event Research",
     description:
-      "Promote your business beside event detail pages where vendors are researching opportunities.",
+      "Appear beside event detail pages while vendors are researching opportunities.",
+    bestFor: ["Booth services", "Supplies", "Local sponsors"],
     priceId: "price_1TYt7FCd2ATbUlJgIAJsPSgu",
   },
   {
     name: "Events Page Sponsored Card",
     price: "$99",
     duration: "30 Days",
-    badge: "Sponsored",
+    badge: "High Intent",
     description:
-      "Place your sponsored card on the events page where vendors browse opportunities.",
+      "Place your sponsored card on the events page where vendors browse listings.",
+    bestFor: ["Festivals", "Markets", "Expos"],
     priceId: "price_1TYt6lCd2ATbUlJgNx9R2TS4",
-    featured: true,
   },
   {
     name: "Dashboard Premium Ad",
     price: "$149",
     duration: "30 Days",
-    badge: "Dashboard",
+    badge: "Logged-In Reach",
     description:
-      "Reach logged-in users inside the dashboard with premium business exposure.",
+      "Reach users inside the dashboard with premium placement and strong visibility.",
+    bestFor: ["Vendor services", "Business tools", "Event services"],
     priceId: "price_1TYt7pCd2ATbUlJgSjcwbtSx",
   },
   {
     name: "Homepage Premium Ad",
     price: "$249",
     duration: "30 Days",
-    badge: "Homepage",
+    badge: "Most Popular",
     description:
       "Show your premium ad directly on the homepage below the hero section.",
+    bestFor: ["Brand awareness", "Events", "Premium sponsors"],
     priceId: "price_1TYt3yCd2ATbUlJgUDIbjMXm",
     featured: true,
   },
@@ -90,35 +93,41 @@ const adPlans = [
     name: "Category Sponsor Premium",
     price: "$299",
     duration: "30 Days",
-    badge: "Category Sponsor",
+    badge: "Premium Sponsor",
     description:
-      "Own premium visibility inside a category such as festivals, fairs, markets, food, wellness, or expos.",
+      "Own premium visibility inside a category such as festivals, markets, food, wellness, or expos.",
+    bestFor: ["Category leaders", "Regional sponsors", "Major events"],
     priceId: "price_1TYtBPCd2ATbUlJgL2DsS3D7",
+    premium: true,
   },
 ];
 
-const benefits = [
-  "Reach vendors actively searching for events",
-  "Promote festivals, fairs, markets, expos, and services",
-  "Advertise booth supplies, insurance, POS, signage, food services, and local businesses",
-  "Stand out with premium visibility across VendorEventsHub",
+const audience = [
+  "Festivals",
+  "Craft Fairs",
+  "Flea Markets",
+  "Farmers Markets",
+  "Food Events",
+  "Expos",
+  "Pop-Ups",
+  "Wellness Events",
 ];
 
 export default function PricingPage() {
   return (
     <main className="pricingPage">
-      <section className="pricingHero">
-        <div>
+      <section className="hero">
+        <div className="heroCopy">
           <p className="eyebrow">VendorEventsHub Pricing</p>
-          <h1>Premium visibility for events, vendors, and local businesses.</h1>
+          <h1>Reach more vendors. Grow smarter.</h1>
           <p className="heroText">
-            Vendor and organizer accounts are free. Paid options are designed
-            for businesses, events, and brands that want more exposure across
-            VendorEventsHub.
+            Promote your event, business, or brand directly to vendors actively
+            searching for festivals, fairs, flea markets, expos, pop-ups, and
+            vendor opportunities across America.
           </p>
 
           <div className="actions">
-            <Link href="/signup">Create Vendor Account</Link>
+            <Link href="/advertise">Advertise Now</Link>
             <Link href="/create-event" className="secondary">
               List Your Event
             </Link>
@@ -132,21 +141,23 @@ export default function PricingPage() {
         </div>
 
         <div className="heroPanel">
-          <p className="eyebrow">Advertising Menu</p>
-          <h3>Pay only for premium exposure.</h3>
+          <p className="eyebrow">Premium Visibility Menu</p>
+          <h3>Pay only when you want more exposure.</h3>
 
-          <div className="statGrid">
-            <div>
-              <strong>$49</strong>
-              <span>Directory Feature</span>
-            </div>
+          <div className="panelPrice">
+            <span>Starting at</span>
+            <strong>$49</strong>
+            <small>30-day advertising placements</small>
+          </div>
+
+          <div className="miniStats">
             <div>
               <strong>$99</strong>
-              <span>Sponsored Card</span>
+              <span>Events Page</span>
             </div>
             <div>
               <strong>$249</strong>
-              <span>Homepage Ad</span>
+              <span>Homepage</span>
             </div>
             <div>
               <strong>$299</strong>
@@ -156,18 +167,27 @@ export default function PricingPage() {
         </div>
       </section>
 
+      <section className="audienceStrip">
+        <p>Built to reach vendors searching across:</p>
+        <div>
+          {audience.map((item) => (
+            <span key={item}>{item}</span>
+          ))}
+        </div>
+      </section>
+
       <section className="section">
-        <div className="sectionHeader">
+        <div className="sectionHead">
           <p className="eyebrow">Core Platform</p>
           <h2>Simple access for vendors and organizers.</h2>
         </div>
 
-        <div className="freeGrid">
-          {freePlans.map((plan) => (
-            <article className="freeCard" key={plan.name}>
-              <p className="badge">{plan.badge}</p>
+        <div className="accessGrid">
+          {accessPlans.map((plan) => (
+            <article className="accessCard" key={plan.name}>
+              <p className="cardEyebrow">{plan.eyebrow}</p>
               <h3>{plan.name}</h3>
-              <h2>{plan.price}</h2>
+              <h4>{plan.price}</h4>
               <p>{plan.description}</p>
 
               <ul>
@@ -183,7 +203,7 @@ export default function PricingPage() {
       </section>
 
       <section className="section">
-        <div className="sectionHeader">
+        <div className="sectionHead">
           <p className="eyebrow">Premium Advertising</p>
           <h2>Choose the placement that matches your growth goal.</h2>
         </div>
@@ -191,36 +211,73 @@ export default function PricingPage() {
         <div className="adGrid">
           {adPlans.map((plan) => (
             <article
-              className={plan.featured ? "adCard featured" : "adCard"}
               key={plan.name}
+              className={[
+                "adCard",
+                plan.featured ? "featured" : "",
+                plan.premium ? "premium" : "",
+              ].join(" ")}
             >
-              <p className="badge">{plan.badge}</p>
+              <div className="badgeRow">
+                <span>{plan.badge}</span>
+                {plan.featured && <strong>Recommended</strong>}
+              </div>
+
               <h3>{plan.name}</h3>
-              <div className="priceLine">
-                <h2>{plan.price}</h2>
+
+              <div className="price">
+                <strong>{plan.price}</strong>
                 <span>/ {plan.duration}</span>
               </div>
+
               <p>{plan.description}</p>
 
+              <div className="bestFor">
+                <small>Best for</small>
+                {plan.bestFor.map((item) => (
+                  <em key={item}>{item}</em>
+                ))}
+              </div>
+
               <Link href={`/advertise?price=${plan.priceId}`}>
-                Advertise Now
+                Select Placement
               </Link>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="benefitSection">
-        <p className="eyebrow">Why Advertise Here</p>
-        <h2>Reach people already looking for vendor opportunities.</h2>
+      <section className="luxuryBand">
+        <div>
+          <p className="eyebrow">Why Advertise Here</p>
+          <h2>Visibility where vendor intent is already happening.</h2>
+        </div>
 
-        <div className="benefitGrid">
-          {benefits.map((item) => (
-            <div key={item}>
-              <span>✓</span>
-              <p>{item}</p>
-            </div>
-          ))}
+        <div className="benefits">
+          <div>
+            <strong>01</strong>
+            <h3>Reach high-intent vendors</h3>
+            <p>
+              Your promotion appears where vendors are already searching for
+              booths, events, markets, and business opportunities.
+            </p>
+          </div>
+          <div>
+            <strong>02</strong>
+            <h3>Promote more than events</h3>
+            <p>
+              Great for booth supplies, signage, insurance, POS systems,
+              marketing services, food services, and local sponsors.
+            </p>
+          </div>
+          <div>
+            <strong>03</strong>
+            <h3>Stand out with premium placement</h3>
+            <p>
+              Sponsored visibility helps your business rise above ordinary
+              listings and reach users with stronger purchase intent.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -242,7 +299,10 @@ export default function PricingPage() {
 
       <style jsx>{`
         .pricingPage {
-          background: #f7f1e6;
+          background:
+            radial-gradient(circle at top left, rgba(184, 138, 46, 0.18), transparent 34%),
+            radial-gradient(circle at top right, rgba(16, 41, 31, 0.12), transparent 30%),
+            #f7f1e6;
           color: #10291f;
           overflow: hidden;
         }
@@ -253,34 +313,36 @@ export default function PricingPage() {
           padding: 78px 18px;
         }
 
-        .pricingHero {
-          min-height: 82vh;
+        .hero {
+          min-height: 84vh;
           display: grid;
-          grid-template-columns: 1.08fr 0.92fr;
+          grid-template-columns: 1.1fr 0.9fr;
           align-items: center;
-          gap: 34px;
+          gap: 36px;
         }
 
-        .eyebrow {
+        .eyebrow,
+        .cardEyebrow {
           color: #b88a2e;
           font-size: 12px;
-          font-weight: 900;
+          font-weight: 950;
           letter-spacing: 0.13em;
           text-transform: uppercase;
           margin: 0 0 14px;
         }
 
         h1 {
-          font-size: clamp(46px, 7vw, 86px);
-          line-height: 0.9;
-          letter-spacing: -0.07em;
+          font-size: clamp(50px, 8vw, 96px);
+          line-height: 0.88;
+          letter-spacing: -0.08em;
           margin: 0;
+          max-width: 850px;
         }
 
         h2 {
-          font-size: clamp(34px, 5vw, 62px);
-          line-height: 0.95;
-          letter-spacing: -0.06em;
+          font-size: clamp(36px, 5vw, 66px);
+          line-height: 0.94;
+          letter-spacing: -0.065em;
           margin: 0;
         }
 
@@ -295,41 +357,41 @@ export default function PricingPage() {
           color: #5f6b66;
           font-size: 18px;
           line-height: 1.75;
-          max-width: 720px;
-          margin: 22px 0 0;
+          max-width: 740px;
+          margin: 24px 0 0;
         }
 
         .actions {
           display: flex;
-          flex-wrap: wrap;
           gap: 12px;
-          margin-top: 28px;
+          flex-wrap: wrap;
+          margin-top: 30px;
         }
 
         .actions a,
-        .freeCard a,
+        .accessCard a,
         .adCard a {
           display: inline-flex;
-          align-items: center;
           justify-content: center;
+          align-items: center;
           background: #10291f;
           color: white;
-          padding: 14px 22px;
+          padding: 15px 24px;
           border-radius: 999px;
-          font-weight: 900;
+          font-weight: 950;
           text-decoration: none;
           transition: 0.2s ease;
         }
 
         .actions a:hover,
-        .freeCard a:hover,
+        .accessCard a:hover,
         .adCard a:hover {
           transform: translateY(-2px);
-          box-shadow: 0 14px 30px rgba(16, 41, 31, 0.18);
+          box-shadow: 0 16px 34px rgba(16, 41, 31, 0.2);
         }
 
         .actions a.secondary {
-          background: transparent;
+          background: rgba(255, 255, 255, 0.55);
           color: #10291f;
           border: 1px solid #cdbf9f;
         }
@@ -342,10 +404,11 @@ export default function PricingPage() {
           display: flex;
           flex-wrap: wrap;
           gap: 10px;
-          margin-top: 28px;
+          margin-top: 30px;
         }
 
-        .trustRow span {
+        .trustRow span,
+        .audienceStrip span {
           background: rgba(255, 255, 255, 0.72);
           border: 1px solid #ded0b5;
           border-radius: 999px;
@@ -355,53 +418,146 @@ export default function PricingPage() {
         }
 
         .heroPanel,
-        .freeCard,
+        .accessCard,
         .adCard,
-        .benefitSection,
-        .finalCta {
-          background: white;
+        .luxuryBand,
+        .finalCta,
+        .audienceStrip {
+          background: rgba(255, 255, 255, 0.86);
           border: 1px solid #eadfc9;
-          border-radius: 34px;
-          box-shadow: 0 28px 80px rgba(20, 88, 63, 0.12);
+          border-radius: 36px;
+          box-shadow: 0 30px 90px rgba(20, 88, 63, 0.13);
+          backdrop-filter: blur(12px);
         }
 
         .heroPanel {
-          padding: 34px;
+          padding: 36px;
+          position: relative;
+          overflow: hidden;
         }
 
-        .statGrid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
+        .heroPanel:before {
+          content: "";
+          position: absolute;
+          inset: -90px -80px auto auto;
+          width: 230px;
+          height: 230px;
+          border-radius: 999px;
+          background: rgba(184, 138, 46, 0.18);
+        }
+
+        .panelPrice {
+          background: #10291f;
+          color: white;
+          border-radius: 30px;
+          padding: 28px;
           margin-top: 26px;
         }
 
-        .statGrid div {
-          background: #f7f1e6;
-          border-radius: 22px;
-          padding: 18px;
+        .panelPrice span,
+        .panelPrice small {
+          display: block;
+          color: rgba(255, 255, 255, 0.72);
+          font-weight: 800;
         }
 
-        .statGrid strong {
+        .panelPrice strong {
           display: block;
-          font-size: 34px;
+          font-size: 78px;
+          letter-spacing: -0.08em;
+          line-height: 0.95;
+          margin: 8px 0;
+        }
+
+        .miniStats {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+          margin-top: 12px;
+        }
+
+        .miniStats div {
+          background: #f7f1e6;
+          border-radius: 22px;
+          padding: 16px;
+        }
+
+        .miniStats strong {
+          display: block;
+          font-size: 28px;
           letter-spacing: -0.05em;
         }
 
-        .statGrid span {
+        .miniStats span {
           color: #5f6b66;
-          font-size: 14px;
+          font-size: 13px;
+          font-weight: 800;
         }
 
-        .sectionHeader {
-          max-width: 820px;
-          margin-bottom: 28px;
+        .audienceStrip {
+          padding: 28px;
+          margin-top: -34px;
         }
 
-        .freeGrid {
+        .audienceStrip p {
+          margin: 0 0 16px;
+          color: #5f6b66;
+          font-weight: 850;
+        }
+
+        .audienceStrip div {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .sectionHead {
+          max-width: 850px;
+          margin-bottom: 30px;
+        }
+
+        .accessGrid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 18px;
+        }
+
+        .accessCard {
+          padding: 32px;
+        }
+
+        .accessCard h4 {
+          font-size: 58px;
+          letter-spacing: -0.07em;
+          line-height: 1;
+          margin: 18px 0;
+        }
+
+        .accessCard p,
+        .adCard p,
+        .luxuryBand p {
+          color: #5f6b66;
+          line-height: 1.65;
+        }
+
+        ul {
+          list-style: none;
+          padding: 0;
+          margin: 24px 0;
+          display: grid;
+          gap: 11px;
+        }
+
+        li {
+          color: #40534b;
+          font-weight: 780;
+          line-height: 1.5;
+        }
+
+        .accessCard a,
+        .adCard a {
+          width: 100%;
+          margin-top: 8px;
         }
 
         .adGrid {
@@ -410,120 +566,139 @@ export default function PricingPage() {
           gap: 18px;
         }
 
-        .freeCard,
         .adCard {
           padding: 28px;
           position: relative;
+          overflow: hidden;
         }
 
         .adCard.featured {
           background: #10291f;
           color: white;
           border-color: #10291f;
+          transform: translateY(-8px);
+        }
+
+        .adCard.premium {
+          background: linear-gradient(145deg, #10291f, #1f4f3c);
+          color: white;
+          border-color: rgba(184, 138, 46, 0.55);
         }
 
         .adCard.featured p,
-        .adCard.featured .priceLine span,
-        .adCard.featured li {
-          color: rgba(255, 255, 255, 0.78);
+        .adCard.premium p,
+        .adCard.featured .price span,
+        .adCard.premium .price span {
+          color: rgba(255, 255, 255, 0.76);
         }
 
-        .adCard.featured a {
+        .adCard.featured a,
+        .adCard.premium a {
           background: #b88a2e;
         }
 
-        .badge {
-          display: inline-flex;
+        .badgeRow {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          align-items: center;
+          margin-bottom: 18px;
+        }
+
+        .badgeRow span,
+        .badgeRow strong {
           background: #f7f1e6;
           color: #10291f;
           border-radius: 999px;
-          padding: 8px 12px;
-          font-size: 12px;
-          font-weight: 900;
+          padding: 8px 11px;
+          font-size: 11px;
+          font-weight: 950;
           text-transform: uppercase;
           letter-spacing: 0.08em;
-          margin: 0 0 18px;
         }
 
-        .adCard.featured .badge {
-          background: white;
-          color: #10291f;
+        .badgeRow strong {
+          background: #b88a2e;
+          color: white;
         }
 
-        .freeCard h2,
-        .adCard h2 {
-          font-size: 48px;
-          margin-top: 16px;
-        }
-
-        .freeCard p,
-        .adCard p {
-          color: #5f6b66;
-          line-height: 1.65;
-        }
-
-        .priceLine {
+        .price {
           display: flex;
           align-items: end;
           gap: 8px;
-          margin-top: 14px;
+          margin: 18px 0;
         }
 
-        .priceLine span {
+        .price strong {
+          font-size: 58px;
+          letter-spacing: -0.08em;
+          line-height: 1;
+        }
+
+        .price span {
           color: #5f6b66;
+          font-weight: 850;
           margin-bottom: 8px;
-          font-weight: 800;
         }
 
-        ul {
-          list-style: none;
-          padding: 0;
+        .bestFor {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
           margin: 22px 0;
-          display: grid;
-          gap: 11px;
         }
 
-        li {
-          color: #40534b;
-          font-weight: 750;
-          line-height: 1.5;
-        }
-
-        .freeCard a,
-        .adCard a {
+        .bestFor small {
           width: 100%;
-          margin-top: 8px;
+          color: #b88a2e;
+          font-size: 11px;
+          font-weight: 950;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
         }
 
-        .benefitSection,
-        .finalCta {
-          text-align: center;
+        .bestFor em {
+          font-style: normal;
+          border: 1px solid #ded0b5;
+          border-radius: 999px;
+          padding: 8px 10px;
+          font-size: 12px;
+          font-weight: 850;
+        }
+
+        .adCard.featured .bestFor em,
+        .adCard.premium .bestFor em {
+          border-color: rgba(255, 255, 255, 0.25);
+          color: rgba(255, 255, 255, 0.88);
+        }
+
+        .luxuryBand {
           padding: 70px 28px;
         }
 
-        .benefitGrid {
+        .benefits {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 14px;
-          margin-top: 30px;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+          margin-top: 32px;
         }
 
-        .benefitGrid div {
+        .benefits div {
           background: #f7f1e6;
-          border-radius: 24px;
-          padding: 22px;
+          border-radius: 26px;
+          padding: 24px;
         }
 
-        .benefitGrid span {
+        .benefits strong {
           color: #b88a2e;
-          font-size: 26px;
+          font-size: 30px;
           font-weight: 1000;
         }
 
-        .benefitGrid p {
-          color: #40534b;
-          font-weight: 800;
-          line-height: 1.55;
+        .finalCta {
+          text-align: center;
+          padding: 76px 28px;
+          margin-bottom: 70px;
         }
 
         .finalCta p {
@@ -531,11 +706,11 @@ export default function PricingPage() {
           margin-right: auto;
         }
 
-        @media (max-width: 920px) {
-          .pricingHero,
-          .freeGrid,
+        @media (max-width: 980px) {
+          .hero,
+          .accessGrid,
           .adGrid,
-          .benefitGrid {
+          .benefits {
             grid-template-columns: 1fr;
           }
 
@@ -543,17 +718,21 @@ export default function PricingPage() {
             padding: 54px 16px;
           }
 
-          .pricingHero {
+          .hero {
             min-height: auto;
-            padding-top: 42px;
+            padding-top: 44px;
           }
 
           h1 {
-            font-size: 50px;
+            font-size: 54px;
           }
 
-          .statGrid {
+          .miniStats {
             grid-template-columns: 1fr;
+          }
+
+          .adCard.featured {
+            transform: none;
           }
         }
       `}</style>
