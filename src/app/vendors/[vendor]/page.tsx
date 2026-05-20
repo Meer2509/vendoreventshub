@@ -1,116 +1,509 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-export default function VendorsPage() {
-  const [vendors, setVendors] = useState<any[]>([]);
+export default function VendorProfilePage() {
+  const params = useParams();
+  const vendorSlug = params.vendor as string;
+
+  const [vendor, setVendor] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadVendors() {
+    async function loadVendor() {
       const { data, error } = await supabase
         .from("vendor_profiles")
         .select("*")
-        .order("created_at", { ascending: false });
+        .eq("slug", vendorSlug)
+        .single();
 
       if (error) {
-        alert(error.message);
+        setVendor(null);
       } else {
-        setVendors(data || []);
+        setVendor(data);
       }
 
       setLoading(false);
     }
 
-    loadVendors();
-  }, []);
+    loadVendor();
+  }, [vendorSlug]);
+
+  if (loading) {
+    return (
+      <main className="luxuryPage">
+        <section className="luxSection">
+          <p className="muted">Loading vendor profile...</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (!vendor) {
+    return (
+      <main className="luxuryPage">
+        <section className="luxSection">
+          <h1>Vendor not found</h1>
+          <p className="muted">This vendor profile may not exist yet.</p>
+          <button className="goldBtn" onClick={() => (window.location.href = "/vendors")}>
+            Back To Vendors
+          </button>
+        </section>
+      </main>
+    );
+  }
 
   return (
-    <main className="luxuryPage">
-      <section className="luxSection">
-        <div className="sectionHeader">
-          <div>
-            <div className="goldEyebrow">Vendor Directory</div>
-            <h2>Discover premium vendor businesses.</h2>
-            <p className="muted">
-              Browse food brands, artisans, makers, service businesses, and
-              event-ready vendors.
+    <main className="vendorProfilePage">
+      <section
+        className="vendorHero"
+        style={{
+          backgroundImage: `url(${
+            vendor.banner_url ||
+            "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1600&auto=format&fit=crop"
+          })`,
+        }}
+      >
+        <div className="heroOverlay">
+          <div className="heroInner">
+            <img
+              src={
+                vendor.logo_url ||
+                "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=400&auto=format&fit=crop"
+              }
+              alt={vendor.business_name || "Vendor"}
+              className="vendorLogo"
+            />
+
+            <p className="eyebrow">{vendor.category || "Premium Vendor"}</p>
+            <h1>{vendor.business_name}</h1>
+
+            <p className="heroText">
+              {vendor.short_description ||
+                "A premium vendor business listed on VendorEventsHub."}
             </p>
+
+            <div className="trustRow">
+              <span>{vendor.city || "City"}, {vendor.state || "State"}</span>
+              <span>{vendor.years_in_business || "New business"}</span>
+              <span>{vendor.verified ? "Verified Vendor" : "Profile Listed"}</span>
+            </div>
+
+            <div className="heroActions">
+              {vendor.website && (
+                <button onClick={() => window.open(vendor.website, "_blank")}>
+                  Visit Website
+                </button>
+              )}
+              <button
+                className="secondary"
+                onClick={() => (window.location.href = "/events")}
+              >
+                View Events
+              </button>
+            </div>
           </div>
-
-          <button
-            className="goldBtn"
-            onClick={() => (window.location.href = "/profile/setup")}
-          >
-            Create Vendor Profile
-          </button>
         </div>
-
-        <div className="luxSearch eventsSearch">
-          <input placeholder="Search by business name, category, city..." />
-          <button>Search Vendors</button>
-        </div>
-
-        {loading ? (
-          <p className="muted">Loading vendors...</p>
-        ) : vendors.length === 0 ? (
-          <p className="muted">No vendors listed yet.</p>
-        ) : (
-          <div className="vendorDirectoryGrid">
-            {vendors.map((vendor) => (
-              <article className="vendorCard" key={vendor.id}>
-                <div
-                  className="vendorCardBanner"
-                  style={{
-                    backgroundImage: `url(${
-                      vendor.banner_url ||
-                      "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop"
-                    })`,
-                  }}
-                />
-
-                <div className="vendorCardBody">
-                  <img
-                    src={
-                      vendor.logo_url ||
-                      "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=400&auto=format&fit=crop"
-                    }
-                    alt={vendor.business_name}
-                    className="vendorCardLogo"
-                  />
-
-                  <p className="goldEyebrow">
-                    {vendor.category || "Premium Vendor"}
-                  </p>
-
-                  <h3>{vendor.business_name}</h3>
-
-                  <p className="muted">
-                    {vendor.short_description ||
-                      "A premium vendor business on VendorEventsHub."}
-                  </p>
-
-                  <div className="marketStats">
-                    <span>{vendor.city || "City"}, {vendor.state || "State"}</span>
-                    <span>{vendor.years_in_business || "New business"}</span>
-                    <span>{vendor.verified ? "Verified" : "Pending verification"}</span>
-                  </div>
-
-                  <button
-                    className="fullBtn"
-                    onClick={() =>
-                      (window.location.href = `/vendors/${vendor.slug}`)
-                    }
-                  >
-                    View Vendor Profile
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
       </section>
+
+      <section className="contentSection">
+        <div className="profileGrid">
+          <div className="mainColumn">
+            <div className="detailCard">
+              <p className="eyebrow">About This Vendor</p>
+              <h2>Business story and event presence.</h2>
+              <p>
+                {vendor.full_description ||
+                  vendor.short_description ||
+                  "This vendor has not added a full business story yet."}
+              </p>
+            </div>
+
+            <div className="detailCard">
+              <p className="eyebrow">Vendor Trust</p>
+              <h2>Why organizers may consider this business.</h2>
+
+              <div className="trustGrid">
+                <div>
+                  <strong>{vendor.category || "Vendor"}</strong>
+                  <span>Business Category</span>
+                </div>
+                <div>
+                  <strong>{vendor.city || "Local"}</strong>
+                  <span>Base City</span>
+                </div>
+                <div>
+                  <strong>{vendor.state || "USA"}</strong>
+                  <span>State</span>
+                </div>
+                <div>
+                  <strong>{vendor.verified ? "Verified" : "Listed"}</strong>
+                  <span>Profile Status</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="detailCard">
+              <p className="eyebrow">Best For</p>
+              <h2>Event opportunities this vendor may fit.</h2>
+
+              <div className="pillGrid">
+                <span>Festivals</span>
+                <span>Farmers Markets</span>
+                <span>Craft Fairs</span>
+                <span>Pop-Ups</span>
+                <span>Community Events</span>
+                <span>Local Markets</span>
+              </div>
+            </div>
+          </div>
+
+          <aside className="sidebar">
+            <div className="sidebarCard">
+              <p className="eyebrow">Vendor Snapshot</p>
+
+              <div className="sidebarInfo">
+                <span>Business</span>
+                <strong>{vendor.business_name}</strong>
+              </div>
+
+              <div className="sidebarInfo">
+                <span>Category</span>
+                <strong>{vendor.category || "Vendor"}</strong>
+              </div>
+
+              <div className="sidebarInfo">
+                <span>Location</span>
+                <strong>{vendor.city || "City"}, {vendor.state || "State"}</strong>
+              </div>
+
+              <div className="sidebarInfo">
+                <span>Years</span>
+                <strong>{vendor.years_in_business || "New"}</strong>
+              </div>
+
+              {vendor.phone && (
+                <div className="sidebarInfo">
+                  <span>Phone</span>
+                  <strong>{vendor.phone}</strong>
+                </div>
+              )}
+            </div>
+
+            <div className="sidebarCard">
+              <p className="eyebrow">Connect</p>
+
+              {vendor.website && (
+                <button onClick={() => window.open(vendor.website, "_blank")}>
+                  Website
+                </button>
+              )}
+
+              {vendor.instagram && (
+                <button
+                  className="secondary"
+                  onClick={() =>
+                    window.open(
+                      vendor.instagram.startsWith("http")
+                        ? vendor.instagram
+                        : `https://instagram.com/${vendor.instagram.replace("@", "")}`,
+                      "_blank"
+                    )
+                  }
+                >
+                  Instagram
+                </button>
+              )}
+
+              {vendor.tiktok && (
+                <button
+                  className="secondary"
+                  onClick={() =>
+                    window.open(
+                      vendor.tiktok.startsWith("http")
+                        ? vendor.tiktok
+                        : `https://tiktok.com/@${vendor.tiktok.replace("@", "")}`,
+                      "_blank"
+                    )
+                  }
+                >
+                  TikTok
+                </button>
+              )}
+
+              {vendor.facebook && (
+                <button
+                  className="secondary"
+                  onClick={() => window.open(vendor.facebook, "_blank")}
+                >
+                  Facebook
+                </button>
+              )}
+            </div>
+
+            <div className="sidebarCard sponsorCard">
+              <p className="eyebrow">For Organizers</p>
+              <h3>Want vendors like this at your event?</h3>
+              <p>
+                List your festival, fair, market, expo, or pop-up and make it
+                easier for vendors to discover your opportunity.
+              </p>
+              <button onClick={() => (window.location.href = "/create-event")}>
+                List Your Event
+              </button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <style jsx>{`
+        .vendorProfilePage {
+          background:
+            radial-gradient(circle at top left, rgba(184, 138, 46, 0.18), transparent 34%),
+            radial-gradient(circle at top right, rgba(16, 41, 31, 0.12), transparent 30%),
+            #f7f1e6;
+          color: #10291f;
+        }
+
+        .vendorHero {
+          min-height: 82vh;
+          background-size: cover;
+          background-position: center;
+        }
+
+        .heroOverlay {
+          min-height: 82vh;
+          background: linear-gradient(
+            90deg,
+            rgba(16, 41, 31, 0.92),
+            rgba(16, 41, 31, 0.66),
+            rgba(16, 41, 31, 0.25)
+          );
+          display: flex;
+          align-items: center;
+        }
+
+        .heroInner {
+          max-width: 1180px;
+          width: 100%;
+          margin: 0 auto;
+          padding: 80px 18px;
+        }
+
+        .vendorLogo {
+          width: 132px;
+          height: 132px;
+          border-radius: 32px;
+          object-fit: cover;
+          border: 5px solid #f7f1e6;
+          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
+          margin-bottom: 24px;
+        }
+
+        .eyebrow {
+          color: #b88a2e;
+          font-size: 12px;
+          font-weight: 950;
+          letter-spacing: 0.13em;
+          text-transform: uppercase;
+          margin: 0 0 14px;
+        }
+
+        h1 {
+          color: white;
+          font-size: clamp(52px, 8vw, 96px);
+          line-height: 0.88;
+          letter-spacing: -0.08em;
+          margin: 0;
+          max-width: 900px;
+        }
+
+        h2 {
+          font-size: clamp(34px, 5vw, 58px);
+          line-height: 0.94;
+          letter-spacing: -0.06em;
+          margin: 0;
+        }
+
+        h3 {
+          font-size: 25px;
+          letter-spacing: -0.04em;
+          margin: 0;
+        }
+
+        .heroText {
+          max-width: 720px;
+          color: rgba(255, 255, 255, 0.84);
+          font-size: 18px;
+          line-height: 1.75;
+          margin-top: 24px;
+        }
+
+        .trustRow,
+        .pillGrid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 28px;
+        }
+
+        .trustRow span,
+        .pillGrid span {
+          background: rgba(255, 255, 255, 0.72);
+          border: 1px solid #ded0b5;
+          border-radius: 999px;
+          padding: 9px 13px;
+          font-size: 13px;
+          font-weight: 850;
+        }
+
+        .heroActions {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin-top: 30px;
+        }
+
+        button {
+          border: 0;
+          background: #10291f;
+          color: white;
+          border-radius: 999px;
+          padding: 15px 24px;
+          font-weight: 950;
+          cursor: pointer;
+          transition: 0.2s ease;
+          width: 100%;
+        }
+
+        .heroActions button {
+          width: auto;
+          background: #b88a2e;
+        }
+
+        button.secondary {
+          background: rgba(255, 255, 255, 0.72);
+          color: #10291f;
+          border: 1px solid #cdbf9f;
+        }
+
+        button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 16px 34px rgba(16, 41, 31, 0.22);
+        }
+
+        .contentSection {
+          max-width: 1180px;
+          margin: 0 auto;
+          padding: 76px 18px;
+        }
+
+        .profileGrid {
+          display: grid;
+          grid-template-columns: 1fr 360px;
+          gap: 22px;
+          align-items: start;
+        }
+
+        .mainColumn,
+        .sidebar {
+          display: grid;
+          gap: 22px;
+        }
+
+        .detailCard,
+        .sidebarCard {
+          background: rgba(255, 255, 255, 0.9);
+          border: 1px solid #eadfc9;
+          border-radius: 36px;
+          box-shadow: 0 30px 90px rgba(20, 88, 63, 0.13);
+          backdrop-filter: blur(12px);
+          padding: 30px;
+        }
+
+        .detailCard p,
+        .sidebarCard p {
+          color: #5f6b66;
+          line-height: 1.7;
+        }
+
+        .trustGrid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 14px;
+          margin-top: 24px;
+        }
+
+        .trustGrid div {
+          background: #f7f1e6;
+          border-radius: 24px;
+          padding: 20px;
+        }
+
+        .trustGrid strong {
+          display: block;
+          font-size: 22px;
+          letter-spacing: -0.04em;
+          margin-bottom: 6px;
+        }
+
+        .trustGrid span {
+          color: #5f6b66;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .sidebarInfo {
+          display: flex;
+          justify-content: space-between;
+          gap: 14px;
+          border-bottom: 1px solid #eadfc9;
+          padding: 14px 0;
+        }
+
+        .sidebarInfo span {
+          color: #5f6b66;
+          font-weight: 800;
+        }
+
+        .sidebarInfo strong {
+          text-align: right;
+        }
+
+        .sidebarCard button {
+          margin-top: 12px;
+        }
+
+        @media (max-width: 980px) {
+          .profileGrid,
+          .trustGrid {
+            grid-template-columns: 1fr;
+          }
+
+          .vendorHero,
+          .heroOverlay {
+            min-height: auto;
+          }
+
+          .heroInner {
+            padding: 76px 16px;
+          }
+
+          h1 {
+            font-size: 54px;
+          }
+
+          .contentSection {
+            padding: 54px 16px;
+          }
+
+          .heroActions button {
+            width: 100%;
+          }
+        }
+      `}</style>
     </main>
   );
 }
