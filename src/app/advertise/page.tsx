@@ -1,4 +1,4 @@
-"use client";
+\"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -89,6 +89,7 @@ export default function AdvertisePage() {
     business_name: "",
     title: "",
     description: "",
+    special_note: "",
     link_url: "",
     placement: "homepage",
     image_url: "",
@@ -179,6 +180,7 @@ export default function AdvertisePage() {
         business_name: ad.business_name,
         title: ad.title,
         description: ad.description,
+        special_note: ad.special_note || "",
         link_url: ad.link_url,
         placement: ad.placement,
         image_url: ad.image_url || "",
@@ -268,10 +270,7 @@ export default function AdvertisePage() {
                 <b>Best for:</b> {placement.bestFor}
               </small>
 
-              <button
-                type="button"
-                onClick={() => selectPlacement(placement)}
-              >
+              <button type="button" onClick={() => selectPlacement(placement)}>
                 {ad.placement === placement.value ? "Selected" : "Select Placement"}
               </button>
             </article>
@@ -300,11 +299,19 @@ export default function AdvertisePage() {
 
           <div className="previewBody">
             <p className="eyebrow">{ad.business_name || "Your Business Name"}</p>
-            <h3>{ad.title || "Your Premium Ad Headline"}</h3>
+            <h3>{ad.title || "Your Premium Ad Title"}</h3>
             <p>
               {ad.description ||
                 "Your ad description will appear here with a clean premium layout designed for vendor attention."}
             </p>
+
+            {ad.special_note && (
+              <div className="specialNote">
+                <strong>Special Note</strong>
+                <p>{ad.special_note}</p>
+              </div>
+            )}
+
             <button type="button">Visit Website</button>
           </div>
         </article>
@@ -331,7 +338,7 @@ export default function AdvertisePage() {
         </label>
 
         <label>
-          Ad Headline *
+          Ad Title *
           <input
             required
             placeholder="Example: Premium Supplies for Event Vendors"
@@ -344,9 +351,18 @@ export default function AdvertisePage() {
           Ad Description *
           <textarea
             required
-            placeholder="Describe what you want to promote."
+            placeholder="Describe your business, event, service, promotion, or offer. This is what vendors will read."
             value={ad.description}
             onChange={(e) => updateField("description", e.target.value)}
+          />
+        </label>
+
+        <label>
+          Special Notes / Instructions
+          <textarea
+            placeholder="Example: Mention our grand opening, promote our discount code, emphasize local business, include specific wording, or important details for approval."
+            value={ad.special_note}
+            onChange={(e) => updateField("special_note", e.target.value)}
           />
         </label>
 
@@ -664,6 +680,30 @@ export default function AdvertisePage() {
           display: flex;
           flex-direction: column;
           justify-content: center;
+        }
+
+        .specialNote {
+          margin-top: 18px;
+          background: #f7f1e6;
+          border: 1px solid #eadfc9;
+          border-radius: 18px;
+          padding: 16px;
+        }
+
+        .specialNote strong {
+          display: block;
+          color: #10291f;
+          font-size: 12px;
+          font-weight: 950;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 8px;
+        }
+
+        .specialNote p {
+          margin: 0;
+          color: #5f6b66;
+          line-height: 1.6;
         }
 
         .adForm {
