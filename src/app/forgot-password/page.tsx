@@ -16,10 +16,13 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     const { error } =
-      await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo:
-          `${window.location.origin}/reset-password`,
-      });
+      await supabase.auth.resetPasswordForEmail(
+        email,
+        {
+          redirectTo:
+            "https://www.vendoreventshub.com/reset-password",
+        }
+      );
 
     setLoading(false);
 
@@ -316,10 +319,6 @@ export default function ForgotPasswordPage() {
           padding: 48px;
         }
 
-        .sectionHead {
-          margin-bottom: 28px;
-        }
-
         label {
           display: grid;
           gap: 8px;
@@ -335,52 +334,21 @@ export default function ForgotPasswordPage() {
           font: inherit;
           background: white;
           color: #10291f;
-        }
-
-        input:focus {
-          outline: none;
-          border-color:
-            #10291f;
-          box-shadow:
-            0 0 0 4px
-            rgba(
-              16,
-              41,
-              31,
-              0.08
-            );
-        }
-
-        button {
-          border: 0;
-          background:
-            #10291f;
-          color: white;
-          border-radius: 999px;
-          padding: 15px 24px;
-          font-weight: 950;
-          cursor: pointer;
-          transition: 0.2s ease;
-        }
-
-        button:hover {
-          transform:
-            translateY(-2px);
+          margin-top: 8px;
         }
 
         .submitBtn {
           width: 100%;
           margin-top: 22px;
           height: 62px;
+          border: 0;
+          background:
+            #10291f;
+          color: white;
+          border-radius: 999px;
           font-size: 16px;
-        }
-
-        .successBox {
-          text-align: center;
-        }
-
-        .successBox button {
-          margin-top: 22px;
+          font-weight: 950;
+          cursor: pointer;
         }
 
         .bottomActions {
@@ -404,13 +372,6 @@ export default function ForgotPasswordPage() {
           .forgotHero {
             grid-template-columns:
               1fr;
-            min-height: auto;
-          }
-
-          .forgotHero,
-          .formSection {
-            padding:
-              54px 16px;
           }
 
           .forgotCard {
@@ -420,11 +381,6 @@ export default function ForgotPasswordPage() {
 
           h1 {
             font-size: 54px;
-          }
-
-          .bottomActions {
-            flex-direction:
-              column;
           }
         }
       `}</style>
