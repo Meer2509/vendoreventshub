@@ -130,6 +130,7 @@ const fallbackEvents = [
 export default function HomePage() {
   const [ads, setAds] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
+  const [activeAdIndex, setActiveAdIndex] = useState(0);
 
   useEffect(() => {
     async function loadHomepageData() {
@@ -156,6 +157,50 @@ export default function HomePage() {
     loadHomepageData();
   }, []);
 
+  useEffect(() => {
+    if (ads.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setActiveAdIndex((prev) => (prev + 1) % ads.length);
+    }, 5500);
+
+    return () => clearInterval(interval);
+  }, [ads.length]);
+
+  async function trackAd(ad: any, eventType: "view" | "click") {
+    try {
+      let visitorId = localStorage.getItem("veh_visitor_id");
+
+      if (!visitorId) {
+        visitorId = crypto.randomUUID();
+        localStorage.setItem("veh_visitor_id", visitorId);
+      }
+
+      await fetch("/api/track-ad", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ad_id: ad.id,
+          event_type: eventType,
+          placement: "homepage",
+          page_url: window.location.href,
+          visitor_id: visitorId,
+        }),
+      });
+    } catch {
+      // keep page smooth even if tracking fails
+    }
+  }
+
+  useEffect(() => {
+    if (ads.length === 0) return;
+
+    const activeAd = ads[activeAdIndex];
+    if (activeAd) trackAd(activeAd, "view");
+  }, [activeAdIndex, ads]);
+
   const trendingEvents = useMemo(() => {
     const sourceEvents = events.length > 0 ? events : fallbackEvents;
 
@@ -167,6 +212,8 @@ export default function HomePage() {
       })
       .slice(0, 6);
   }, [events]);
+
+  const activeAd = ads[activeAdIndex];
 
   return (
     <main className="luxuryPage">
@@ -226,6 +273,100 @@ export default function HomePage() {
           </button>
         </div>
       </section>
+
+      {ads.length > 0 && activeAd && (
+        <section style={styles.adSliderSection}>
+          <div style={styles.adSliderHeader}>
+            <div>
+              <p className="goldEyebrow">Sponsored Spotlight</p>
+              <h2 style={styles.adSliderTitle}>
+                Premium partners helping vendors grow.
+              </h2>
+            </div>
+
+            <button
+              className="goldBtn"
+              onClick={() => (window.location.href = "/advertise")}
+            >
+              Advertise Here
+            </button>
+          </div>
+
+          <article style={styles.adSliderCard}>
+            <div
+              style={{
+                ...styles.adSliderImage,
+                backgroundImage: `url(${
+                  activeAd.image_url ||
+                  "https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=1400&auto=format&fit=crop"
+                })`,
+              }}
+            >
+              <span style={styles.sponsoredBadge}>Sponsored</span>
+            </div>
+
+            <div style={styles.adSliderBody}>
+              <p className="goldEyebrow">
+                {activeAd.business_name || "Sponsored Partner"}
+              </p>
+
+              <h3 style={styles.adSliderHeading}>
+                {activeAd.ad_title || "Premium Sponsored Placement"}
+              </h3>
+
+              <p style={styles.adSliderText}>
+                {activeAd.ad_description ||
+                  "A premium partner promoted through VendorEventsHub."}
+              </p>
+
+              <div style={styles.adMetaRow}>
+                <span>Paid Partner</span>
+                <span>Homepage Placement</span>
+                <span>30-Day Feature</span>
+              </div>
+
+              <div style={styles.adActions}>
+                {activeAd.link_url && (
+                  <button
+                    className="goldBtn"
+                    onClick={() => {
+                      trackAd(activeAd, "click");
+                      window.open(activeAd.link_url, "_blank");
+                    }}
+                  >
+                    Visit Website
+                  </button>
+                )}
+
+                <button
+                  className="outlineBtn"
+                  onClick={() => (window.location.href = "/advertise")}
+                >
+                  Promote Your Business
+                </button>
+              </div>
+
+              {ads.length > 1 && (
+                <div style={styles.dots}>
+                  {ads.map((ad, index) => (
+                    <button
+                      key={ad.id}
+                      aria-label={`Show sponsored ad ${index + 1}`}
+                      onClick={() => setActiveAdIndex(index)}
+                      style={{
+                        ...styles.dot,
+                        opacity: index === activeAdIndex ? 1 : 0.35,
+                        transform:
+                          index === activeAdIndex ? "scale(1.25)" : "scale(1)",
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </article>
+        </section>
+      )}
 
       <section className="vhProblemSection">
         <p className="goldEyebrow">The Vendor Problem</p>
@@ -316,60 +457,6 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-
-      {ads.length > 0 && (
-        <section className="liveAdsSection">
-          <div className="sectionHeader">
-            <div>
-              <p className="goldEyebrow">Sponsored Placements</p>
-              <h2>Featured Sponsored Partners</h2>
-            </div>
-
-            <button
-              className="goldBtn"
-              onClick={() => (window.location.href = "/advertise")}
-            >
-              Advertise Here
-            </button>
-          </div>
-
-          <div className="liveAdsGrid">
-            {ads.slice(0, 3).map((ad) => (
-              <article className="liveAdCard" key={ad.id}>
-                <div
-                  className="liveAdImage"
-                  style={{
-                    backgroundImage: `url(${ad.image_url || "/window.svg"})`,
-                  }}
-                >
-                  <span>Sponsored</span>
-                </div>
-
-                <div className="liveAdBody">
-                  <p className="goldEyebrow">
-                    {ad.business_name || "Sponsored Partner"}
-                  </p>
-                  <h3>{ad.ad_title || ad.title || "Premium Sponsored Ad"}</h3>
-                  <p className="muted">
-                    {ad.ad_description ||
-                      ad.description ||
-                      "A premium partner promoted through VendorEventsHub."}
-                  </p>
-
-                  {ad.link_url && (
-                    <button
-                      className="goldBtn fullWidth"
-                      onClick={() => window.open(ad.link_url, "_blank")}
-                    >
-                      Visit Website
-                    </button>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
 
       <section className="luxSection">
         <div className="sectionHeader">
@@ -485,3 +572,99 @@ export default function HomePage() {
     </main>
   );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  adSliderSection: {
+    maxWidth: 1180,
+    margin: "28px auto 0",
+    padding: "0 18px",
+  },
+  adSliderHeader: {
+    display: "flex",
+    alignItems: "end",
+    justifyContent: "space-between",
+    gap: 18,
+    flexWrap: "wrap",
+    marginBottom: 16,
+  },
+  adSliderTitle: {
+    margin: 0,
+    fontSize: "clamp(30px, 5vw, 52px)",
+    lineHeight: 1,
+    letterSpacing: "-.055em",
+    color: "#10291f",
+  },
+  adSliderCard: {
+    display: "grid",
+    gridTemplateColumns: "minmax(280px, 44%) 1fr",
+    gap: 0,
+    background: "#fff",
+    border: "1px solid #e7dcc7",
+    borderRadius: 34,
+    overflow: "hidden",
+    boxShadow: "0 28px 80px rgba(20,88,63,.14)",
+  },
+  adSliderImage: {
+    minHeight: 330,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    position: "relative",
+  },
+  sponsoredBadge: {
+    position: "absolute",
+    top: 18,
+    left: 18,
+    background: "#10291f",
+    color: "#fff",
+    borderRadius: 999,
+    padding: "8px 13px",
+    fontSize: 12,
+    fontWeight: 900,
+    textTransform: "uppercase",
+  },
+  adSliderBody: {
+    padding: "clamp(24px, 4vw, 46px)",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+  },
+  adSliderHeading: {
+    margin: "8px 0 12px",
+    fontSize: "clamp(30px, 5vw, 56px)",
+    lineHeight: 0.96,
+    letterSpacing: "-.06em",
+    color: "#10291f",
+  },
+  adSliderText: {
+    color: "#5f6b66",
+    fontSize: 17,
+    lineHeight: 1.7,
+    maxWidth: 620,
+  },
+  adMetaRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 14,
+  },
+  adActions: {
+    display: "flex",
+    gap: 12,
+    flexWrap: "wrap",
+    marginTop: 22,
+  },
+  dots: {
+    display: "flex",
+    gap: 10,
+    marginTop: 22,
+  },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 999,
+    border: 0,
+    background: "#14583f",
+    cursor: "pointer",
+    transition: "all .2s ease",
+  },
+};
