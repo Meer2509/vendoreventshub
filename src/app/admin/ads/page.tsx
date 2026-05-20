@@ -68,16 +68,34 @@ export default function AdminAdsPage() {
   }
 
   async function updateStatus(id: string, status: string) {
-    const { error } = await supabase
-      .from("ad_orders")
-      .update({ approval_status: status })
-      .eq("id", id);
-
-    if (error) {
-      alert(error.message);
+    const res = await fetch("/api/update-ad-status", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id,
+        status,
+      }),
+    });
+  
+    const data = await res.json();
+  
+    if (!res.ok) {
+      alert(data.error || "Could not update ad status.");
       return;
     }
-
+  
+    alert(
+      status === "approved"
+        ? "Ad approved and customer email sent."
+        : status === "rejected"
+        ? "Ad rejected and customer email sent."
+        : status === "paused"
+        ? "Ad paused and customer email sent."
+        : "Ad status updated."
+    );
+  
     loadAds();
   }
 
