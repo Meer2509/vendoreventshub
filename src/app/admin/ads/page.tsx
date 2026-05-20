@@ -28,6 +28,7 @@ export default function AdminAdsPage() {
   const [ads, setAds] = useState<AdOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [allowed, setAllowed] = useState(false);
+  const [renewingId, setRenewingId] = useState("");
 
   async function checkAdmin() {
     const { data } = await supabase.auth.getUser();
@@ -80,13 +81,40 @@ export default function AdminAdsPage() {
     loadAds();
   }
 
+  async function renewAd(adId: string) {
+    try {
+      setRenewingId(adId);
+
+      const res = await fetch("/api/create-renewal-checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ adId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.clientSecret) {
+        alert(data.error || "Renewal checkout failed.");
+        setRenewingId("");
+        return;
+      }
+
+      window.location.href = `/checkout-renew?client_secret=${encodeURIComponent(
+        data.clientSecret
+      )}`;
+    } catch (error) {
+      alert("Something went wrong starting renewal checkout.");
+      setRenewingId("");
+    }
+  }
+
   useEffect(() => {
     checkAdmin();
   }, []);
 
-  if (loading) {
-    return <main style={styles.page}>Loading admin ads...</main>;
-  }
+  if (loading) return <main style={styles.page}>Loading admin ads...</main>;
 
   if (!allowed) {
     return (
@@ -109,7 +137,7 @@ export default function AdminAdsPage() {
         <h1 style={styles.title}>Paid Advertising Review</h1>
         <p style={styles.subtitle}>
           Review paid advertiser submissions, approve placements, reject bad ads,
-          or pause active ads.
+          pause active ads, or renew approved placements for another 30 days.
         </p>
       </section>
 
@@ -117,49 +145,80 @@ export default function AdminAdsPage() {
         <div style={styles.empty}>No paid ad orders yet.</div>
       ) : (
         <section style={styles.grid}>
-          {ads.map((ad) => (
-            <article key={ad.id} style={styles.card}>
-              {ad.image_url && (
-                <img src={ad.image_url} alt={ad.ad_title} style={styles.image} />
-              )}
+          {ads.map((ad) => {
+            const isExpired =
+              ad.expires_at && new Date(ad.expires_at) < new Date();
 
-              <div style={styles.topRow}>
-                <span style={styles.status}>{ad.approval_status}</span>
-                <span style={styles.payment}>{ad.payment_status}</span>
-              </div>
+            return (
+              <article key={ad.id} style={styles.card}>
+                {ad.image_url && (
+                  <img src={ad.image_url} alt={ad.ad_title} style={styles.image} />
+                )}
 
-              <h2 style={styles.cardTitle}>{ad.ad_title}</h2>
-              <p style={styles.business}>{ad.business_name}</p>
-              <p style={styles.desc}>{ad.ad_description}</p>
+                <div style={styles.topRow}>
+                  <span style={styles.status}>{ad.approval_status}</span>
+                  <span style={styles.payment}>{ad.payment_status}</span>
+                  {isExpired && <span style={styles.expired}>Expired</span>}
+                </div>
 
-              <div style={styles.infoBox}>
-                <p><strong>Placement:</strong> {ad.placement}</p>
-                <p><strong>Plan:</strong> {ad.plan}</p>
-                <p><strong>Budget:</strong> {ad.budget}</p>
-                <p><strong>Paid:</strong> ${((ad.amount_total || 0) / 100).toFixed(2)}</p>
-                <p><strong>Starts:</strong> {ad.starts_at ? new Date(ad.starts_at).toLocaleDateString() : "N/A"}</p>
-                <p><strong>Expires:</strong> {ad.expires_at ? new Date(ad.expires_at).toLocaleDateString() : "N/A"}</p>
-              </div>
+                <h2 style={styles.cardTitle}>{ad.ad_title}</h2>
+                <p style={styles.business}>{ad.business_name}</p>
+                <p style={styles.desc}>{ad.ad_description}</p>
 
-              {ad.link_url && (
-                <a href={ad.link_url} target="_blank" style={styles.link}>
-                  Visit advertiser website →
-                </a>
-              )}
+                <div style={styles.infoBox}>
+                  <p><strong>Placement:</strong> {ad.placement}</p>
+                  <p><strong>Plan:</strong> {ad.plan}</p>
+                  <p><strong>Budget:</strong> {ad.budget}</p>
+                  <p><strong>Paid:</strong> ${((ad.amount_total || 0) / 100).toFixed(2)}</p>
+                  <p>
+                    <strong>Starts:</strong>{" "}
+                    {ad.starts_at ? new Date(ad.starts_at).toLocaleDateString() : "N/A"}
+                  </p>
+                  <p>
+                    <strong>Expires:</strong>{" "}
+                    {ad.expires_at ? new Date(ad.expires_at).toLocaleDateString() : "N/A"}
+                  </p>
+                </div>
 
-              <div style={styles.actions}>
-                <button style={styles.approve} onClick={() => updateStatus(ad.id, "approved")}>
-                  Approve
-                </button>
-                <button style={styles.pause} onClick={() => updateStatus(ad.id, "paused")}>
-                  Pause
-                </button>
-                <button style={styles.reject} onClick={() => updateStatus(ad.id, "rejected")}>
-                  Reject
-                </button>
-              </div>
-            </article>
-          ))}
+                {ad.link_url && (
+                  <a href={ad.link_url} target="_blank" style={styles.link}>
+                    Visit advertiser website →
+                  </a>
+                )}
+
+                <div style={styles.actions}>
+                  <button
+                    style={styles.approve}
+                    onClick={() => updateStatus(ad.id, "approved")}
+                  >
+                    Approve
+                  </button>
+
+                  <button
+                    style={styles.pause}
+                    onClick={() => updateStatus(ad.id, "paused")}
+                  >
+                    Pause
+                  </button>
+
+                  <button
+                    style={styles.reject}
+                    onClick={() => updateStatus(ad.id, "rejected")}
+                  >
+                    Reject
+                  </button>
+
+                  <button
+                    style={styles.renew}
+                    onClick={() => renewAd(ad.id)}
+                    disabled={renewingId === ad.id}
+                  >
+                    {renewingId === ad.id ? "Opening..." : "Renew 30 Days"}
+                  </button>
+                </div>
+              </article>
+            );
+          })}
         </section>
       )}
     </main>
@@ -226,6 +285,7 @@ const styles: Record<string, React.CSSProperties> = {
   topRow: {
     display: "flex",
     justifyContent: "space-between",
+    flexWrap: "wrap",
     gap: 10,
     marginBottom: 14,
   },
@@ -240,6 +300,15 @@ const styles: Record<string, React.CSSProperties> = {
   },
   payment: {
     background: "#10291f",
+    color: "#fff",
+    borderRadius: 999,
+    padding: "7px 11px",
+    fontWeight: 900,
+    fontSize: 12,
+    textTransform: "uppercase",
+  },
+  expired: {
+    background: "#8b1e1e",
     color: "#fff",
     borderRadius: 999,
     padding: "7px 11px",
@@ -278,7 +347,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   actions: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
+    gridTemplateColumns: "1fr 1fr",
     gap: 10,
     marginTop: 18,
   },
@@ -305,6 +374,15 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 999,
     padding: "12px 10px",
     background: "#8b1e1e",
+    color: "#fff",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+  renew: {
+    border: 0,
+    borderRadius: 999,
+    padding: "12px 10px",
+    background: "#10291f",
     color: "#fff",
     fontWeight: 900,
     cursor: "pointer",
