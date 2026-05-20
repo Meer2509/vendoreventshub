@@ -29,317 +29,368 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="loginLuxuryPage">
-      <section className="loginLuxuryCard">
-        <div className="loginPanel">
-          <p className="loginEyebrow">PREMIUM MEMBER ACCESS</p>
-
-          <h1>Welcome Back.</h1>
-
-          <p className="loginIntro">
-            Log in to manage your saved events, applications, organizer tools,
-            vendor profile, and premium growth dashboard.
+    <main className="loginPage">
+      <section className="loginHero">
+        <div>
+          <p className="eyebrow">
+            America’s Vendor Event Platform
           </p>
 
-          <form onSubmit={handleLogin} className="loginForm">
-            <div className="loginField">
-              <label>
-                Email Address <span>*</span>
-              </label>
-              <input
-                type="email"
-                required
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
+          <h1>Welcome back to VendorEventsHub.</h1>
 
-            <div className="loginField">
-              <label>
-                Password <span>*</span>
-              </label>
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+          <p className="heroText">
+            Access your dashboard to manage vendor opportunities, organizer
+            tools, event applications, profiles, premium visibility, and smarter
+            business growth.
+          </p>
 
-            <button
-              type="button"
-              className="loginGhostBtn"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? "Hide Password" : "Show Password"}
-            </button>
-
-            <button type="submit" className="loginSubmit" disabled={loading}>
-              {loading ? "Logging In..." : "Login To Dashboard"}
-            </button>
-
-            <p className="loginSignupText">
-              New to VendorEventsHub? <a href="/signup">Create account</a>
-            </p>
-          </form>
+          <div className="trustRow">
+            <span>Vendor Dashboard</span>
+            <span>Organizer Tools</span>
+            <span>Premium Visibility</span>
+          </div>
         </div>
 
-        <div className="loginSidePanel">
-          <p className="sideBadge">VendorEventsHub</p>
-          <h2>One dashboard for vendors and organizers.</h2>
+        <div className="heroPanel">
+          <p className="panelBadge">Marketplace Access</p>
 
-          <div className="loginBenefitGrid">
+          <h3>
+            One premium dashboard for vendors and organizers.
+          </h3>
+
+          <p>
+            Save events, manage listings, grow visibility, build trust,
+            and make smarter event decisions in one place.
+          </p>
+
+          <div className="benefitGrid">
             <div>
               <strong>Saved Events</strong>
-              <span>Track opportunities before applying.</span>
+              <span>Track better opportunities.</span>
             </div>
 
             <div>
               <strong>Applications</strong>
-              <span>Manage requested and approved events.</span>
+              <span>Manage vendor requests.</span>
             </div>
 
             <div>
               <strong>Organizer Tools</strong>
-              <span>Create events and attract vendors.</span>
+              <span>Create and manage events.</span>
             </div>
 
             <div>
               <strong>Growth</strong>
-              <span>Premium visibility and sponsored placement.</span>
+              <span>Premium visibility tools.</span>
             </div>
           </div>
         </div>
       </section>
 
+      <section className="formSection">
+        <form onSubmit={handleLogin} className="loginCard">
+          <div className="sectionHead">
+            <p className="eyebrow">Login</p>
+            <h2>Access your account.</h2>
+
+            <p className="intro">
+              Continue where you left off and manage your business faster.
+            </p>
+          </div>
+
+          <label>
+            Email Address *
+            <input
+              type="email"
+              required
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </label>
+
+          <label>
+            Password *
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </label>
+
+          <button
+            type="button"
+            className="ghostBtn"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? "Hide Password" : "Show Password"}
+          </button>
+
+          <button
+            type="submit"
+            className="submitBtn"
+            disabled={loading}
+          >
+            {loading
+              ? "Logging In..."
+              : "Login To Dashboard"}
+          </button>
+
+          <div className="loginActions">
+            <a href="/forgot-password">
+              Forgot password?
+            </a>
+
+            <a href="/signup">
+              Create account
+            </a>
+          </div>
+        </form>
+      </section>
+
       <style jsx>{`
-        .loginLuxuryPage {
+        .loginPage {
           min-height: 100vh;
-          padding: 70px 20px;
           background:
-            radial-gradient(circle at top left, rgba(214, 179, 106, 0.18), transparent 30%),
-            linear-gradient(135deg, #fffaf0, #f7f2e8);
-          display: flex;
-          justify-content: center;
-          align-items: center;
+            radial-gradient(circle at top left, rgba(184, 138, 46, 0.18), transparent 34%),
+            radial-gradient(circle at top right, rgba(16, 41, 31, 0.12), transparent 30%),
+            #f7f1e6;
+          color: #10291f;
         }
 
-        .loginLuxuryCard {
-          width: 100%;
-          max-width: 1080px;
-          background: rgba(255, 255, 255, 0.9);
-          border: 1px solid rgba(15, 61, 46, 0.1);
-          border-radius: 40px;
-          padding: 22px;
-          box-shadow: 0 28px 85px rgba(15, 61, 46, 0.12);
+        .loginHero,
+        .formSection {
+          max-width: 1180px;
+          margin: 0 auto;
+          padding: 76px 18px;
+        }
+
+        .loginHero {
           display: grid;
-          grid-template-columns: 1fr 0.9fr;
-          gap: 22px;
+          grid-template-columns: 1.1fr 0.9fr;
+          gap: 36px;
+          align-items: center;
+          min-height: 72vh;
         }
 
-        .loginPanel {
-          padding: 44px;
-        }
-
-        .loginEyebrow {
-          color: #b8872f;
-          text-transform: uppercase;
-          letter-spacing: 5px;
+        .eyebrow {
+          color: #b88a2e;
           font-size: 12px;
-          font-weight: 900;
-          margin: 0 0 18px;
+          font-weight: 950;
+          letter-spacing: 0.13em;
+          text-transform: uppercase;
+          margin: 0 0 14px;
         }
 
         h1 {
-          color: #0b1f18;
-          font-size: clamp(46px, 6vw, 72px);
-          line-height: 1;
-          letter-spacing: -2px;
+          font-size: clamp(52px, 8vw, 96px);
+          line-height: 0.88;
+          letter-spacing: -0.08em;
           margin: 0;
         }
 
-        .loginIntro {
-          margin: 22px 0 34px;
-          color: #526058;
-          font-size: 18px;
+        h2 {
+          font-size: clamp(34px, 5vw, 62px);
+          line-height: 0.94;
+          letter-spacing: -0.06em;
+          margin: 0;
+        }
+
+        h3 {
+          font-size: 28px;
+          letter-spacing: -0.045em;
+          line-height: 1.05;
+          margin: 0;
+        }
+
+        .heroText,
+        .intro,
+        .heroPanel p {
+          color: #5f6b66;
           line-height: 1.7;
         }
 
-        .loginForm {
-          display: grid;
-          gap: 20px;
+        .heroText {
+          font-size: 18px;
+          max-width: 720px;
+          margin-top: 24px;
         }
 
-        .loginField {
-          display: grid;
+        .trustRow {
+          display: flex;
+          flex-wrap: wrap;
           gap: 10px;
+          margin-top: 28px;
         }
 
-        .loginField label {
-          color: #0f3d2e;
-          font-weight: 900;
-          font-size: 16px;
-        }
-
-        .loginField span {
-          color: #c1121f;
-        }
-
-        .loginField input {
-          width: 100%;
-          height: 62px;
-          border-radius: 18px;
-          border: 1px solid rgba(15, 61, 46, 0.13);
-          background: #fffaf0;
-          padding: 0 20px;
-          font-size: 16px;
-          color: #0b1f18;
-          outline: none;
-        }
-
-        .loginField input:focus {
-          border-color: #0f3d2e;
-          box-shadow: 0 0 0 4px rgba(15, 61, 46, 0.08);
-        }
-
-        .loginGhostBtn {
-          width: fit-content;
+        .trustRow span {
+          background: rgba(255,255,255,.72);
+          border: 1px solid #ded0b5;
           border-radius: 999px;
-          border: 1px solid rgba(15, 61, 46, 0.16);
-          background: #fffaf0;
-          color: #0f3d2e;
-          padding: 13px 22px;
-          font-weight: 900;
-          cursor: pointer;
+          padding: 9px 13px;
+          font-size: 13px;
+          font-weight: 850;
         }
 
-        .loginSubmit {
-          height: 64px;
+        .heroPanel,
+        .loginCard {
+          background: rgba(255,255,255,.88);
+          border: 1px solid #eadfc9;
+          border-radius: 36px;
+          box-shadow: 0 30px 90px rgba(20,88,63,.13);
+          backdrop-filter: blur(12px);
+        }
+
+        .heroPanel {
+          padding: 36px;
+        }
+
+        .panelBadge {
+          display: inline-block;
+          background: #10291f;
+          color: white !important;
+          border-radius: 999px;
+          padding: 8px 13px;
+          font-size: 12px;
+          font-weight: 950;
+          text-transform: uppercase;
+          letter-spacing: .09em;
+          margin-bottom: 18px;
+        }
+
+        .benefitGrid {
+          display: grid;
+          grid-template-columns: repeat(2,1fr);
+          gap: 14px;
+          margin-top: 24px;
+        }
+
+        .benefitGrid div {
+          background: #f7f1e6;
+          border-radius: 24px;
+          padding: 18px;
+        }
+
+        .benefitGrid strong {
+          display: block;
+          margin-bottom: 6px;
+          font-size: 18px;
+        }
+
+        .benefitGrid span {
+          color: #5f6b66;
+          font-size: 14px;
+        }
+
+        .loginCard {
+          max-width: 760px;
+          margin: 0 auto;
+          padding: 48px;
+        }
+
+        .sectionHead {
+          margin-bottom: 26px;
+        }
+
+        label {
+          display: grid;
+          gap: 8px;
+          font-weight: 900;
+          margin-bottom: 18px;
+        }
+
+        input {
+          width: 100%;
+          border: 1px solid #d8ccb5;
+          border-radius: 18px;
+          padding: 15px 16px;
+          font: inherit;
+          background: white;
+          color: #10291f;
+        }
+
+        input:focus {
+          outline: none;
+          border-color: #10291f;
+          box-shadow: 0 0 0 4px rgba(16,41,31,.08);
+        }
+
+        button {
           border: 0;
           border-radius: 999px;
-          background: linear-gradient(135deg, #0f3d2e, #1f6f54);
-          color: white;
-          font-weight: 900;
-          font-size: 17px;
+          padding: 15px 24px;
+          font-weight: 950;
           cursor: pointer;
-          box-shadow: 0 18px 42px rgba(15, 61, 46, 0.2);
+          transition: .2s ease;
         }
 
-        .loginSubmit:disabled {
-          opacity: 0.65;
+        button:hover {
+          transform: translateY(-2px);
+        }
+
+        .ghostBtn {
+          width: 100%;
+          background: rgba(255,255,255,.65);
+          color: #10291f;
+          border: 1px solid #d8ccb5;
+          margin-bottom: 12px;
+        }
+
+        .submitBtn {
+          width: 100%;
+          background: #10291f;
+          color: white;
+          height: 62px;
+          font-size: 17px;
+        }
+
+        .submitBtn:disabled {
+          opacity: .7;
           cursor: not-allowed;
         }
 
-        .loginSignupText {
-          text-align: center;
-          color: #526058;
-          margin: 0;
-          font-weight: 700;
-        }
-
-        .loginSignupText a {
-          color: #0f3d2e;
-          font-weight: 900;
-        }
-
-        .loginSidePanel {
-          border-radius: 30px;
-          padding: 38px;
-          background:
-            radial-gradient(circle at top right, rgba(214, 179, 106, 0.22), transparent 36%),
-            linear-gradient(135deg, #0f3d2e, #1f6f54);
-          color: white;
+        .loginActions {
           display: flex;
-          flex-direction: column;
           justify-content: space-between;
-          min-height: 560px;
+          gap: 16px;
+          margin-top: 20px;
+          flex-wrap: wrap;
         }
 
-        .sideBadge {
-          width: fit-content;
-          background: rgba(255, 255, 255, 0.12);
-          border: 1px solid rgba(255, 255, 255, 0.16);
-          border-radius: 999px;
-          padding: 10px 16px;
-          color: #efe7d6;
+        .loginActions a {
+          color: #10291f;
           font-weight: 900;
-          margin: 0;
-        }
-
-        .loginSidePanel h2 {
-          font-size: clamp(34px, 4vw, 52px);
-          line-height: 1;
-          letter-spacing: -1px;
-          margin: 34px 0;
-          max-width: 460px;
-        }
-
-        .loginBenefitGrid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 14px;
-        }
-
-        .loginBenefitGrid div {
-          border-radius: 22px;
-          padding: 20px;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.13);
-        }
-
-        .loginBenefitGrid strong {
-          display: block;
-          color: #fffaf0;
-          font-size: 17px;
-          margin-bottom: 8px;
-        }
-
-        .loginBenefitGrid span {
-          color: #efe7d6;
-          font-size: 13px;
-          line-height: 1.5;
+          text-decoration: none;
         }
 
         @media (max-width: 900px) {
-          .loginLuxuryPage {
-            padding: 28px 14px;
-            align-items: flex-start;
-          }
-
-          .loginLuxuryCard {
+          .loginHero {
             grid-template-columns: 1fr;
-            border-radius: 30px;
-            padding: 16px;
+            min-height: auto;
+            padding-top: 44px;
           }
 
-          .loginPanel {
-            padding: 26px 8px;
+          .loginHero,
+          .formSection {
+            padding: 54px 16px;
+          }
+
+          .benefitGrid {
+            grid-template-columns: 1fr;
+          }
+
+          .loginCard {
+            padding: 30px 18px;
           }
 
           h1 {
-            font-size: 42px;
-            letter-spacing: -1px;
+            font-size: 54px;
           }
 
-          .loginIntro {
-            font-size: 15px;
-          }
-
-          .loginGhostBtn,
-          .loginSubmit {
-            width: 100%;
-          }
-
-          .loginSidePanel {
-            min-height: auto;
-            padding: 28px;
-            border-radius: 26px;
-          }
-
-          .loginBenefitGrid {
-            grid-template-columns: 1fr;
+          .loginActions {
+            flex-direction: column;
           }
         }
       `}</style>
