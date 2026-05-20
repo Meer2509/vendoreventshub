@@ -5,6 +5,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Command Center", href: "/admin" },
     { name: "Ads Review", href: "/admin/ads" },
     { name: "Payments", href: "/admin/payments" },
+    { name: "Email Logs", href: "/admin/emails" },
     { name: "Events", href: "/admin/events" },
     { name: "Vendors", href: "/admin/vendors" },
     { name: "Users", href: "/admin/users" },
