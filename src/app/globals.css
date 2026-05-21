@@ -178,32 +178,120 @@ button.btn {
   }
 
   .vehFooter {
-    margin: 48px 14px 20px;
+    margin: 48px 12px 24px;
+    width: auto;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
 
   .vehFooterShell {
-    padding: 28px 20px 22px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 28px 18px 24px;
     border-radius: 22px;
   }
 
   .vehFooterMain {
     grid-template-columns: 1fr;
-    gap: 28px;
+    gap: 32px;
+    min-width: 0;
+  }
+
+  .vehFooterBrand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .vehFooterBrandLink {
+    justify-content: center;
+  }
+
+  .vehFooterDesc {
+    max-width: 100%;
+    text-align: center;
   }
 
   .vehFooterGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px 16px;
+    grid-template-columns: 1fr;
+    gap: 28px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .vehFooterCol {
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .vehFooterColTitle {
+    text-align: center;
+  }
+
+  .vehFooterList {
+    align-items: center;
+  }
+
+  .vehFooterList a {
+    display: inline-block;
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .vehFooterList a:hover {
+    padding-left: 0;
+  }
+
+  .vehFooterPopular {
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .vehFooterPopular .vehFooterColTitle {
+    text-align: center;
+  }
+
+  .vehFooterPopularLinks {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .vehFooterChip {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .vehFooterBottom {
     flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .vehFooterCopy,
+  .vehFooterLaunch {
+    width: 100%;
+    text-align: center;
   }
 
   .vehFooterLaunch {
-    text-align: left;
     flex: none;
   }
 
@@ -923,21 +1011,6 @@ button.btn {
   font-weight: 800;
 }
 
-@media (max-width: 640px) {
-  .vehFooterGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .vehFooterPopularLinks {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .vehFooterChip {
-    justify-content: center;
-    text-align: center;
-  }
-}
 .eventsSearch {
   margin-top: 28px;
 }

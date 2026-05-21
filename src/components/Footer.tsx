@@ -116,9 +116,6 @@ export default function Footer() {
           <p className="vehFooterLaunch">
             Launching in Connecticut — expanding nationwide.
           </p>
-          <Link href="/sitemap.xml" className="vehFooterSitemap">
-            Sitemap
-          </Link>
         </div>
       </div>
     </footer>
