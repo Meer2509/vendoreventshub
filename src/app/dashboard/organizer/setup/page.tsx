@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function OrganizerSetupPage() {
@@ -23,6 +23,41 @@ export default function OrganizerSetupPage() {
     logo_url: "",
     banner_url: "",
   });
+
+  useEffect(() => {
+    async function loadExistingProfile() {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+
+      const { data } = await supabase
+        .from("organizer_profiles")
+        .select("*")
+        .eq("user_id", userData.user.id)
+        .maybeSingle();
+
+      if (data) {
+        setProfile({
+          organizer_name: data.organizer_name || "",
+          slug: data.slug || "",
+          short_description: data.short_description || "",
+          full_description: data.full_description || "",
+          website: data.website || "",
+          instagram: data.instagram || "",
+          tiktok: data.tiktok || "",
+          facebook: data.facebook || "",
+          phone: data.phone || "",
+          city: data.city || "",
+          state: data.state || "",
+          logo_url: data.logo_url || "",
+          banner_url: data.banner_url || "",
+        });
+        if (data.logo_url) setLogoPreview(data.logo_url);
+        if (data.banner_url) setBannerPreview(data.banner_url);
+      }
+    }
+
+    loadExistingProfile();
+  }, []);
 
   const profileScore = useMemo(() => {
     let score = 15;
@@ -137,11 +172,14 @@ export default function OrganizerSetupPage() {
 
     const { error } = await supabase
       .from("organizer_profiles")
-      .upsert({
-        user_id: userData.user.id,
-        ...profile,
-        slug: cleanSlug,
-      });
+      .upsert(
+        {
+          user_id: userData.user.id,
+          ...profile,
+          slug: cleanSlug,
+        },
+        { onConflict: "user_id" }
+      );
 
     setLoading(false);
 
@@ -180,6 +218,18 @@ export default function OrganizerSetupPage() {
             <span>Vendor Trust</span>
             <span>Better Applications</span>
             <span>Professional Presence</span>
+          </div>
+
+          <div className="heroActions" style={{ marginTop: 24 }}>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() =>
+                (window.location.href = "/dashboard/organizer")
+              }
+            >
+              Back To Dashboard
+            </button>
           </div>
         </div>
 

@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 
 export default function VendorDashboardPage() {
   const [profile, setProfile] = useState<any>(null);
+  const [vendorProfile, setVendorProfile] = useState<any>(null);
   const [savedEvents, setSavedEvents] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +27,14 @@ export default function VendorDashboardPage() {
       .single();
 
     setProfile(profileData);
+
+    const { data: vendorProfileData } = await supabase
+      .from("vendor_profiles")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    setVendorProfile(vendorProfileData);
 
     const { data: savedData } = await supabase
       .from("saved_events")
@@ -51,20 +60,21 @@ export default function VendorDashboardPage() {
   }, []);
 
   const profileStrength = useMemo(() => {
+    const source = vendorProfile || profile;
     let score = 20;
 
-    if (profile?.business_name) score += 20;
-    if (profile?.logo_url) score += 15;
-    if (profile?.banner_url) score += 15;
-    if (profile?.description) score += 15;
-    if (profile?.website_url) score += 10;
-    if (profile?.facebook_url) score += 5;
-    if (profile?.instagram_url) score += 5;
-    if (profile?.tiktok_url) score += 5;
-    if (profile?.phone) score += 10;
+    if (source?.business_name) score += 20;
+    if (source?.logo_url) score += 15;
+    if (source?.banner_url) score += 15;
+    if (source?.short_description || source?.description) score += 15;
+    if (source?.website || source?.website_url) score += 10;
+    if (source?.facebook || source?.facebook_url) score += 5;
+    if (source?.instagram || source?.instagram_url) score += 5;
+    if (source?.tiktok || source?.tiktok_url) score += 5;
+    if (source?.phone) score += 10;
 
     return Math.min(score, 100);
-  }, [profile]);
+  }, [profile, vendorProfile]);
 
   async function logout() {
     await supabase.auth.signOut();
@@ -97,6 +107,17 @@ export default function VendorDashboardPage() {
             >
               Edit Profile
             </button>
+
+            {vendorProfile?.slug && (
+              <button
+                className="secondary"
+                onClick={() =>
+                  (window.location.href = `/vendors/${vendorProfile.slug}`)
+                }
+              >
+                View Public Profile
+              </button>
+            )}
 
             <button
               className="secondary"
@@ -154,6 +175,45 @@ export default function VendorDashboardPage() {
           </strong>
           <span>Profile Strength</span>
         </div>
+      </section>
+
+      <section className="section">
+        <div className="sectionHeader">
+          <h2>Saved Events</h2>
+        </div>
+
+        {loading ? (
+          <p>Loading...</p>
+        ) : savedEvents.length === 0 ? (
+          <div className="emptyState">
+            <h3>No saved events yet</h3>
+            <p>Browse events and save opportunities you want to revisit.</p>
+            <button onClick={() => (window.location.href = "/events")}>
+              Explore Events
+            </button>
+          </div>
+        ) : (
+          <div className="cardGrid">
+            {savedEvents.map((saved) => (
+              <div className="eventCard" key={saved.id}>
+                <p className="status">Saved</p>
+                <h3>{saved.events?.title || "Event"}</h3>
+                <p>
+                  {saved.events?.city}, {saved.events?.state}
+                </p>
+                {saved.events?.id && (
+                  <button
+                    onClick={() =>
+                      (window.location.href = `/events/${saved.events.id}`)
+                    }
+                  >
+                    View Event
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="section">

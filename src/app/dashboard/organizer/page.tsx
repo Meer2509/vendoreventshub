@@ -17,6 +17,7 @@ function formatDate(date: string) {
 
 export default function OrganizerDashboardPage() {
   const [profile, setProfile] = useState<any>(null);
+  const [organizerProfile, setOrganizerProfile] = useState<any>(null);
   const [myEvents, setMyEvents] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +43,14 @@ export default function OrganizerDashboardPage() {
 
     setProfile(profileData);
 
+    const { data: organizerProfileData } = await supabase
+      .from("organizer_profiles")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    setOrganizerProfile(organizerProfileData);
+
     const { data: eventsData } = await supabase
       .from("events")
       .select("*")
@@ -53,13 +62,60 @@ export default function OrganizerDashboardPage() {
     const eventIds = (eventsData || []).map((event) => event.id);
 
     if (eventIds.length > 0) {
-      const { data: appData } = await supabase
-        .from("event_attendance")
-        .select("id, status, created_at, vendor_id, events(*)")
+      const { data: appData, error: appError } = await supabase
+        .from("event_applications_with_vendors")
+        .select("*")
         .in("event_id", eventIds)
         .order("created_at", { ascending: false });
 
-      setApplications(appData || []);
+      if (!appError && appData) {
+        setApplications(appData);
+      } else {
+        const { data: attendanceData } = await supabase
+          .from("event_attendance")
+          .select("id, status, created_at, vendor_id, events(*)")
+          .in("event_id", eventIds)
+          .order("created_at", { ascending: false });
+
+        const vendorIds = [
+          ...new Set(
+            (attendanceData || [])
+              .map((row) => row.vendor_id)
+              .filter(Boolean)
+          ),
+        ];
+
+        let vendorMap: Record<string, any> = {};
+
+        if (vendorIds.length > 0) {
+          const { data: vendors } = await supabase
+            .from("vendor_profiles")
+            .select("user_id, business_name, slug, category")
+            .in("user_id", vendorIds);
+
+          vendorMap = Object.fromEntries(
+            (vendors || []).map((vendor) => [vendor.user_id, vendor])
+          );
+        }
+
+        setApplications(
+          (attendanceData || []).map((row) => {
+            const vendor = vendorMap[row.vendor_id] || {};
+            const event = Array.isArray(row.events) ? row.events[0] : row.events;
+
+            return {
+              ...row,
+              business_name: vendor.business_name,
+              slug: vendor.slug,
+              category: vendor.category,
+              event_title: event?.title,
+              event_city: event?.city,
+              event_state: event?.state,
+              event_date: event?.event_date,
+            };
+          })
+        );
+      }
     } else {
       setApplications([]);
     }
@@ -206,6 +262,26 @@ export default function OrganizerDashboardPage() {
             <button onClick={() => (window.location.href = "/create-event")}>
               Create Event
             </button>
+
+            <button
+              className="secondary"
+              onClick={() =>
+                (window.location.href = "/dashboard/organizer/setup")
+              }
+            >
+              Edit Organizer Profile
+            </button>
+
+            {organizerProfile?.slug && (
+              <button
+                className="secondary"
+                onClick={() =>
+                  (window.location.href = `/organizers/${organizerProfile.slug}`)
+                }
+              >
+                View Public Profile
+              </button>
+            )}
 
             <button
               className="secondary"
@@ -367,30 +443,45 @@ export default function OrganizerDashboardPage() {
         ) : (
           <div className="applicationGrid">
             {applications.map((application) => {
-              const event = application.events;
-
               return (
                 <article className="applicationCard" key={application.id}>
                   <p className="status">{application.status}</p>
 
-                  <h3>{event?.title || "Event Application"}</h3>
+                  <h3>
+                    {application.business_name ||
+                      application.event_title ||
+                      "Vendor Application"}
+                  </h3>
 
                   <p className="muted">
-                    Applied{" "}
+                    {application.event_title
+                      ? `Event: ${application.event_title}`
+                      : "Event application"}{" "}
+                    · Applied{" "}
                     {application.created_at
                       ? new Date(application.created_at).toLocaleDateString()
                       : "recently"}
                   </p>
 
                   <div className="pillGrid">
+                    <span>{application.category || "Vendor"}</span>
                     <span>
-                      Vendor ID: {application.vendor_id?.slice(0, 8)}...
+                      {application.event_city}, {application.event_state}
                     </span>
-                    <span>
-                      {event?.city}, {event?.state}
-                    </span>
-                    <span>{formatDate(event?.event_date)}</span>
+                    <span>{formatDate(application.event_date)}</span>
                   </div>
+
+                  {application.slug && (
+                    <button
+                      className="secondary"
+                      style={{ marginBottom: 12 }}
+                      onClick={() =>
+                        (window.location.href = `/vendors/${application.slug}`)
+                      }
+                    >
+                      View Vendor Profile
+                    </button>
+                  )}
 
                   <div className="buttonRow">
                     <button

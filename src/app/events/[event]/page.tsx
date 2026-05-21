@@ -56,7 +56,8 @@ function cleanSocialUrl(type: string, value: string) {
 
 export default function EventDetailPage() {
   const params = useParams();
-  const eventId = params.events as string;
+  const rawEvent = params.event;
+  const eventId = Array.isArray(rawEvent) ? rawEvent[0] : (rawEvent as string);
 
   const [event, setEvent] = useState<any>(null);
   const [organizer, setOrganizer] = useState<any>(null);

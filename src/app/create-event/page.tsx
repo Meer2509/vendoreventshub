@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 const categories = [
@@ -35,7 +35,23 @@ const vendorFitOptions = [
 
 export default function CreateEventPage() {
   const [loading, setLoading] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [eventPreview, setEventPreview] = useState("");
+
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: userData } = await supabase.auth.getUser();
+
+      if (!userData.user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      setAuthChecked(true);
+    }
+
+    checkAuth();
+  }, []);
 
   const [event, setEvent] = useState({
     title: "",
@@ -151,20 +167,24 @@ Vendor Details:
 - Best Vendor Fit: ${event.vendor_fit.join(", ") || "Not provided"}
 `.trim();
 
-    const { error } = await supabase.from("events").insert({
-      title: event.title,
-      city: event.city,
-      state: event.state,
-      zip_code: event.zip_code,
-      category: event.category,
-      description: enhancedDescription,
-      booth_price: Number(event.booth_price),
-      expected_visitors: event.expected_visitors,
-      event_date: event.event_date,
-      image_url: event.image_url,
-      is_featured: false,
-      created_by: userData.user.id,
-    });
+    const { data: created, error } = await supabase
+      .from("events")
+      .insert({
+        title: event.title,
+        city: event.city,
+        state: event.state,
+        zip_code: event.zip_code,
+        category: event.category,
+        description: enhancedDescription,
+        booth_price: Number(event.booth_price),
+        expected_visitors: event.expected_visitors,
+        event_date: event.event_date,
+        image_url: event.image_url,
+        is_featured: false,
+        created_by: userData.user.id,
+      })
+      .select("id")
+      .single();
 
     setLoading(false);
 
@@ -174,7 +194,20 @@ Vendor Details:
     }
 
     alert("Event submitted successfully!");
-    window.location.href = "/events";
+    window.location.href = created?.id
+      ? `/events/${created.id}`
+      : "/dashboard/organizer";
+  }
+
+  if (!authChecked) {
+    return (
+      <main className="createEventPage">
+        <section className="hero">
+          <p className="eyebrow">Organizer Event Listing</p>
+          <h1>Checking your account...</h1>
+        </section>
+      </main>
+    );
   }
 
   return (
@@ -199,6 +232,13 @@ Vendor Details:
               }
             >
               Start Event Listing
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => (window.location.href = "/dashboard/organizer")}
+            >
+              Organizer Dashboard
             </button>
             <button
               type="button"

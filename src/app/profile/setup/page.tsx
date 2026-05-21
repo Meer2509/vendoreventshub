@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 const categories = [
@@ -40,6 +40,43 @@ export default function VendorProfileSetupPage() {
     banner_url: "",
     years_in_business: "",
   });
+
+  useEffect(() => {
+    async function loadExistingProfile() {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+
+      const { data } = await supabase
+        .from("vendor_profiles")
+        .select("*")
+        .eq("user_id", userData.user.id)
+        .maybeSingle();
+
+      if (data) {
+        setProfile({
+          business_name: data.business_name || "",
+          slug: data.slug || "",
+          category: data.category || "",
+          short_description: data.short_description || "",
+          full_description: data.full_description || "",
+          website: data.website || "",
+          instagram: data.instagram || "",
+          tiktok: data.tiktok || "",
+          facebook: data.facebook || "",
+          phone: data.phone || "",
+          city: data.city || "",
+          state: data.state || "",
+          logo_url: data.logo_url || "",
+          banner_url: data.banner_url || "",
+          years_in_business: data.years_in_business || "",
+        });
+        if (data.logo_url) setLogoPreview(data.logo_url);
+        if (data.banner_url) setBannerPreview(data.banner_url);
+      }
+    }
+
+    loadExistingProfile();
+  }, []);
 
   const profileScore = useMemo(() => {
     let score = 15;
@@ -116,11 +153,14 @@ export default function VendorProfileSetupPage() {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
 
-    const { error } = await supabase.from("vendor_profiles").upsert({
-      user_id: userData.user.id,
-      ...profile,
-      slug: cleanSlug,
-    });
+    const { error } = await supabase.from("vendor_profiles").upsert(
+      {
+        user_id: userData.user.id,
+        ...profile,
+        slug: cleanSlug,
+      },
+      { onConflict: "user_id" }
+    );
 
     setLoading(false);
 
@@ -158,7 +198,7 @@ export default function VendorProfileSetupPage() {
             <button
               type="button"
               className="secondary"
-              onClick={() => (window.location.href = "/dashboard")}
+              onClick={() => (window.location.href = "/dashboard/vendor")}
             >
               Back To Dashboard
             </button>

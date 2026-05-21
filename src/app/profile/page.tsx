@@ -94,6 +94,14 @@ export default function ProfilePage() {
           <textarea value={profile.bio || ""} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} />
         </label>
 
+        <button
+          className="outlineBtn"
+          onClick={() => (window.location.href = "/profile/setup")}
+          style={{ marginRight: 12 }}
+        >
+          Open Premium Vendor Profile
+        </button>
+
         <button onClick={saveProfile} className="goldBtn">
           Save Profile
         </button>

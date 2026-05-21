@@ -25,7 +25,7 @@ export default function SignupPage() {
 
   const redirectPath = useMemo(() => {
     if (formData.accountType === "vendor") return "/profile/setup";
-    if (formData.accountType === "organizer") return "/create-event";
+    if (formData.accountType === "organizer") return "/dashboard/organizer/setup";
     return "/dashboard";
   }, [formData.accountType]);
 

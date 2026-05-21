@@ -27,7 +27,7 @@ export default function DashboardRouterPage() {
       }
 
       if (role === "admin") {
-        window.location.href = "/dashboard/admin";
+        window.location.href = "/admin";
         return;
       }
 
