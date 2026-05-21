@@ -353,23 +353,37 @@ export default function HomePageClient() {
           <p className="panelBadge">Vendor Profit Check</p>
           <h3>Before you book a booth, know the real opportunity.</h3>
 
-          <div className="scoreCircle">VE</div>
+          <div
+            className="vendorScoreHero"
+            aria-label="Vendor Score preview: 92 out of 100"
+          >
+            <div className="vendorScoreRing">
+              <div className="vendorScoreRingInner">
+                <span className="vendorScoreValue">92</span>
+              </div>
+            </div>
+            <p className="vendorScoreLabel">Vendor Score™</p>
+            <p className="vendorScoreSupport">
+              Based on vendor opportunity, booth value, traffic, organizer trust,
+              and vendor fit.
+            </p>
+          </div>
 
           <div className="miniGrid">
             <div>
-              <strong>Traffic</strong>
+              <strong>Traffic Signal</strong>
               <span>Strong</span>
             </div>
             <div>
-              <strong>Booth Value</strong>
+              <strong>Booth ROI</strong>
               <span>Excellent</span>
             </div>
             <div>
-              <strong>Best For</strong>
+              <strong>Best Vendor Fit</strong>
               <span>Coffee</span>
             </div>
             <div>
-              <strong>Organizer</strong>
+              <strong>Organizer Trust</strong>
               <span>Trusted</span>
             </div>
           </div>
@@ -979,17 +993,77 @@ export default function HomePageClient() {
           font-weight: 900;
         }
 
-        .scoreCircle {
-          width: 150px;
-          height: 150px;
+        .vendorScoreHero {
+          text-align: center;
+          margin: 22px auto 18px;
+        }
+
+        .vendorScoreRing {
+          width: 168px;
+          height: 168px;
+          margin: 0 auto 14px;
+          border-radius: 50%;
+          padding: 7px;
+          background: linear-gradient(
+            145deg,
+            #e8d4a8 0%,
+            #b88a2e 42%,
+            #8f6b22 100%
+          );
+          box-shadow:
+            0 14px 42px rgba(184, 138, 46, 0.28),
+            inset 0 1px 0 rgba(255, 255, 255, 0.35);
+          transition:
+            transform 0.25s ease,
+            box-shadow 0.25s ease;
+        }
+
+        .vendorScoreHero:hover .vendorScoreRing {
+          transform: scale(1.02);
+          box-shadow:
+            0 18px 50px rgba(184, 138, 46, 0.34),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .vendorScoreRingInner {
+          width: 100%;
+          height: 100%;
           border-radius: 50%;
           display: grid;
           place-items: center;
-          background: #f7f1e6;
-          border: 12px solid #b88a2e;
-          font-size: 48px;
-          font-weight: 1000;
-          margin: 28px auto;
+          background: radial-gradient(
+            circle at 32% 28%,
+            #fffdf8 0%,
+            #f7f1e6 52%,
+            #efe4cf 100%
+          );
+          border: 2px solid rgba(16, 41, 31, 0.07);
+        }
+
+        .vendorScoreValue {
+          font-size: clamp(48px, 8vw, 58px);
+          font-weight: 900;
+          line-height: 0.92;
+          letter-spacing: -0.07em;
+          color: #10291f;
+        }
+
+        .vendorScoreLabel {
+          margin: 0 0 8px;
+          font-size: 14px;
+          font-weight: 900;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #10291f;
+        }
+
+        .vendorScoreSupport {
+          margin: 0 auto;
+          max-width: 300px;
+          font-size: 13px;
+          line-height: 1.6;
+          font-weight: 600;
+          color: #5f6b66;
         }
 
         .miniGrid,
@@ -1002,11 +1076,29 @@ export default function HomePageClient() {
         .miniGrid div,
         .scoreGrid div {
           background: #f7f1e6;
-          border-radius: 20px;
-          padding: 16px;
+          border: 1px solid rgba(16, 41, 31, 0.06);
+          border-radius: 18px;
+          padding: 14px 16px;
         }
 
-        .miniGrid span,
+        .miniGrid strong {
+          display: block;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #10291f;
+        }
+
+        .miniGrid span {
+          display: block;
+          margin-top: 6px;
+          font-size: 15px;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          color: #14583f;
+        }
+
         .scoreGrid span {
           display: block;
           color: #5f6b66;
@@ -1212,6 +1304,11 @@ export default function HomePageClient() {
 
           .miniGrid {
             grid-template-columns: 1fr;
+          }
+
+          .vendorScoreRing {
+            width: 148px;
+            height: 148px;
           }
 
           section {
