@@ -289,13 +289,13 @@ export default function HomePageClient() {
           </form>
 
           <div className="actions">
-            <Link href="/events" className="heroLinkBtn primary">
+            <Link href="/events" className="btn btn-primary">
               Find Events
             </Link>
-            <Link href="/create-event" className="heroLinkBtn secondary">
+            <Link href="/create-event" className="btn btn-secondary">
               List Your Event
             </Link>
-            <Link href="/signup" className="heroLinkBtn secondary">
+            <Link href="/signup" className="btn btn-secondary">
               Join as Vendor
             </Link>
           </div>
@@ -498,11 +498,11 @@ export default function HomePageClient() {
                 </div>
 
                 {event.founder ? (
-                  <Link href={event.cta || "/signup"} className="eventCardLink">
+                  <Link href={event.cta || "/signup"} className="btn btn-primary btn-block">
                     {event.ctaLabel || "Learn More"}
                   </Link>
                 ) : (
-                  <Link href={`/events/${event.id}`} className="eventCardLink">
+                  <Link href={`/events/${event.id}`} className="btn btn-primary btn-block">
                     View Event Intelligence
                   </Link>
                 )}

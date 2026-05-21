@@ -97,9 +97,7 @@ export default function AdminVendorsPage() {
             <thead>
               <tr>
                 <th>Business</th>
-                <th>Verified</th>
-                <th>Featured</th>
-                <th>Profile</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -111,40 +109,39 @@ export default function AdminVendorsPage() {
                     <span className="adminMuted">{vendor.slug || vendor.user_id}</span>
                   </td>
                   <td>
-                    <button
-                      type="button"
-                      className="adminBtn adminBtnGold"
-                      onClick={() =>
-                        updateVendor(vendor.user_id, {
-                          verified: !Boolean(vendor.verified),
-                        })
-                      }
-                    >
-                      {vendor.verified ? "Verified" : "Verify"}
-                    </button>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="adminBtn adminBtnSecondary"
-                      disabled={!hasFeaturedColumn}
-                      onClick={() =>
-                        updateVendor(vendor.user_id, {
-                          featured: !Boolean(vendor.featured),
-                        })
-                      }
-                    >
-                      {vendor.featured ? "Featured" : "Feature"}
-                    </button>
-                  </td>
-                  <td>
-                    {vendor.slug ? (
-                      <Link href={`/vendors/${vendor.slug}`} className="adminBadge">
-                        View profile →
-                      </Link>
-                    ) : (
-                      "—"
-                    )}
+                    <div className="adminActions">
+                      <button
+                        type="button"
+                        className="adminBtn adminBtnGold"
+                        onClick={() =>
+                          updateVendor(vendor.user_id, {
+                            verified: !Boolean(vendor.verified),
+                          })
+                        }
+                      >
+                        {vendor.verified ? "Verified" : "Verify"}
+                      </button>
+                      <button
+                        type="button"
+                        className="adminBtn adminBtnSecondary"
+                        disabled={!hasFeaturedColumn}
+                        onClick={() =>
+                          updateVendor(vendor.user_id, {
+                            featured: !Boolean(vendor.featured),
+                          })
+                        }
+                      >
+                        {vendor.featured ? "Featured" : "Feature"}
+                      </button>
+                      {vendor.slug ? (
+                        <Link
+                          href={`/vendors/${vendor.slug}`}
+                          className="adminBtn adminBtnSecondary"
+                        >
+                          View
+                        </Link>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))}

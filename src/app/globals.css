@@ -22,6 +22,115 @@ body {
   overflow-x: hidden;
 }
 
+/* ——— Design system: links ——— */
+a {
+  color: var(--veh-green);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+a:hover {
+  color: var(--veh-gold);
+}
+
+a:visited {
+  color: var(--veh-green);
+}
+
+/* ——— Design system: buttons ——— */
+.btn,
+button.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-decoration: none;
+  font-family: inherit;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-primary,
+.goldBtn,
+.fullBtn.eventDetailLink,
+.heroLinkBtn.primary {
+  background: var(--veh-green) !important;
+  color: var(--veh-cream) !important;
+  border-color: var(--veh-green) !important;
+  box-shadow: 0 8px 24px rgba(16, 41, 31, 0.16);
+}
+
+.btn-primary:hover,
+.goldBtn:hover {
+  box-shadow: 0 12px 28px rgba(16, 41, 31, 0.22);
+}
+
+.btn-secondary,
+.outlineBtn,
+.heroLinkBtn.secondary {
+  background: var(--veh-cream) !important;
+  color: var(--veh-green) !important;
+  border: 1px solid var(--veh-green) !important;
+  box-shadow: none;
+}
+
+.btn-danger {
+  background: #fff !important;
+  color: #b33a2b !important;
+  border: 1px solid #e8b4ad !important;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: rgba(16, 41, 31, 0.06) !important;
+  color: var(--veh-green) !important;
+  border-color: transparent !important;
+}
+
+.btn-sm {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 10px;
+}
+
+.btn-nav {
+  min-height: 40px;
+  padding: 0 16px;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.adminActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .vehHeroTitle,
 .vehPage .hero h1,
 .vhHero h1,
@@ -140,23 +249,14 @@ body {
 .goldBtn,
 .outlineBtn,
 .fullBtn {
-  border-radius: 999px;
-  padding: 13px 20px;
-  font-weight: 800;
+  border-radius: 12px;
+  padding: 0 20px;
+  min-height: 44px;
+  font-weight: 700;
   cursor: pointer;
-}
-
-.goldBtn {
-  border: 0;
-  color: #ffffff;
-  background: linear-gradient(135deg, #0f3d2e, #1f6f54);
-  box-shadow: 0 14px 35px rgba(15, 61, 46, 0.22);
-}
-
-.outlineBtn {
-  color: #0f3d2e;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(15, 61, 46, 0.18);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* HERO */
@@ -2840,31 +2940,45 @@ body {
   font-size: 15px;
 }
 
-.adminBtn {
+.adminBtn,
+.adminToolbar .adminBtn {
   border: 0;
-  border-radius: 999px;
-  padding: 10px 16px;
-  font-weight: 900;
+  border-radius: 10px;
+  padding: 0 12px;
+  min-height: 34px;
+  font-weight: 700;
   cursor: pointer;
   background: var(--veh-green);
-  color: #fff;
-  font-size: 14px;
+  color: var(--veh-cream);
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .adminBtnSecondary {
-  background: #fff;
+  background: var(--veh-cream);
   color: var(--veh-green);
-  border: 1px solid #cdbf9f;
+  border: 1px solid var(--veh-green);
 }
 
 .adminBtnGold {
   background: var(--veh-gold);
   color: var(--veh-green);
+  border: 1px solid var(--veh-gold);
+}
+
+.adminBtnDanger {
+  background: #fff;
+  color: #b33a2b;
+  border: 1px solid #e8b4ad;
 }
 
 .adminBtn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+  transform: none;
 }
 
 .adminBadge {
@@ -2875,6 +2989,12 @@ body {
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 800;
+}
+
+.adminBadgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .adminMuted {

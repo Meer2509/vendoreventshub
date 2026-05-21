@@ -120,8 +120,7 @@ export default function AdminOrganizersPage() {
               <tr>
                 <th>Organizer</th>
                 <th>Events</th>
-                <th>Verified</th>
-                <th>Public</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -134,28 +133,29 @@ export default function AdminOrganizersPage() {
                   </td>
                   <td>{eventCounts[org.user_id] || 0}</td>
                   <td>
-                    {hasVerifiedColumn ? (
-                      <button
-                        type="button"
-                        className="adminBtn adminBtnGold"
-                        onClick={() =>
-                          toggleVerified(org.user_id, !Boolean(org.verified))
-                        }
-                      >
-                        {org.verified ? "Verified" : "Verify"}
-                      </button>
-                    ) : (
-                      <span className="adminBadge">Column needed</span>
-                    )}
-                  </td>
-                  <td>
-                    {org.slug ? (
-                      <Link href={`/organizers/${org.slug}`} className="adminBadge">
-                        View profile →
-                      </Link>
-                    ) : (
-                      "—"
-                    )}
+                    <div className="adminActions">
+                      {hasVerifiedColumn ? (
+                        <button
+                          type="button"
+                          className="adminBtn adminBtnGold"
+                          onClick={() =>
+                            toggleVerified(org.user_id, !Boolean(org.verified))
+                          }
+                        >
+                          {org.verified ? "Verified" : "Verify"}
+                        </button>
+                      ) : (
+                        <span className="adminBadge">Verify N/A</span>
+                      )}
+                      {org.slug ? (
+                        <Link
+                          href={`/organizers/${org.slug}`}
+                          className="adminBtn adminBtnSecondary"
+                        >
+                          View
+                        </Link>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))}

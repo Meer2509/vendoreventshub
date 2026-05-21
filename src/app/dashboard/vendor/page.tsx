@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import PremiumEmptyState from "@/components/PremiumEmptyState";
-import { requireVendorDashboard } from "@/lib/auth";
+import {
+  clearProfileRoleCache,
+  getAuthSession,
+  requireVendorDashboard,
+} from "@/lib/auth";
 
 export default function VendorDashboardPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -75,6 +79,8 @@ export default function VendorDashboardPage() {
   }, [profile, vendorProfile]);
 
   async function logout() {
+    const { user } = await getAuthSession();
+    if (user?.id) clearProfileRoleCache(user.id);
     await supabase.auth.signOut();
     window.location.href = "/login";
   }

@@ -403,8 +403,10 @@ export default function EventDetailPage() {
               </div>
 
               <div className="heroActions">
-                <button onClick={applyAsVendor}>Apply As Vendor</button>
-                <button className="secondary" onClick={saveEvent}>
+                <button type="button" className="btn btn-primary" onClick={applyAsVendor}>
+                  Apply As Vendor
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={saveEvent}>
                   Save Event
                 </button>
               </div>
@@ -447,7 +449,10 @@ export default function EventDetailPage() {
 
                 <div className="organizerActions">
                   {organizer.slug && (
-                    <Link className="organizerProfileLink" href={`/organizers/${organizer.slug}`}>
+                    <Link
+                      className="btn btn-secondary"
+                      href={`/organizers/${organizer.slug}`}
+                    >
                       View Organizer Profile
                     </Link>
                   )}
@@ -682,10 +687,14 @@ export default function EventDetailPage() {
                 </div>
               )}
 
-              <button onClick={applyAsVendor}>Apply As Vendor</button>
-              <button className="secondary" onClick={saveEvent}>
-                Save Event
-              </button>
+              <div className="sidebarCtaStack">
+                <button type="button" className="btn btn-primary btn-block" onClick={applyAsVendor}>
+                  Apply As Vendor
+                </button>
+                <button type="button" className="btn btn-secondary btn-block" onClick={saveEvent}>
+                  Save Event
+                </button>
+              </div>
             </div>
 
             {organizer && (
@@ -698,7 +707,7 @@ export default function EventDetailPage() {
                 </p>
 
                 {organizer.slug && (
-                  <Link className="organizerProfileLink" href={`/organizers/${organizer.slug}`}>
+                  <Link className="btn btn-secondary btn-block" href={`/organizers/${organizer.slug}`}>
                     View Organizer Profile
                   </Link>
                 )}
@@ -881,32 +890,19 @@ export default function EventDetailPage() {
           margin-top: 30px;
         }
 
-        button {
-          border: 0;
-          background: #10291f;
-          color: white;
-          border-radius: 999px;
-          padding: 15px 24px;
-          font-weight: 950;
-          cursor: pointer;
-          transition: 0.2s ease;
-          width: 100%;
+        .heroActions :global(.btn) {
+          min-width: 168px;
         }
 
-        .heroActions button {
-          width: auto;
-          background: #b88a2e;
+        .sidebarCtaStack {
+          display: grid;
+          gap: 10px;
+          margin-top: 8px;
         }
 
-        button:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 16px 34px rgba(16, 41, 31, 0.22);
-        }
-
-        button.secondary {
-          background: rgba(255, 255, 255, 0.72);
-          color: #10291f;
-          border: 1px solid #cdbf9f;
+        .stickyCard {
+          position: sticky;
+          top: 96px;
         }
 
         .smallBtn {

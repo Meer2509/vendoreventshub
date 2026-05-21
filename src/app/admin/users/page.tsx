@@ -157,21 +157,23 @@ export default function AdminUsersPage() {
                       : "—"}
                   </td>
                   <td>
-                    <button
-                      type="button"
-                      className="adminBtn adminBtnSecondary"
-                      disabled={!hasSuspendedColumn}
-                      title={
-                        hasSuspendedColumn
-                          ? "Toggle suspended"
-                          : "Add profiles.suspended column in Supabase"
-                      }
-                      onClick={() =>
-                        toggleSuspend(user.id, !Boolean(user.suspended))
-                      }
-                    >
-                      {user.suspended ? "Unsuspend" : "Suspend"}
-                    </button>
+                    <div className="adminActions">
+                      <button
+                        type="button"
+                        className="adminBtn adminBtnSecondary"
+                        disabled={!hasSuspendedColumn}
+                        title={
+                          hasSuspendedColumn
+                            ? "Toggle suspended"
+                            : "Add profiles.suspended column in Supabase"
+                        }
+                        onClick={() =>
+                          toggleSuspend(user.id, !Boolean(user.suspended))
+                        }
+                      >
+                        {user.suspended ? "Unsuspend" : "Suspend"}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

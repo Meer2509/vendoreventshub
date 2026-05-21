@@ -27,18 +27,55 @@ export async function getAuthUser() {
   };
 }
 
+function roleCacheKey(userId: string) {
+  return `veh_profile_role_${userId}`;
+}
+
+export function clearProfileRoleCache(userId?: string) {
+  if (typeof window === "undefined") return;
+  if (userId) {
+    sessionStorage.removeItem(roleCacheKey(userId));
+    return;
+  }
+  Object.keys(sessionStorage).forEach((key) => {
+    if (key.startsWith("veh_profile_role_")) sessionStorage.removeItem(key);
+  });
+}
+
 export async function getProfileRole(userId: string): Promise<UserRole> {
-  const { data } = await supabase
+  if (typeof window !== "undefined") {
+    const cached = sessionStorage.getItem(roleCacheKey(userId));
+    if (
+      cached === "organizer" ||
+      cached === "admin" ||
+      cached === "both" ||
+      cached === "vendor"
+    ) {
+      return cached;
+    }
+  }
+
+  const { data, error } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", userId)
     .maybeSingle();
 
-  const role = data?.role;
-  if (role === "organizer" || role === "admin" || role === "both") {
-    return role;
+  if (error) {
+    console.warn("getProfileRole:", error.message);
   }
-  return "vendor";
+
+  const role = data?.role;
+  const resolved: UserRole =
+    role === "organizer" || role === "admin" || role === "both"
+      ? role
+      : "vendor";
+
+  if (typeof window !== "undefined" && data?.role) {
+    sessionStorage.setItem(roleCacheKey(userId), resolved);
+  }
+
+  return resolved;
 }
 
 export function dashboardPathForRole(role: UserRole): string {
@@ -148,15 +185,28 @@ export async function requireOrganizerAccess(): Promise<{ user: User } | null> {
   return requireAuth("/login/organizer");
 }
 
-export async function requireAdmin(): Promise<{ user: User } | null> {
-  const auth = await requireAuth("/login");
-  if (!auth) return null;
+/** Non-destructive admin check for layouts — does not redirect. */
+export async function resolveAdminAccess(): Promise<{ user: User } | null> {
+  const user = await waitForUser(12);
+  if (!user) return null;
 
-  const role = await getProfileRole(auth.user.id);
-  if (role !== "admin") {
-    window.location.assign(dashboardPathForRole(role));
+  const role = await getProfileRole(user.id);
+  if (role !== "admin") return null;
+
+  return { user };
+}
+
+export async function requireAdmin(): Promise<{ user: User } | null> {
+  const auth = await resolveAdminAccess();
+  if (auth) return auth;
+
+  const { user } = await getAuthSession();
+  if (!user) {
+    window.location.assign("/login");
     return null;
   }
 
-  return auth;
+  const role = await getProfileRole(user.id);
+  window.location.assign(dashboardPathForRole(role));
+  return null;
 }

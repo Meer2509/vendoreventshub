@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import AdminGate from "./AdminGate";
 
 const navLinks = [
-  { name: "Command Center", href: "/admin" },
+  { name: "Overview", href: "/admin" },
   { name: "Users", href: "/admin/users" },
   { name: "Vendors", href: "/admin/vendors" },
   { name: "Organizers", href: "/admin/organizers" },
@@ -27,8 +27,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         <aside className="adminSidebar">
           <div>
             <p className="adminEyebrow">VendorEventsHub</p>
-            <h2 className="adminLogo">Admin God Mode</h2>
-            <p className="adminSub">Full marketplace control</p>
+            <h2 className="adminLogo">Admin</h2>
+            <p className="adminSub">Marketplace operations</p>
           </div>
 
           <nav className="adminNav">

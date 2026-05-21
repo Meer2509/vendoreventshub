@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import PremiumEmptyState from "@/components/PremiumEmptyState";
-import { getAuthUser, requireOrganizerDashboard } from "@/lib/auth";
+import {
+  clearProfileRoleCache,
+  getAuthSession,
+  getAuthUser,
+  requireOrganizerDashboard,
+} from "@/lib/auth";
 import { deleteEventCascade, duplicateEventRecord } from "@/lib/events";
 
 function formatDate(date: string) {
@@ -208,6 +213,8 @@ export default function OrganizerDashboardPage() {
   }
 
   async function logout() {
+    const { user } = await getAuthSession();
+    if (user?.id) clearProfileRoleCache(user.id);
     await supabase.auth.signOut();
     window.location.href = "/login";
   }

@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
+  clearProfileRoleCache,
   dashboardPathForRole,
-  getAuthUser,
+  getAuthSession,
   getProfileRole,
 } from "@/lib/auth";
 
@@ -15,7 +16,7 @@ export default function Navbar() {
 
   useEffect(() => {
     async function resolveDashboard() {
-      const { user } = await getAuthUser();
+      const { user } = await getAuthSession();
       if (!user) {
         setDashboardHref(null);
         return;
@@ -29,8 +30,16 @@ export default function Navbar() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      resolveDashboard();
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        if (session?.user) return;
+        clearProfileRoleCache();
+        setDashboardHref(null);
+        return;
+      }
+      if (session?.user) {
+        resolveDashboard();
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -64,18 +73,30 @@ export default function Navbar() {
 
           <div className="vhMenuActions">
             {dashboardHref ? (
-              <Link href={dashboardHref} onClick={() => setOpen(false)}>
-                <button className="outlineBtn">Dashboard</button>
+              <Link
+                href={dashboardHref}
+                className="btn btn-secondary btn-nav"
+                onClick={() => setOpen(false)}
+              >
+                Dashboard
               </Link>
             ) : (
-              <Link href="/login" onClick={() => setOpen(false)}>
-                <button className="outlineBtn">Log In</button>
+              <Link
+                href="/login"
+                className="btn btn-secondary btn-nav"
+                onClick={() => setOpen(false)}
+              >
+                Log In
               </Link>
             )}
 
             {!dashboardHref && (
-              <Link href="/signup" onClick={() => setOpen(false)}>
-                <button className="goldBtn">Join Free</button>
+              <Link
+                href="/signup"
+                className="btn btn-primary btn-nav"
+                onClick={() => setOpen(false)}
+              >
+                Join Free
               </Link>
             )}
           </div>
