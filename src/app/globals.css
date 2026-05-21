@@ -177,124 +177,6 @@ button.btn {
     font-size: clamp(44px, 12vw, 54px);
   }
 
-  .vehFooter {
-    margin: 48px 12px 24px;
-    width: auto;
-    max-width: 100%;
-    overflow-x: hidden;
-    box-sizing: border-box;
-  }
-
-  .vehFooterShell {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    padding: 28px 18px 24px;
-    border-radius: 22px;
-  }
-
-  .vehFooterMain {
-    grid-template-columns: 1fr;
-    gap: 32px;
-    min-width: 0;
-  }
-
-  .vehFooterBrand {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .vehFooterBrandLink {
-    justify-content: center;
-  }
-
-  .vehFooterDesc {
-    max-width: 100%;
-    text-align: center;
-  }
-
-  .vehFooterGrid {
-    grid-template-columns: 1fr;
-    gap: 28px;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .vehFooterCol {
-    width: 100%;
-    min-width: 0;
-    text-align: center;
-  }
-
-  .vehFooterColTitle {
-    text-align: center;
-  }
-
-  .vehFooterList {
-    align-items: center;
-  }
-
-  .vehFooterList a {
-    display: inline-block;
-    max-width: 100%;
-    word-wrap: break-word;
-    overflow-wrap: anywhere;
-  }
-
-  .vehFooterList a:hover {
-    padding-left: 0;
-  }
-
-  .vehFooterPopular {
-    width: 100%;
-    min-width: 0;
-    text-align: center;
-  }
-
-  .vehFooterPopular .vehFooterColTitle {
-    text-align: center;
-  }
-
-  .vehFooterPopularLinks {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .vehFooterChip {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    justify-content: center;
-    text-align: center;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .vehFooterBottom {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: 10px;
-    width: 100%;
-  }
-
-  .vehFooterCopy,
-  .vehFooterLaunch {
-    width: 100%;
-    text-align: center;
-  }
-
-  .vehFooterLaunch {
-    flex: none;
-  }
-
   .adminShell {
     grid-template-columns: 1fr !important;
   }
@@ -801,11 +683,13 @@ button.btn {
 }
 
 .vehFooterMain {
-  display: grid;
-  grid-template-columns: minmax(240px, 1.1fr) minmax(0, 2fr);
-  gap: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
   padding-bottom: 32px;
   border-bottom: 1px solid rgba(247, 241, 230, 0.12);
+  width: 100%;
+  min-width: 0;
 }
 
 .vehFooterBrandLink {
@@ -864,9 +748,11 @@ button.btn {
 }
 
 .vehFooterGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: 100%;
+  min-width: 0;
 }
 
 .vehFooterColTitle {
@@ -970,6 +856,202 @@ button.btn {
 .vehFooterSitemap:hover {
   border-color: #b88a2e;
   color: #b88a2e !important;
+}
+
+/* Footer: desktop layout only */
+@media (min-width: 769px) {
+  .vehFooterMain {
+    display: grid;
+    grid-template-columns: minmax(240px, 1.1fr) minmax(0, 2fr);
+    gap: 40px 48px;
+  }
+
+  .vehFooterGrid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 28px 24px;
+  }
+
+  .vehFooterBottom {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+  }
+
+  .vehFooterLaunch {
+    flex: 1;
+    text-align: center;
+  }
+
+  .vehFooterList a.vehFooterLink {
+    display: inline;
+    width: auto;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+  }
+}
+
+/* Footer: mobile — single column, full width (must come after base footer rules) */
+@media (max-width: 768px) {
+  .vehFooter {
+    margin: 40px 0 20px !important;
+    padding: 0 12px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .vehFooterShell,
+  .footerInner {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 auto !important;
+    padding: 28px 16px 22px !important;
+    border-radius: 20px !important;
+    box-sizing: border-box !important;
+  }
+
+  .vehFooterMain,
+  .footerColumns,
+  .vehFooterGrid,
+  .footerGrid {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    gap: 28px !important;
+  }
+
+  .vehFooterBrand,
+  .footerBrand,
+  .vehFooterCol,
+  .footerColumn,
+  .vehFooterPopular,
+  .footerPopular,
+  .vehFooterBottom,
+  .footerBottom {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    text-align: center !important;
+    flex: none !important;
+  }
+
+  .vehFooterBrandLink {
+    display: inline-flex !important;
+    justify-content: center !important;
+    width: auto !important;
+    max-width: 100% !important;
+  }
+
+  .vehFooterDesc {
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .vehFooterColTitle {
+    text-align: center !important;
+    letter-spacing: 0.12em !important;
+  }
+
+  .vehFooterList {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .vehFooterList li {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .vehFooterList a.vehFooterLink,
+  .vehFooterColumn a {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 12px 16px !important;
+    border-radius: 12px !important;
+    background: rgba(247, 241, 230, 0.08) !important;
+    border: 1px solid rgba(247, 241, 230, 0.18) !important;
+    color: #f7f1e6 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+  }
+
+  .vehFooterList a.vehFooterLink:hover {
+    padding-left: 16px !important;
+    background: rgba(247, 241, 230, 0.14) !important;
+    color: #b88a2e !important;
+  }
+
+  .vehFooterPopularLinks,
+  .footerPopularLinks {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    gap: 10px !important;
+  }
+
+  .vehFooterChip,
+  .footerPopular a {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    text-align: center !important;
+  }
+
+  .vehFooterBottom,
+  .footerBottom {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    padding-top: 20px !important;
+  }
+
+  .vehFooterCopy,
+  .vehFooterLaunch {
+    width: 100% !important;
+    max-width: 100% !important;
+    text-align: center !important;
+    flex: none !important;
+  }
 }
 
 .stateBrowse {

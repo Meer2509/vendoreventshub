@@ -54,12 +54,14 @@ function FooterColumn({
   links: { label: string; href: string }[];
 }) {
   return (
-    <div className="vehFooterCol">
+    <div className="vehFooterCol footerColumn">
       <h3 className="vehFooterColTitle">{title}</h3>
       <ul className="vehFooterList">
         {links.map((link) => (
           <li key={link.href + link.label}>
-            <Link href={link.href}>{link.label}</Link>
+            <Link href={link.href} className="vehFooterLink">
+              {link.label}
+            </Link>
           </li>
         ))}
       </ul>
@@ -72,9 +74,9 @@ export default function Footer() {
 
   return (
     <footer className="vehFooter" aria-label="Site footer">
-      <div className="vehFooterShell">
-        <div className="vehFooterMain">
-          <div className="vehFooterBrand">
+      <div className="vehFooterShell footerInner">
+        <div className="vehFooterMain footerColumns">
+          <div className="vehFooterBrand footerBrand">
             <Link href="/" className="vehFooterBrandLink">
               <span className="vehFooterMark" aria-hidden>
                 V
@@ -90,7 +92,7 @@ export default function Footer() {
             </p>
           </div>
 
-          <div className="vehFooterGrid">
+          <div className="vehFooterGrid footerGrid">
             <FooterColumn title="Marketplace" links={marketplaceLinks} />
             <FooterColumn title="For Vendors" links={vendorLinks} />
             <FooterColumn title="For Organizers" links={organizerLinks} />
@@ -98,9 +100,9 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="vehFooterPopular">
+        <div className="vehFooterPopular footerPopular">
           <h3 className="vehFooterColTitle">Popular Searches</h3>
-          <div className="vehFooterPopularLinks">
+          <div className="vehFooterPopularLinks footerPopularLinks">
             {popularSearches.map((link) => (
               <Link key={link.href} href={link.href} className="vehFooterChip">
                 {link.label}
@@ -109,7 +111,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="vehFooterBottom">
+        <div className="vehFooterBottom footerBottom">
           <p className="vehFooterCopy">
             © {year} VendorEventsHub. All rights reserved.
           </p>
