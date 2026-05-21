@@ -3476,4 +3476,389 @@ button.btn {
     display: block;
     overflow-x: auto;
   }
+
+  .vehDashMetrics {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .vehDashHero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .vehDashCardGrid,
+  .vehDashEventGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .vehDashTabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .vehDashBtnRow .vehDashBtn {
+    flex: 1 1 100%;
+  }
+}
+
+/* Marketplace command center dashboards */
+.vehDash {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(184, 138, 46, 0.14), transparent 34%),
+    radial-gradient(circle at top right, rgba(16, 41, 31, 0.08), transparent 28%),
+    #f7f1e6;
+  color: #10291f;
+}
+
+.vehDashShell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 18px 64px;
+}
+
+.vehDashHero {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 22px;
+  align-items: stretch;
+  margin-bottom: 22px;
+}
+
+.vehDashHeroMain,
+.vehDashHeroAside {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #eadfc9;
+  border-radius: 28px;
+  padding: clamp(24px, 4vw, 36px);
+  box-shadow: 0 24px 70px rgba(16, 41, 31, 0.1);
+}
+
+.vehDashHeroAside {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.vehDashEyebrow {
+  color: #b88a2e;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+
+.vehDashHero h1 {
+  font-size: clamp(36px, 6vw, 58px);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+  margin: 0;
+}
+
+.vehDashHeroText {
+  color: #5f6b66;
+  line-height: 1.65;
+  margin: 14px 0 0;
+  max-width: 620px;
+}
+
+.vehDashActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.vehDashScoreRing {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  padding: 5px;
+  background: linear-gradient(145deg, #e8d4a8, #b88a2e, #8f6b22);
+  box-shadow: 0 12px 36px rgba(184, 138, 46, 0.25);
+}
+
+.vehDashScoreInner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #f7f1e6;
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  font-weight: 900;
+  color: #10291f;
+}
+
+.vehDashMetrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.vehDashMetric {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #eadfc9;
+  border-radius: 20px;
+  padding: 18px 16px;
+  box-shadow: 0 12px 32px rgba(16, 41, 31, 0.06);
+}
+
+.vehDashMetric strong {
+  display: block;
+  font-size: clamp(28px, 4vw, 36px);
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.vehDashMetric span {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #5f6b66;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.vehDashMetricPremium {
+  background: linear-gradient(145deg, #10291f, #1a3d30);
+  color: #fffaf0;
+  border-color: #10291f;
+}
+
+.vehDashMetricPremium span {
+  color: rgba(255, 250, 240, 0.75);
+}
+
+.vehDashSection {
+  margin-bottom: 28px;
+}
+
+.vehDashSectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.vehDashSectionHead h2 {
+  font-size: clamp(24px, 4vw, 34px);
+  letter-spacing: -0.05em;
+  margin: 0;
+  line-height: 1.05;
+}
+
+.vehDashTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.vehDashTab {
+  border: 1px solid #d8ccb5;
+  background: rgba(255, 255, 255, 0.7);
+  color: #10291f;
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.vehDashTab:hover {
+  border-color: #b88a2e;
+}
+
+.vehDashTabActive {
+  background: #10291f;
+  color: #f7f1e6;
+  border-color: #10291f;
+}
+
+.vehDashCardGrid,
+.vehDashEventGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.vehDashCard {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #eadfc9;
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 16px 40px rgba(16, 41, 31, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vehDashCard h3 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.vehDashCardMeta {
+  color: #5f6b66;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.vehDashPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vehDashPills span {
+  background: #f7f1e6;
+  border: 1px solid #ded0b5;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.vehDashBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.vehDashBadgePending,
+.vehDashBadgeSaved {
+  background: #f7f1e6;
+  color: #8a6b1e;
+  border: 1px solid #e8ddc7;
+}
+
+.vehDashBadgeApproved {
+  background: #e8f5ef;
+  color: #14583f;
+  border: 1px solid #b8dcc8;
+}
+
+.vehDashBadgeRejected {
+  background: #fff0ee;
+  color: #8f2d20;
+  border: 1px solid #f0c4bc;
+}
+
+.vehDashBadgeWaitlist {
+  background: #faf5e8;
+  color: #7a5c12;
+  border: 1px solid #eadfc9;
+}
+
+.vehDashBadgeClosed {
+  background: #f0f0f0;
+  color: #5f6b66;
+  border: 1px solid #ddd;
+}
+
+.vehDashBtn {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  background: #10291f;
+  color: #f7f1e6;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vehDashBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(16, 41, 31, 0.18);
+}
+
+.vehDashBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vehDashBtnSecondary {
+  background: #f7f1e6;
+  color: #10291f;
+  border: 1px solid #cdbf9f;
+}
+
+.vehDashBtnGold {
+  background: #b88a2e;
+  color: #10291f;
+  border: 1px solid #b88a2e;
+}
+
+.vehDashBtnDanger {
+  background: #fff;
+  color: #8f2d20;
+  border: 1px solid #e8b4ad;
+}
+
+.vehDashBtnRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.vehDashTips {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #eadfc9;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 16px 40px rgba(16, 41, 31, 0.08);
+}
+
+.vehDashTips ul {
+  margin: 14px 0 0;
+  padding-left: 18px;
+  color: #5f6b66;
+  line-height: 1.7;
+}
+
+.vehDashMuted {
+  color: #5f6b66;
+  font-size: 14px;
+}
+
+.vehDashEventImage {
+  min-height: 140px;
+  border-radius: 16px 16px 0 0;
+  margin: -20px -20px 0;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.vehDashEventImage span {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #10291f;
+  color: #f7f1e6;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 900;
 }

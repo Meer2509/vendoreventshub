@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import PremiumEmptyState from "@/components/PremiumEmptyState";
 import {
   clearProfileRoleCache,
@@ -9,28 +8,47 @@ import {
   getAuthUser,
   requireOrganizerDashboard,
 } from "@/lib/auth";
+import {
+  AppFilterTab,
+  calcOrganizerProfileStrength,
+  countByStatus,
+  formatBoothPrice,
+  formatDashboardDate,
+  statusBadgeClass,
+  statusLabel,
+} from "@/lib/dashboard";
 import { deleteEventCascade, duplicateEventRecord } from "@/lib/events";
+import { supabase } from "@/lib/supabase";
 
-function formatDate(date: string) {
-  if (!date) return "Date coming soon";
-  const parsed = new Date(date);
-  if (Number.isNaN(parsed.getTime())) return date;
-
-  return parsed.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+type ApplicationRow = {
+  id: string;
+  status?: string;
+  created_at?: string;
+  vendor_id?: string;
+  event_id?: string;
+  business_name?: string;
+  slug?: string;
+  category?: string;
+  event_title?: string;
+  event_city?: string;
+  event_state?: string;
+  event_date?: string;
+  events?: Record<string, unknown> | null;
+};
 
 export default function OrganizerDashboardPage() {
-  const [profile, setProfile] = useState<any>(null);
-  const [organizerProfile, setOrganizerProfile] = useState<any>(null);
-  const [myEvents, setMyEvents] = useState<any[]>([]);
-  const [applications, setApplications] = useState<any[]>([]);
+  const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
+  const [organizerProfile, setOrganizerProfile] =
+    useState<Record<string, unknown> | null>(null);
+  const [myEvents, setMyEvents] = useState<Record<string, unknown>[]>([]);
+  const [applications, setApplications] = useState<ApplicationRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [appFilter, setAppFilter] = useState<AppFilterTab>("all");
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
-  const [duplicatingEventId, setDuplicatingEventId] = useState<string | null>(null);
+  const [duplicatingEventId, setDuplicatingEventId] = useState<string | null>(
+    null
+  );
+  const [actingId, setActingId] = useState<string | null>(null);
 
   async function loadDashboard() {
     setLoading(true);
@@ -40,20 +58,17 @@ export default function OrganizerDashboardPage() {
 
     const userId = auth.user.id;
 
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
+    const [{ data: profileData }, { data: organizerProfileData }] =
+      await Promise.all([
+        supabase.from("profiles").select("*").eq("id", userId).single(),
+        supabase
+          .from("organizer_profiles")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle(),
+      ]);
 
     setProfile(profileData);
-
-    const { data: organizerProfileData } = await supabase
-      .from("organizer_profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
-
     setOrganizerProfile(organizerProfileData);
 
     const { data: eventsData } = await supabase
@@ -62,9 +77,9 @@ export default function OrganizerDashboardPage() {
       .eq("created_by", userId)
       .order("created_at", { ascending: false });
 
-    setMyEvents(eventsData || []);
+    setMyEvents((eventsData as Record<string, unknown>[]) || []);
 
-    const eventIds = (eventsData || []).map((event) => event.id);
+    const eventIds = (eventsData || []).map((event) => String(event.id));
 
     if (eventIds.length > 0) {
       const { data: appData, error: appError } = await supabase
@@ -74,11 +89,11 @@ export default function OrganizerDashboardPage() {
         .order("created_at", { ascending: false });
 
       if (!appError && appData) {
-        setApplications(appData);
+        setApplications(appData as ApplicationRow[]);
       } else {
         const { data: attendanceData } = await supabase
           .from("event_attendance")
-          .select("id, status, created_at, vendor_id, events(*)")
+          .select("id, status, created_at, vendor_id, event_id, events(*)")
           .in("event_id", eventIds)
           .order("created_at", { ascending: false });
 
@@ -86,11 +101,11 @@ export default function OrganizerDashboardPage() {
           ...new Set(
             (attendanceData || [])
               .map((row) => row.vendor_id)
-              .filter(Boolean)
+              .filter(Boolean) as string[]
           ),
         ];
 
-        let vendorMap: Record<string, any> = {};
+        let vendorMap: Record<string, Record<string, unknown>> = {};
 
         if (vendorIds.length > 0) {
           const { data: vendors } = await supabase
@@ -99,24 +114,31 @@ export default function OrganizerDashboardPage() {
             .in("user_id", vendorIds);
 
           vendorMap = Object.fromEntries(
-            (vendors || []).map((vendor) => [vendor.user_id, vendor])
+            (vendors || []).map((vendor) => [String(vendor.user_id), vendor])
           );
         }
 
         setApplications(
           (attendanceData || []).map((row) => {
-            const vendor = vendorMap[row.vendor_id] || {};
+            const vendor = vendorMap[String(row.vendor_id)] || {};
             const event = Array.isArray(row.events) ? row.events[0] : row.events;
 
             return {
-              ...row,
-              business_name: vendor.business_name,
-              slug: vendor.slug,
-              category: vendor.category,
-              event_title: event?.title,
-              event_city: event?.city,
-              event_state: event?.state,
-              event_date: event?.event_date,
+              id: row.id,
+              status: row.status,
+              created_at: row.created_at,
+              vendor_id: row.vendor_id,
+              event_id: row.event_id,
+              business_name: String(vendor.business_name || ""),
+              slug: String(vendor.slug || ""),
+              category: String(vendor.category || ""),
+              event_title: String((event as Record<string, unknown>)?.title || ""),
+              event_city: String((event as Record<string, unknown>)?.city || ""),
+              event_state: String((event as Record<string, unknown>)?.state || ""),
+              event_date: String(
+                (event as Record<string, unknown>)?.event_date || ""
+              ),
+              events: event as Record<string, unknown>,
             };
           })
         );
@@ -132,76 +154,127 @@ export default function OrganizerDashboardPage() {
     loadDashboard();
   }, []);
 
-  const pendingCount = applications.filter(
-    (app) => app.status === "requested"
-  ).length;
+  const organizerName = String(
+    organizerProfile?.organizer_name || profile?.business_name || ""
+  );
 
-  const approvedCount = applications.filter(
-    (app) => app.status === "approved"
-  ).length;
+  const profileScore = useMemo(
+    () => calcOrganizerProfileStrength(organizerProfile, profile),
+    [organizerProfile, profile]
+  );
+
+  const liveEvents = myEvents.filter((e) => e.accepting_vendors !== false);
+  const closedEvents = myEvents.filter((e) => e.accepting_vendors === false);
+
+  const appsByEvent = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const app of applications) {
+      const eid = String(app.event_id || "");
+      if (!eid) continue;
+      map[eid] = (map[eid] || 0) + 1;
+    }
+    return map;
+  }, [applications]);
 
   const estimatedRevenue = useMemo(() => {
     return myEvents.reduce((total, event) => {
       const booth = Number(event.booth_price || 0);
-      return total + booth * approvedCount;
+      const approvedForEvent = applications.filter(
+        (app) =>
+          String(app.event_id) === String(event.id) &&
+          statusLabel(app.status) === "Approved"
+      ).length;
+      return total + booth * approvedForEvent;
     }, 0);
-  }, [myEvents, approvedCount]);
+  }, [myEvents, applications]);
 
-  async function updateApplicationStatus(applicationId: string, status: string) {
+  const filteredApplications = useMemo(() => {
+    if (appFilter === "pending")
+      return applications.filter((a) => statusLabel(a.status) === "Pending");
+    if (appFilter === "approved")
+      return applications.filter((a) => statusLabel(a.status) === "Approved");
+    if (appFilter === "rejected")
+      return applications.filter((a) => statusLabel(a.status) === "Rejected");
+    if (appFilter === "waitlisted")
+      return applications.filter((a) => statusLabel(a.status) === "Waitlisted");
+    return applications;
+  }, [applications, appFilter]);
+
+  async function updateApplicationStatus(
+    applicationId: string,
+    status: string
+  ) {
+    setActingId(applicationId);
     const { error } = await supabase
       .from("event_attendance")
       .update({ status })
       .eq("id", applicationId);
 
-    if (error) {
-      alert(error.message);
-      return;
+    if (error) alert(error.message);
+    else {
+      alert(`Application marked as ${statusLabel(status)}.`);
+      await loadDashboard();
     }
+    setActingId(null);
+  }
 
-    alert(`Application marked as ${status}.`);
-    loadDashboard();
+  async function removeApplication(applicationId: string) {
+    if (!confirm("Remove this application from your queue?")) return;
+
+    setActingId(applicationId);
+    const { error } = await supabase
+      .from("event_attendance")
+      .delete()
+      .eq("id", applicationId);
+
+    if (error) alert(error.message);
+    else await loadDashboard();
+    setActingId(null);
+  }
+
+  async function toggleAcceptingVendors(event: Record<string, unknown>) {
+    const eventId = String(event.id);
+    const isOpen = event.accepting_vendors !== false;
+    setActingId(eventId);
+
+    const { error } = await supabase
+      .from("events")
+      .update({ accepting_vendors: !isOpen })
+      .eq("id", eventId);
+
+    if (error) alert(error.message);
+    else await loadDashboard();
+    setActingId(null);
   }
 
   async function deleteEvent(eventId: string, eventTitle: string) {
     const confirmed = confirm(
-      `Delete "${eventTitle}"?\n\nThis will remove the event and all vendor applications connected to it. This cannot be undone.`
+      `Delete "${eventTitle}"?\n\nThis removes the event and related vendor applications. This cannot be undone.`
     );
-
     if (!confirmed) return;
 
     setDeletingEventId(eventId);
-
     const { user } = await getAuthUser();
-
     if (!user) {
-      alert("Please login again.");
       window.location.href = "/login/organizer";
       return;
     }
 
     const result = await deleteEventCascade(eventId, user.id);
-
-    if (!result.ok) {
-      alert(result.error || "Could not delete event.");
-      setDeletingEventId(null);
-      return;
-    }
-
-    setMyEvents((prev) => prev.filter((item) => item.id !== eventId));
+    if (!result.ok) alert(result.error || "Could not delete event.");
+    else await loadDashboard();
     setDeletingEventId(null);
   }
 
-  async function duplicateEvent(source: any) {
+  async function duplicateEvent(source: Record<string, unknown>) {
     const { user } = await getAuthUser();
     if (!user) {
       window.location.href = "/login/organizer";
       return;
     }
 
-    setDuplicatingEventId(source.id);
-
+    setDuplicatingEventId(String(source.id));
     const { data, error } = await duplicateEventRecord(source, user.id);
-
     setDuplicatingEventId(null);
 
     if (error || !data?.id) {
@@ -219,614 +292,419 @@ export default function OrganizerDashboardPage() {
     window.location.href = "/login";
   }
 
+  const appTabs: { id: AppFilterTab; label: string; count: number }[] = [
+    { id: "all", label: "All", count: applications.length },
+    {
+      id: "pending",
+      label: "Pending",
+      count: countByStatus(applications, "requested"),
+    },
+    {
+      id: "approved",
+      label: "Approved",
+      count: countByStatus(applications, "approved"),
+    },
+    {
+      id: "rejected",
+      label: "Rejected",
+      count: countByStatus(applications, "rejected"),
+    },
+    {
+      id: "waitlisted",
+      label: "Waitlisted",
+      count: countByStatus(applications, "waitlist"),
+    },
+  ];
+
   return (
-    <main className="dashboardPage">
-      <section className="hero">
-        <div>
-          <p className="eyebrow">Organizer Dashboard</p>
+    <main className="vehDash dashboardPage">
+      <div className="vehDashShell">
+        <section className="vehDashHero">
+          <div className="vehDashHeroMain">
+            <p className="vehDashEyebrow">Organizer Command Center</p>
+            <h1>
+              Welcome back
+              {organizerName ? `, ${organizerName}` : ""}
+            </h1>
+            <p className="vehDashHeroText">
+              Manage events, review vendor applications, and grow visibility
+              from one professional organizer hub.
+            </p>
+            <div className="vehDashActions">
+              <button
+                type="button"
+                className="vehDashBtn"
+                onClick={() => (window.location.href = "/create-event")}
+              >
+                Create Event
+              </button>
+              {organizerProfile?.slug ? (
+                <button
+                  type="button"
+                  className="vehDashBtn vehDashBtnSecondary"
+                  onClick={() =>
+                    (window.location.href = `/organizers/${organizerProfile.slug}`)
+                  }
+                >
+                  Public Profile
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="vehDashBtn vehDashBtnSecondary"
+                onClick={() =>
+                  (window.location.href = "/dashboard/organizer/setup")
+                }
+              >
+                Edit Profile
+              </button>
+              <button
+                type="button"
+                className="vehDashBtn vehDashBtnGold"
+                onClick={() => (window.location.href = "/advertise")}
+              >
+                Advertise Event
+              </button>
+              <button
+                type="button"
+                className="vehDashBtn vehDashBtnDanger"
+                onClick={logout}
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+          <aside className="vehDashHeroAside">
+            <p className="vehDashEyebrow">Organizer Score</p>
+            <div className="vehDashScoreRing">
+              <div className="vehDashScoreInner">{profileScore}%</div>
+            </div>
+            <p className="vehDashMuted">
+              {myEvents.length} event{myEvents.length === 1 ? "" : "s"} in your
+              portfolio
+            </p>
+          </aside>
+        </section>
 
-          <h1>
-            Welcome back
-            {profile?.business_name ? `, ${profile.business_name}` : ""}
-          </h1>
+        <div className="vehDashMetrics">
+          <div className="vehDashMetric">
+            <strong>{myEvents.length}</strong>
+            <span>Total Events</span>
+          </div>
+          <div className="vehDashMetric">
+            <strong>{liveEvents.length}</strong>
+            <span>Accepting Vendors</span>
+          </div>
+          <div className="vehDashMetric">
+            <strong>{closedEvents.length}</strong>
+            <span>Closed</span>
+          </div>
+          <div className="vehDashMetric">
+            <strong>{countByStatus(applications, "requested")}</strong>
+            <span>Pending Apps</span>
+          </div>
+          <div className="vehDashMetric">
+            <strong>{countByStatus(applications, "approved")}</strong>
+            <span>Approved</span>
+          </div>
+          <div className="vehDashMetric">
+            <strong>{countByStatus(applications, "rejected")}</strong>
+            <span>Rejected</span>
+          </div>
+          <div className="vehDashMetric">
+            <strong>{countByStatus(applications, "waitlist")}</strong>
+            <span>Waitlisted</span>
+          </div>
+          <div className="vehDashMetric vehDashMetricPremium">
+            <strong>${estimatedRevenue.toLocaleString()}</strong>
+            <span>Est. Booth Revenue</span>
+          </div>
+        </div>
 
-          <p className="heroText">
-            Manage your events, review vendor applications, track approvals,
-            and grow your event visibility from one organizer command center.
-          </p>
-
-          <div className="heroButtons">
-            <button onClick={() => (window.location.href = "/create-event")}>
-              Create Event
-            </button>
-
+        <section className="vehDashSection">
+          <div className="vehDashSectionHead">
+            <div>
+              <p className="vehDashEyebrow">My Events</p>
+              <h2>Event portfolio</h2>
+            </div>
             <button
-              className="secondary"
+              type="button"
+              className="vehDashBtn"
+              onClick={() => (window.location.href = "/create-event")}
+            >
+              Create New Event
+            </button>
+          </div>
+
+          {loading ? (
+            <p className="vehDashMuted">Loading events...</p>
+          ) : myEvents.length === 0 ? (
+            <PremiumEmptyState
+              eyebrow="Organizer Portfolio"
+              title="No events listed yet"
+              description="Create your first festival, fair, market, or expo listing to start receiving vendor applications."
+              actionLabel="Create Event"
+              onAction={() => (window.location.href = "/create-event")}
+              secondaryLabel={
+                organizerProfile?.slug ? undefined : "Create Organizer Profile"
+              }
+              onSecondary={
+                organizerProfile?.slug
+                  ? undefined
+                  : () => (window.location.href = "/dashboard/organizer/setup")
+              }
+            />
+          ) : (
+            <div className="vehDashEventGrid">
+              {myEvents.map((event) => {
+                const eventId = String(event.id);
+                const isOpen = event.accepting_vendors !== false;
+                const busy =
+                  actingId === eventId ||
+                  deletingEventId === eventId ||
+                  duplicatingEventId === eventId;
+
+                return (
+                  <article className="vehDashCard" key={eventId}>
+                    <div
+                      className="vehDashEventImage"
+                      style={{
+                        backgroundImage: `url(${
+                          event.image_url ||
+                          "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop"
+                        })`,
+                      }}
+                    >
+                      <span>
+                        {event.is_featured ? "Featured" : isOpen ? "Live" : "Closed"}
+                      </span>
+                    </div>
+                    <h3>{String(event.title || "Untitled")}</h3>
+                    <p className="vehDashCardMeta">
+                      {formatDashboardDate(String(event.event_date || ""))} ·{" "}
+                      {String(event.city || "")}, {String(event.state || "")}
+                    </p>
+                    <div className="vehDashPills">
+                      <span>Booth {formatBoothPrice(event.booth_price)}</span>
+                      <span>{String(event.expected_visitors || "Visitors TBD")}</span>
+                      <span>{appsByEvent[eventId] || 0} applications</span>
+                      <span className={isOpen ? statusBadgeClass("approved") : statusBadgeClass("closed")}>
+                        {isOpen ? "Accepting" : "Closed"}
+                      </span>
+                    </div>
+                    <div className="vehDashBtnRow">
+                      <button
+                        type="button"
+                        className="vehDashBtn"
+                        disabled={busy}
+                        onClick={() =>
+                          (window.location.href = `/events/${eventId}`)
+                        }
+                      >
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        className="vehDashBtn vehDashBtnSecondary"
+                        disabled={busy}
+                        onClick={() =>
+                          (window.location.href = `/dashboard/organizer/events/${eventId}/edit`)
+                        }
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="vehDashBtn vehDashBtnSecondary"
+                        disabled={busy}
+                        onClick={() => duplicateEvent(event)}
+                      >
+                        {duplicatingEventId === eventId ? "…" : "Duplicate"}
+                      </button>
+                      <button
+                        type="button"
+                        className="vehDashBtn vehDashBtnGold"
+                        disabled={busy}
+                        onClick={() => toggleAcceptingVendors(event)}
+                      >
+                        {isOpen ? "Close Vendors" : "Open Vendors"}
+                      </button>
+                      <button
+                        type="button"
+                        className="vehDashBtn vehDashBtnDanger"
+                        disabled={busy}
+                        onClick={() =>
+                          deleteEvent(eventId, String(event.title || "Event"))
+                        }
+                      >
+                        {deletingEventId === eventId ? "…" : "Delete"}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="vehDashSection">
+          <div className="vehDashSectionHead">
+            <div>
+              <p className="vehDashEyebrow">Vendor Applications</p>
+              <h2>Application command center</h2>
+            </div>
+          </div>
+
+          <div className="vehDashTabs">
+            {appTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={
+                  appFilter === tab.id ? "vehDashTab vehDashTabActive" : "vehDashTab"
+                }
+                onClick={() => setAppFilter(tab.id)}
+              >
+                {tab.label} ({tab.count})
+              </button>
+            ))}
+          </div>
+
+          {applications.length === 0 ? (
+            <PremiumEmptyState
+              eyebrow="Vendor Applications"
+              title="No applications yet"
+              description="Share your public event link and promote listings to attract qualified vendors."
+              actionLabel="Create Event"
+              onAction={() => (window.location.href = "/create-event")}
+              secondaryLabel="Advertise Event"
+              onSecondary={() => (window.location.href = "/advertise")}
+            />
+          ) : filteredApplications.length === 0 ? (
+            <p className="vehDashMuted">No applications in this filter.</p>
+          ) : (
+            <div className="vehDashCardGrid">
+              {filteredApplications.map((application) => {
+                const busy = actingId === application.id;
+
+                return (
+                  <article className="vehDashCard" key={application.id}>
+                    <span className={statusBadgeClass(application.status)}>
+                      {statusLabel(application.status)}
+                    </span>
+                    <h3>
+                      {application.business_name ||
+                        application.event_title ||
+                        "Vendor Application"}
+                    </h3>
+                    <p className="vehDashCardMeta">
+                      {application.event_title
+                        ? `Event: ${application.event_title}`
+                        : "Event application"}{" "}
+                      · Applied {formatDashboardDate(application.created_at)}
+                    </p>
+                    <div className="vehDashPills">
+                      <span>{application.category || "Vendor"}</span>
+                      <span>
+                        {application.event_city}, {application.event_state}
+                      </span>
+                    </div>
+                    <div className="vehDashBtnRow">
+                      {application.slug ? (
+                        <button
+                          type="button"
+                          className="vehDashBtn vehDashBtnSecondary"
+                          disabled={busy}
+                          onClick={() =>
+                            (window.location.href = `/vendors/${application.slug}`)
+                          }
+                        >
+                          View Vendor
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="vehDashBtn"
+                        disabled={busy}
+                        onClick={() =>
+                          updateApplicationStatus(application.id, "approved")
+                        }
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        className="vehDashBtn vehDashBtnSecondary"
+                        disabled={busy}
+                        onClick={() =>
+                          updateApplicationStatus(application.id, "waitlist")
+                        }
+                      >
+                        Waitlist
+                      </button>
+                      <button
+                        type="button"
+                        className="vehDashBtn vehDashBtnDanger"
+                        disabled={busy}
+                        onClick={() =>
+                          updateApplicationStatus(application.id, "rejected")
+                        }
+                      >
+                        Reject
+                      </button>
+                      <button
+                        type="button"
+                        className="vehDashBtn vehDashBtnDanger"
+                        disabled={busy}
+                        onClick={() => removeApplication(application.id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="vehDashTips">
+          <p className="vehDashEyebrow">Grow Your Event</p>
+          <h2>Make listings convert better vendors</h2>
+          <ul>
+            <li>Add strong event photos and clear booth pricing</li>
+            <li>Add booth rules and vendor fit details</li>
+            <li>Link organizer social profiles for trust</li>
+            <li>Keep applications open while you are actively filling booths</li>
+            <li>Promote your public event page to local vendor communities</li>
+          </ul>
+          <div className="vehDashBtnRow">
+            <button
+              type="button"
+              className="vehDashBtn vehDashBtnSecondary"
               onClick={() =>
                 (window.location.href = "/dashboard/organizer/setup")
               }
             >
               Edit Organizer Profile
             </button>
-
-            {organizerProfile?.slug && (
-              <button
-                className="secondary"
-                onClick={() =>
-                  (window.location.href = `/organizers/${organizerProfile.slug}`)
-                }
-              >
-                View Public Profile
-              </button>
-            )}
-
             <button
-              className="secondary"
+              type="button"
+              className="vehDashBtn"
+              onClick={() => (window.location.href = "/create-event")}
+            >
+              Create New Event
+            </button>
+            <button
+              type="button"
+              className="vehDashBtn vehDashBtnGold"
               onClick={() => (window.location.href = "/advertise")}
             >
-              Boost Event
-            </button>
-
-            <button className="secondary" onClick={logout}>
-              Log Out
+              Advertise Event
             </button>
           </div>
-        </div>
-
-        <div className="scoreCard">
-          <p className="eyebrow">Organizer Growth</p>
-
-          <div className="scoreCircle">{myEvents.length}</div>
-
-          <h3>Events Managed</h3>
-
-          <p>
-            Create trusted event listings, attract better vendors, and manage
-            applications professionally.
-          </p>
-        </div>
-      </section>
-
-      <section className="metrics">
-        <div className="metricCard">
-          <strong>{myEvents.length}</strong>
-          <span>My Events</span>
-        </div>
-
-        <div className="metricCard">
-          <strong>{pendingCount}</strong>
-          <span>Pending Applicants</span>
-        </div>
-
-        <div className="metricCard">
-          <strong>{approvedCount}</strong>
-          <span>Approved Vendors</span>
-        </div>
-
-        <div className="metricCard premium">
-          <strong>${estimatedRevenue}</strong>
-          <span>Estimated Booth Revenue</span>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="sectionHeader">
-          <div>
-            <p className="eyebrow">My Events</p>
-            <h2>Your event portfolio.</h2>
-          </div>
-
-          <button onClick={() => (window.location.href = "/create-event")}>
-            Create New Event
-          </button>
-        </div>
-
-        {loading ? (
-          <p className="muted">Loading organizer events...</p>
-        ) : myEvents.length === 0 ? (
-          <PremiumEmptyState
-            eyebrow="Organizer Portfolio"
-            title="No events listed yet"
-            description="Create your first festival, fair, market, or expo listing to start receiving vendor applications."
-            actionLabel="Create Event"
-            onAction={() => (window.location.href = "/create-event")}
-          />
-        ) : (
-          <div className="cardGrid">
-            {myEvents.map((event) => (
-              <article className="eventCard" key={event.id}>
-                <div
-                  className="eventImage"
-                  style={{
-                    backgroundImage: `url(${
-                      event.image_url ||
-                      "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop"
-                    })`,
-                  }}
-                >
-                  <span>{event.is_featured ? "Featured" : "Listed"}</span>
-                </div>
-
-                <div className="eventBody">
-                  <p className="status">{formatDate(event.event_date)}</p>
-
-                  <h3>{event.title}</h3>
-
-                  <p className="muted">
-                    {event.city}, {event.state} {event.zip_code}
-                  </p>
-
-                  <div className="pillGrid">
-                    <span>${event.booth_price || "TBD"} Booth</span>
-                    <span>{event.expected_visitors || "TBD"} Visitors</span>
-                    <span>
-                      {event.accepting_vendors === false
-                        ? "Closed"
-                        : "Accepting Vendors"}
-                    </span>
-                  </div>
-
-                  <div className="buttonRow">
-                    <button
-                      onClick={() =>
-                        (window.location.href = `/events/${event.id}`)
-                      }
-                    >
-                      View Event
-                    </button>
-
-                    <button
-                      className="secondary"
-                      onClick={() =>
-                        (window.location.href = `/dashboard/organizer/events/${event.id}/edit`)
-                      }
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      className="secondary"
-                      disabled={duplicatingEventId === event.id}
-                      onClick={() => duplicateEvent(event)}
-                    >
-                      {duplicatingEventId === event.id ? "Duplicating..." : "Duplicate"}
-                    </button>
-
-                    <button
-                      className="secondary"
-                      onClick={() => (window.location.href = "/advertise")}
-                    >
-                      Boost
-                    </button>
-
-                    <button
-                      className="danger"
-                      disabled={deletingEventId === event.id}
-                      onClick={() => deleteEvent(event.id, event.title)}
-                    >
-                      {deletingEventId === event.id ? "Deleting..." : "Delete"}
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="section">
-        <div className="sectionHeader">
-          <div>
-            <p className="eyebrow">Vendor Applications</p>
-            <h2>Approve, waitlist, or reject vendors.</h2>
-          </div>
-        </div>
-
-        {applications.length === 0 ? (
-          <PremiumEmptyState
-            eyebrow="Vendor Applications"
-            title="No applications yet"
-            description="When vendors apply to your events, their requests will appear here for approval, waitlist, or rejection."
-            actionLabel="Browse Public Events"
-            onAction={() => (window.location.href = "/events")}
-          />
-        ) : (
-          <div className="applicationGrid">
-            {applications.map((application) => {
-              return (
-                <article className="applicationCard" key={application.id}>
-                  <p className="status">{application.status}</p>
-
-                  <h3>
-                    {application.business_name ||
-                      application.event_title ||
-                      "Vendor Application"}
-                  </h3>
-
-                  <p className="muted">
-                    {application.event_title
-                      ? `Event: ${application.event_title}`
-                      : "Event application"}{" "}
-                    · Applied{" "}
-                    {application.created_at
-                      ? new Date(application.created_at).toLocaleDateString()
-                      : "recently"}
-                  </p>
-
-                  <div className="pillGrid">
-                    <span>{application.category || "Vendor"}</span>
-                    <span>
-                      {application.event_city}, {application.event_state}
-                    </span>
-                    <span>{formatDate(application.event_date)}</span>
-                  </div>
-
-                  {application.slug && (
-                    <button
-                      className="secondary"
-                      style={{ marginBottom: 12 }}
-                      onClick={() =>
-                        (window.location.href = `/vendors/${application.slug}`)
-                      }
-                    >
-                      View Vendor Profile
-                    </button>
-                  )}
-
-                  <div className="buttonRow">
-                    <button
-                      onClick={() =>
-                        updateApplicationStatus(application.id, "approved")
-                      }
-                    >
-                      Approve
-                    </button>
-
-                    <button
-                      className="secondary"
-                      onClick={() =>
-                        updateApplicationStatus(application.id, "waitlist")
-                      }
-                    >
-                      Waitlist
-                    </button>
-
-                    <button
-                      className="danger"
-                      onClick={() =>
-                        updateApplicationStatus(application.id, "rejected")
-                      }
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <section className="section">
-        <div className="growthPanel">
-          <p className="eyebrow">Organizer Growth Tools</p>
-
-          <h2>Make your event more attractive to vendors.</h2>
-
-          <p>
-            Add strong event photos, clear booth pricing, expected visitor
-            numbers, social media links, vendor rules, and application details
-            to build trust faster.
-          </p>
-
-          <div className="heroButtons center">
-            <button onClick={() => (window.location.href = "/create-event")}>
-              Improve Event Listings
-            </button>
-
-            <button
-              className="secondary"
-              onClick={() => (window.location.href = "/advertise")}
-            >
-              Promote Event
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <style jsx>{`
-        .dashboardPage {
-          background:
-            radial-gradient(circle at top left, rgba(184, 138, 46, 0.18), transparent 34%),
-            radial-gradient(circle at top right, rgba(16, 41, 31, 0.12), transparent 30%),
-            #f7f1e6;
-          min-height: 100vh;
-          color: #10291f;
-        }
-
-        section {
-          max-width: 1180px;
-          margin: 0 auto;
-          padding: 70px 18px;
-        }
-
-        .hero {
-          min-height: 72vh;
-          display: grid;
-          grid-template-columns: 1.1fr 0.9fr;
-          gap: 30px;
-          align-items: center;
-        }
-
-        .eyebrow {
-          color: #b88a2e;
-          font-size: 12px;
-          font-weight: 950;
-          letter-spacing: 0.13em;
-          text-transform: uppercase;
-          margin: 0 0 14px;
-        }
-
-        h1 {
-          font-size: clamp(44px, 8vw, 82px);
-          line-height: 0.9;
-          letter-spacing: -0.07em;
-          margin: 0;
-        }
-
-        h2 {
-          font-size: clamp(34px, 5vw, 58px);
-          line-height: 0.94;
-          letter-spacing: -0.06em;
-          margin: 0;
-        }
-
-        h3 {
-          font-size: 25px;
-          letter-spacing: -0.04em;
-          margin: 0;
-        }
-
-        .heroText,
-        .muted,
-        .scoreCard p,
-        .growthPanel p,
-        .emptyState p {
-          color: #5f6b66;
-          line-height: 1.7;
-        }
-
-        .heroText {
-          font-size: 18px;
-          max-width: 760px;
-          margin-top: 24px;
-        }
-
-        .heroButtons,
-        .buttonRow {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-          margin-top: 24px;
-        }
-
-        .center {
-          justify-content: center;
-        }
-
-        button {
-          border: 0;
-          background: #10291f;
-          color: white;
-          border-radius: 999px;
-          padding: 14px 22px;
-          font-weight: 950;
-          cursor: pointer;
-          transition: 0.2s ease;
-        }
-
-        button:disabled {
-          opacity: 0.55;
-          cursor: not-allowed;
-          transform: none;
-        }
-
-        button:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 16px 34px rgba(16, 41, 31, 0.2);
-        }
-
-        button.secondary {
-          background: rgba(255, 255, 255, 0.72);
-          color: #10291f;
-          border: 1px solid #cdbf9f;
-        }
-
-        button.danger {
-          background: #8f2d20;
-        }
-
-        .scoreCard,
-        .metricCard,
-        .eventCard,
-        .applicationCard,
-        .emptyState,
-        .growthPanel {
-          background: rgba(255, 255, 255, 0.9);
-          border: 1px solid #eadfc9;
-          border-radius: 36px;
-          box-shadow: 0 30px 90px rgba(20, 88, 63, 0.13);
-          backdrop-filter: blur(12px);
-        }
-
-        .scoreCard {
-          padding: 36px;
-          text-align: center;
-        }
-
-        .scoreCircle {
-          width: 150px;
-          height: 150px;
-          border-radius: 50%;
-          display: grid;
-          place-items: center;
-          background: #f7f1e6;
-          border: 12px solid #b88a2e;
-          font-size: 48px;
-          font-weight: 1000;
-          margin: 28px auto;
-        }
-
-        .metrics {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 18px;
-          padding-top: 20px;
-        }
-
-        .metricCard {
-          padding: 28px;
-        }
-
-        .metricCard strong {
-          display: block;
-          font-size: 44px;
-          line-height: 1;
-          letter-spacing: -0.06em;
-        }
-
-        .metricCard span {
-          color: #5f6b66;
-          display: block;
-          margin-top: 8px;
-          font-weight: 850;
-        }
-
-        .metricCard.premium {
-          background: linear-gradient(145deg, #10291f, #1f4f3c);
-          color: white;
-        }
-
-        .metricCard.premium span {
-          color: rgba(255, 255, 255, 0.76);
-        }
-
-        .sectionHeader {
-          display: flex;
-          justify-content: space-between;
-          align-items: end;
-          gap: 18px;
-          flex-wrap: wrap;
-          margin-bottom: 28px;
-        }
-
-        .cardGrid,
-        .applicationGrid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 18px;
-        }
-
-        .applicationGrid {
-          grid-template-columns: repeat(2, 1fr);
-        }
-
-        .eventCard {
-          overflow: hidden;
-        }
-
-        .eventImage {
-          min-height: 220px;
-          background-size: cover;
-          background-position: center;
-          position: relative;
-        }
-
-        .eventImage span {
-          position: absolute;
-          top: 16px;
-          left: 16px;
-          background: #10291f;
-          color: white;
-          border-radius: 999px;
-          padding: 8px 12px;
-          font-size: 12px;
-          font-weight: 950;
-        }
-
-        .eventBody,
-        .applicationCard,
-        .emptyState,
-        .growthPanel {
-          padding: 30px;
-        }
-
-        .status {
-          color: #b88a2e;
-          font-size: 12px;
-          font-weight: 950;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          margin: 0 0 10px;
-        }
-
-        .pillGrid {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin: 18px 0;
-        }
-
-        .pillGrid span {
-          background: #f7f1e6;
-          border: 1px solid #ded0b5;
-          border-radius: 999px;
-          padding: 9px 13px;
-          font-size: 13px;
-          font-weight: 850;
-        }
-
-        .buttonRow button {
-          flex: 1;
-        }
-
-        .emptyState,
-        .growthPanel {
-          text-align: center;
-        }
-
-        .growthPanel {
-          max-width: 900px;
-          margin: 0 auto;
-        }
-
-        @media (max-width: 980px) {
-          .hero,
-          .metrics,
-          .cardGrid,
-          .applicationGrid {
-            grid-template-columns: 1fr;
-          }
-
-          section {
-            padding: 52px 16px;
-          }
-
-          .hero {
-            min-height: auto;
-            padding-top: 44px;
-          }
-
-          h1 {
-            font-size: 52px;
-          }
-
-          .heroButtons button,
-          .buttonRow button {
-            width: 100%;
-          }
-        }
-      `}</style>
+        </section>
+      </div>
     </main>
   );
 }

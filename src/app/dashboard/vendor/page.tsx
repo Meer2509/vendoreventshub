@@ -1,41 +1,69 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import PremiumEmptyState from "@/components/PremiumEmptyState";
 import {
   clearProfileRoleCache,
   getAuthSession,
   requireVendorDashboard,
 } from "@/lib/auth";
+import {
+  calcVendorProfileStrength,
+  countByStatus,
+  eventVendorScore,
+  formatBoothPrice,
+  formatDashboardDate,
+  joinedEvent,
+  statusBadgeClass,
+  statusLabel,
+  type PipelineTab,
+} from "@/lib/dashboard";
+import { supabase } from "@/lib/supabase";
+
+type SavedRow = {
+  id: string;
+  created_at?: string;
+  events: Record<string, unknown> | null;
+};
+
+type ApplicationRow = {
+  id: string;
+  status?: string;
+  created_at?: string;
+  events: Record<string, unknown> | null;
+};
 
 export default function VendorDashboardPage() {
-  const [profile, setProfile] = useState<any>(null);
-  const [vendorProfile, setVendorProfile] = useState<any>(null);
-  const [savedEvents, setSavedEvents] = useState<any[]>([]);
-  const [applications, setApplications] = useState<any[]>([]);
+  const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
+  const [vendorProfile, setVendorProfile] =
+    useState<Record<string, unknown> | null>(null);
+  const [savedEvents, setSavedEvents] = useState<SavedRow[]>([]);
+  const [applications, setApplications] = useState<ApplicationRow[]>([]);
+  const [recommendations, setRecommendations] = useState<
+    Record<string, unknown>[]
+  >([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<PipelineTab>("all");
+  const [actingId, setActingId] = useState<string | null>(null);
 
   async function loadDashboard() {
+    setLoading(true);
     const auth = await requireVendorDashboard();
     if (!auth) return;
 
     const userId = auth.user.id;
 
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
+    const [{ data: profileData }, { data: vendorProfileData }] =
+      await Promise.all([
+        supabase.from("profiles").select("*").eq("id", userId).single(),
+        supabase
+          .from("vendor_profiles")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle(),
+      ]);
 
     setProfile(profileData);
-
-    const { data: vendorProfileData } = await supabase
-      .from("vendor_profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
-
     setVendorProfile(vendorProfileData);
 
     const { data: savedData } = await supabase
@@ -44,7 +72,13 @@ export default function VendorDashboardPage() {
       .eq("vendor_id", userId)
       .order("created_at", { ascending: false });
 
-    setSavedEvents(savedData || []);
+    setSavedEvents(
+      (savedData || []).map((row) => ({
+        id: String(row.id),
+        created_at: row.created_at as string | undefined,
+        events: joinedEvent(row.events),
+      }))
+    );
 
     const { data: applicationData } = await supabase
       .from("event_attendance")
@@ -52,8 +86,71 @@ export default function VendorDashboardPage() {
       .eq("vendor_id", userId)
       .order("created_at", { ascending: false });
 
-    setApplications(applicationData || []);
+    setApplications(
+      (applicationData || []).map((row) => ({
+        id: String(row.id),
+        status: row.status as string | undefined,
+        created_at: row.created_at as string | undefined,
+        events: joinedEvent(row.events),
+      }))
+    );
 
+    const appliedIds = new Set(
+      (applicationData || [])
+        .map((row) => {
+          const ev = joinedEvent(row.events);
+          return ev?.id ? String(ev.id) : "";
+        })
+        .filter(Boolean)
+    );
+
+    const savedIds = new Set(
+      (savedData || [])
+        .map((row) => {
+          const ev = joinedEvent(row.events);
+          return ev?.id ? String(ev.id) : "";
+        })
+        .filter(Boolean)
+    );
+
+    const { data: eventPool } = await supabase
+      .from("events")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(40);
+
+    const vendorState = String(
+      vendorProfileData?.state || profileData?.state || ""
+    ).toLowerCase();
+    const vendorCategory = String(
+      vendorProfileData?.category || ""
+    ).toLowerCase();
+
+    const filtered = (eventPool || []).filter((event) => {
+      if (event.accepting_vendors === false) return false;
+      const id = String(event.id);
+      if (appliedIds.has(id) || savedIds.has(id)) return false;
+      return true;
+    });
+
+    const scored = [...filtered].sort((a, b) => {
+      const aState = String(a.state || "").toLowerCase() === vendorState ? 1 : 0;
+      const bState = String(b.state || "").toLowerCase() === vendorState ? 1 : 0;
+      if (bState !== aState) return bState - aState;
+
+      const aCat =
+        String(a.category || "").toLowerCase() === vendorCategory ? 1 : 0;
+      const bCat =
+        String(b.category || "").toLowerCase() === vendorCategory ? 1 : 0;
+      if (bCat !== aCat) return bCat - aCat;
+
+      return (
+        new Date(String(b.created_at || 0)).getTime() -
+        new Date(String(a.created_at || 0)).getTime()
+      );
+    });
+
+    setRecommendations(scored.slice(0, 6));
     setLoading(false);
   }
 
@@ -61,22 +158,58 @@ export default function VendorDashboardPage() {
     loadDashboard();
   }, []);
 
-  const profileStrength = useMemo(() => {
-    const source = vendorProfile || profile;
-    let score = 20;
+  const profileStrength = useMemo(
+    () => calcVendorProfileStrength(vendorProfile, profile),
+    [vendorProfile, profile]
+  );
 
-    if (source?.business_name) score += 20;
-    if (source?.logo_url) score += 15;
-    if (source?.banner_url) score += 15;
-    if (source?.short_description || source?.description) score += 15;
-    if (source?.website || source?.website_url) score += 10;
-    if (source?.facebook || source?.facebook_url) score += 5;
-    if (source?.instagram || source?.instagram_url) score += 5;
-    if (source?.tiktok || source?.tiktok_url) score += 5;
-    if (source?.phone) score += 10;
+  const businessName = String(
+    vendorProfile?.business_name || profile?.business_name || ""
+  );
 
-    return Math.min(score, 100);
-  }, [profile, vendorProfile]);
+  const savedEventIds = useMemo(
+    () =>
+      new Set(
+        savedEvents
+          .map((row) => {
+            const ev = row.events;
+            return ev?.id ? String(ev.id) : "";
+          })
+          .filter(Boolean)
+      ),
+    [savedEvents]
+  );
+
+  const appliedEventIds = useMemo(
+    () =>
+      new Set(
+        applications
+          .map((row) => {
+            const ev = row.events;
+            return ev?.id ? String(ev.id) : "";
+          })
+          .filter(Boolean)
+      ),
+    [applications]
+  );
+
+  const pendingApps = useMemo(
+    () => applications.filter((a) => statusLabel(a.status) === "Pending"),
+    [applications]
+  );
+
+  const filteredApplications = useMemo(() => {
+    if (activeTab === "pending")
+      return applications.filter((a) => statusLabel(a.status) === "Pending");
+    if (activeTab === "approved")
+      return applications.filter((a) => statusLabel(a.status) === "Approved");
+    if (activeTab === "rejected")
+      return applications.filter((a) => statusLabel(a.status) === "Rejected");
+    if (activeTab === "waitlisted")
+      return applications.filter((a) => statusLabel(a.status) === "Waitlisted");
+    if (activeTab === "applied") return applications;
+    return applications;
+  }, [applications, activeTab]);
 
   async function logout() {
     const { user } = await getAuthSession();
@@ -85,315 +218,417 @@ export default function VendorDashboardPage() {
     window.location.href = "/login";
   }
 
-  return (
-    <main className="dashboardPage">
-      <section className="hero">
-        <div>
-          <p className="eyebrow">Vendor Dashboard</p>
+  async function removeSaved(savedId: string) {
+    setActingId(savedId);
+    const { error } = await supabase
+      .from("saved_events")
+      .delete()
+      .eq("id", savedId);
+    if (error) alert(error.message);
+    else await loadDashboard();
+    setActingId(null);
+  }
 
-          <h1>
-            Welcome back
-            {profile?.business_name
-              ? `, ${profile.business_name}`
-              : ""}
-          </h1>
+  async function saveEventById(eventId: string) {
+    const auth = await requireVendorDashboard();
+    if (!auth) return;
 
-          <p className="heroText">
-            Manage your business profile, saved events,
-            applications, and marketplace visibility.
-          </p>
+    setActingId(eventId);
+    const { error } = await supabase.from("saved_events").insert({
+      vendor_id: auth.user.id,
+      event_id: eventId,
+    });
 
-          <div className="heroButtons">
-            <button
-              onClick={() =>
-                (window.location.href = "/profile/setup")
-              }
-            >
-              Edit Profile
-            </button>
+    if (error) {
+      alert(
+        error.message.includes("duplicate")
+          ? "Event already saved."
+          : error.message
+      );
+    } else await loadDashboard();
+    setActingId(null);
+  }
 
-            {vendorProfile?.slug && (
-              <button
-                className="secondary"
-                onClick={() =>
-                  (window.location.href = `/vendors/${vendorProfile.slug}`)
-                }
-              >
-                View Public Profile
-              </button>
-            )}
+  async function applyToEvent(eventId: string) {
+    const auth = await requireVendorDashboard();
+    if (!auth) return;
 
-            <button
-              className="secondary"
-              onClick={() =>
-                (window.location.href = "/events")
-              }
-            >
-              Find Events
-            </button>
+    setActingId(eventId);
+    const { error } = await supabase.from("event_attendance").insert({
+      event_id: eventId,
+      vendor_id: auth.user.id,
+      status: "requested",
+    });
 
-            <button
-              className="secondary"
-              onClick={logout}
-            >
-              Log Out
-            </button>
-          </div>
-        </div>
+    if (error) {
+      alert(
+        error.message.includes("duplicate")
+          ? "You already applied for this event."
+          : error.message
+      );
+    } else {
+      alert("Application submitted.");
+      await loadDashboard();
+    }
+    setActingId(null);
+  }
 
-        <div className="scoreCard">
-          <p className="eyebrow">
-            Profile Strength
-          </p>
+  async function withdrawApplication(applicationId: string) {
+    if (!confirm("Withdraw this application?")) return;
 
-          <div className="scoreCircle">
-            {profileStrength}%
-          </div>
+    setActingId(applicationId);
+    const { error } = await supabase
+      .from("event_attendance")
+      .delete()
+      .eq("id", applicationId);
 
-          <p>
-            Complete your vendor profile to
-            attract more organizers and build
-            trust.
-          </p>
-        </div>
-      </section>
+    if (error) alert(error.message);
+    else await loadDashboard();
+    setActingId(null);
+  }
 
-      <section className="metrics">
-        <div className="metricCard">
-          <strong>
-            {savedEvents.length}
-          </strong>
-          <span>Saved Events</span>
-        </div>
+  function renderEventActions(
+    event: Record<string, unknown>,
+    opts: {
+      savedId?: string;
+      applicationId?: string;
+      showRemoveSaved?: boolean;
+      showWithdraw?: boolean;
+    }
+  ) {
+    const eventId = String(event.id);
+    const isSaved = savedEventIds.has(eventId);
+    const busy = actingId === eventId || actingId === opts.savedId;
 
-        <div className="metricCard">
-          <strong>
-            {applications.length}
-          </strong>
-          <span>Applications</span>
-        </div>
-
-        <div className="metricCard premium">
-          <strong>
-            {profileStrength}%
-          </strong>
-          <span>Profile Strength</span>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="sectionHeader">
-          <h2>Saved Events</h2>
-        </div>
-
-        {loading ? (
-          <p>Loading...</p>
-        ) : savedEvents.length === 0 ? (
-          <PremiumEmptyState
-            eyebrow="Saved Opportunities"
-            title="No saved events yet"
-            description="Browse the marketplace and save festivals, fairs, and markets you want to revisit before applying."
-            actionLabel="Explore Events"
-            onAction={() => (window.location.href = "/events")}
-          />
-        ) : (
-          <div className="cardGrid">
-            {savedEvents.map((saved) => (
-              <div className="eventCard" key={saved.id}>
-                <p className="status">Saved</p>
-                <h3>{saved.events?.title || "Event"}</h3>
-                <p>
-                  {saved.events?.city}, {saved.events?.state}
-                </p>
-                {saved.events?.id && (
-                  <button
-                    onClick={() =>
-                      (window.location.href = `/events/${saved.events.id}`)
-                    }
-                  >
-                    View Event
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+    return (
+      <div className="vehDashBtnRow">
+        <button
+          type="button"
+          className="vehDashBtn"
+          disabled={busy}
+          onClick={() => (window.location.href = `/events/${eventId}`)}
+        >
+          View Details
+        </button>
+        {!opts.showWithdraw && !appliedEventIds.has(eventId) && (
+          <button
+            type="button"
+            className="vehDashBtn vehDashBtnGold"
+            disabled={busy || event.accepting_vendors === false}
+            onClick={() => applyToEvent(eventId)}
+          >
+            Apply
+          </button>
         )}
-      </section>
+        {opts.showWithdraw && opts.applicationId && (
+          <button
+            type="button"
+            className="vehDashBtn vehDashBtnDanger"
+            disabled={busy}
+            onClick={() => withdrawApplication(opts.applicationId!)}
+          >
+            Withdraw
+          </button>
+        )}
+        {!isSaved && !opts.showRemoveSaved && (
+          <button
+            type="button"
+            className="vehDashBtn vehDashBtnSecondary"
+            disabled={busy}
+            onClick={() => saveEventById(eventId)}
+          >
+            Save
+          </button>
+        )}
+        {opts.showRemoveSaved && opts.savedId && (
+          <button
+            type="button"
+            className="vehDashBtn vehDashBtnDanger"
+            disabled={busy}
+            onClick={() => removeSaved(opts.savedId!)}
+          >
+            Remove Saved
+          </button>
+        )}
+      </div>
+    );
+  }
 
-      <section className="section">
-        <div className="sectionHeader">
-          <h2>Your Applications</h2>
+  function renderEventCard(
+    event: Record<string, unknown>,
+    extras?: {
+      badge?: string;
+      savedId?: string;
+      applicationId?: string;
+      showRemoveSaved?: boolean;
+      showWithdraw?: boolean;
+    }
+  ) {
+    const score = eventVendorScore(event);
+
+    return (
+      <article className="vehDashCard" key={String(event.id) + (extras?.savedId || "")}>
+        {extras?.badge && (
+          <span className={statusBadgeClass(extras.badge)}>{extras.badge}</span>
+        )}
+        <h3>{String(event.title || "Event")}</h3>
+        <p className="vehDashCardMeta">
+          {formatDashboardDate(String(event.event_date || ""))} · {String(event.city || "")},{" "}
+          {String(event.state || "")}
+        </p>
+        <div className="vehDashPills">
+          <span>Booth {formatBoothPrice(event.booth_price)}</span>
+          <span>{String(event.expected_visitors || "Visitors TBD")}</span>
+          {score !== null && <span>Vendor Score™ {score}</span>}
         </div>
+        {renderEventActions(event, {
+          savedId: extras?.savedId,
+          applicationId: extras?.applicationId,
+          showRemoveSaved: extras?.showRemoveSaved,
+          showWithdraw: extras?.showWithdraw,
+        })}
+      </article>
+    );
+  }
 
-        {loading ? (
-          <p>Loading...</p>
-        ) : applications.length === 0 ? (
-          <PremiumEmptyState
-            eyebrow="Your Applications"
-            title="No applications yet"
-            description="Apply to events as a vendor and track approvals, waitlist status, and attendance here."
-            actionLabel="Find Events"
-            onAction={() => (window.location.href = "/events")}
-          />
-        ) : (
-          <div className="cardGrid">
-            {applications.map((app) => (
-              <div
-                className="eventCard"
-                key={app.id}
-              >
-                <p className="status">
-                  {app.status}
-                </p>
+  const pipelineTabs: { id: PipelineTab; label: string; count?: number }[] = [
+    { id: "all", label: "All" },
+    { id: "saved", label: "Saved", count: savedEvents.length },
+    { id: "applied", label: "Applied", count: applications.length },
+    { id: "pending", label: "Pending", count: pendingApps.length },
+    {
+      id: "approved",
+      label: "Approved",
+      count: countByStatus(applications, "approved"),
+    },
+    {
+      id: "rejected",
+      label: "Rejected",
+      count: countByStatus(applications, "rejected"),
+    },
+    {
+      id: "waitlisted",
+      label: "Waitlisted",
+      count: countByStatus(applications, "waitlist"),
+    },
+  ];
 
-                <h3>
-                  {app.events?.title}
-                </h3>
-
-                <p>
-                  {app.events?.city},{" "}
-                  {app.events?.state}
-                </p>
-
+  return (
+    <main className="vehDash dashboardPage">
+      <div className="vehDashShell">
+        <section className="vehDashHero">
+          <div className="vehDashHeroMain">
+            <p className="vehDashEyebrow">Vendor Command Center</p>
+            <h1>
+              Welcome back
+              {businessName ? `, ${businessName}` : ""}
+            </h1>
+            <p className="vehDashHeroText">
+              Track saved opportunities, applications, and recommended events —
+              all connected to live marketplace data.
+            </p>
+            <div className="vehDashActions">
+              {vendorProfile?.slug ? (
                 <button
+                  type="button"
+                  className="vehDashBtn vehDashBtnSecondary"
                   onClick={() =>
-                    (window.location.href =
-                      `/events/${app.events?.id}`)
+                    (window.location.href = `/vendors/${vendorProfile.slug}`)
                   }
                 >
-                  View Event
+                  Public Profile
                 </button>
-              </div>
-            ))}
+              ) : null}
+              <button
+                type="button"
+                className="vehDashBtn vehDashBtnSecondary"
+                onClick={() => (window.location.href = "/profile/setup")}
+              >
+                Edit Profile
+              </button>
+              <button
+                type="button"
+                className="vehDashBtn"
+                onClick={() => (window.location.href = "/events")}
+              >
+                Find Events
+              </button>
+              <button
+                type="button"
+                className="vehDashBtn vehDashBtnDanger"
+                onClick={logout}
+              >
+                Log Out
+              </button>
+            </div>
           </div>
+          <aside className="vehDashHeroAside">
+            <p className="vehDashEyebrow">Profile Strength</p>
+            <div className="vehDashScoreRing">
+              <div className="vehDashScoreInner">{profileStrength}%</div>
+            </div>
+            <p className="vehDashMuted">
+              Complete your vendor profile to improve trust with organizers.
+            </p>
+          </aside>
+        </section>
+
+        <div className="vehDashMetrics">
+          <div className="vehDashMetric">
+            <strong>{savedEvents.length}</strong>
+            <span>Saved Events</span>
+          </div>
+          <div className="vehDashMetric">
+            <strong>{applications.length}</strong>
+            <span>Applied</span>
+          </div>
+          <div className="vehDashMetric">
+            <strong>{countByStatus(applications, "approved")}</strong>
+            <span>Approved</span>
+          </div>
+          <div className="vehDashMetric">
+            <strong>{countByStatus(applications, "rejected")}</strong>
+            <span>Rejected</span>
+          </div>
+          <div className="vehDashMetric">
+            <strong>{pendingApps.length}</strong>
+            <span>Pending</span>
+          </div>
+          <div className="vehDashMetric vehDashMetricPremium">
+            <strong>{profileStrength}%</strong>
+            <span>Profile Strength</span>
+          </div>
+        </div>
+
+        <div className="vehDashTabs">
+          {pipelineTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className={
+                activeTab === tab.id ? "vehDashTab vehDashTabActive" : "vehDashTab"
+              }
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+              {tab.count !== undefined ? ` (${tab.count})` : ""}
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <p className="vehDashMuted">Loading your command center...</p>
+        ) : (
+          <>
+            {(activeTab === "all" || activeTab === "saved") && (
+              <section className="vehDashSection">
+                <div className="vehDashSectionHead">
+                  <div>
+                    <p className="vehDashEyebrow">Saved Events</p>
+                    <h2>Opportunities you bookmarked</h2>
+                  </div>
+                </div>
+                {savedEvents.length === 0 ? (
+                  <PremiumEmptyState
+                    eyebrow="Saved Events"
+                    title="No saved events yet"
+                    description="Browse the marketplace and save festivals, fairs, and markets you want to revisit before applying."
+                    actionLabel="Find Events"
+                    onAction={() => (window.location.href = "/events")}
+                  />
+                ) : (
+                  <div className="vehDashCardGrid">
+                    {savedEvents.map((saved) => {
+                      const event = saved.events;
+                      if (!event) return null;
+                      return renderEventCard(event, {
+                        badge: "saved",
+                        savedId: saved.id,
+                        showRemoveSaved: true,
+                      });
+                    })}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {(activeTab === "all" ||
+              activeTab === "applied" ||
+              activeTab === "pending" ||
+              activeTab === "approved" ||
+              activeTab === "rejected" ||
+              activeTab === "waitlisted") && (
+              <section className="vehDashSection">
+                <div className="vehDashSectionHead">
+                  <div>
+                    <p className="vehDashEyebrow">Applications</p>
+                    <h2>Your vendor pipeline</h2>
+                  </div>
+                </div>
+                {filteredApplications.length === 0 ? (
+                  <PremiumEmptyState
+                    eyebrow="Applications"
+                    title={
+                      activeTab === "approved"
+                        ? "No approved events yet"
+                        : activeTab === "rejected"
+                        ? "No rejected applications"
+                        : "No applications yet"
+                    }
+                    description={
+                      activeTab === "approved"
+                        ? "Keep applying to strong matches — approvals will show here."
+                        : activeTab === "rejected"
+                        ? "No rejections on file. Stay focused on events that fit your category and location."
+                        : "Apply to events as a vendor and track status updates here."
+                    }
+                    actionLabel="Find Events"
+                    onAction={() => (window.location.href = "/events")}
+                  />
+                ) : (
+                  <div className="vehDashCardGrid">
+                    {filteredApplications.map((app) => {
+                      const event = app.events;
+                      if (!event) return null;
+                      return renderEventCard(event, {
+                        badge: app.status,
+                        applicationId: app.id,
+                        showWithdraw: true,
+                      });
+                    })}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {activeTab === "all" && (
+              <section className="vehDashSection">
+                <div className="vehDashSectionHead">
+                  <div>
+                    <p className="vehDashEyebrow">Recommendations</p>
+                    <h2>Events matched to your profile</h2>
+                  </div>
+                </div>
+                {recommendations.length === 0 ? (
+                  <PremiumEmptyState
+                    eyebrow="Recommendations"
+                    title="No new recommendations right now"
+                    description="Check back as more organizers publish events accepting vendors."
+                    actionLabel="Browse Events"
+                    onAction={() => (window.location.href = "/events")}
+                  />
+                ) : (
+                  <div className="vehDashCardGrid">
+                    {recommendations.map((event) =>
+                      renderEventCard(event as Record<string, unknown>)
+                    )}
+                  </div>
+                )}
+              </section>
+            )}
+          </>
         )}
-      </section>
-
-      <style jsx>{`
-        .dashboardPage {
-          background: #f7f1e6;
-          min-height: 100vh;
-          color: #10291f;
-        }
-
-        section {
-          max-width: 1180px;
-          margin: 0 auto;
-          padding: 70px 18px;
-        }
-
-        .hero {
-          display: grid;
-          grid-template-columns: 1.1fr 0.9fr;
-          gap: 30px;
-          align-items: center;
-        }
-
-        .eyebrow {
-          color: #b88a2e;
-          font-size: 12px;
-          font-weight: 900;
-          text-transform: uppercase;
-        }
-
-        h1 {
-          font-size: clamp(44px, 8vw, 82px);
-          line-height: 0.9;
-          margin: 12px 0;
-        }
-
-        h2 {
-          font-size: 42px;
-        }
-
-        .heroText {
-          color: #5f6b66;
-          line-height: 1.8;
-          max-width: 700px;
-        }
-
-        .heroButtons {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 12px;
-          margin-top: 24px;
-        }
-
-        button {
-          border: 0;
-          background: #10291f;
-          color: white;
-          padding: 14px 22px;
-          border-radius: 999px;
-          cursor: pointer;
-          font-weight: 900;
-        }
-
-        button.secondary {
-          background: white;
-          color: #10291f;
-          border: 1px solid #ddd;
-        }
-
-        .scoreCard,
-        .metricCard,
-        .eventCard,
-        .emptyState {
-          background: white;
-          border-radius: 30px;
-          border: 1px solid #eadfc9;
-          padding: 30px;
-          box-shadow: 0 20px 50px rgba(0,0,0,.06);
-        }
-
-        .scoreCircle {
-          width: 140px;
-          height: 140px;
-          border-radius: 50%;
-          display: grid;
-          place-items: center;
-          background: #f7f1e6;
-          border: 12px solid #b88a2e;
-          font-size: 40px;
-          font-weight: 900;
-          margin: 20px auto;
-        }
-
-        .metrics,
-        .cardGrid {
-          display: grid;
-          grid-template-columns: repeat(3,1fr);
-          gap: 18px;
-        }
-
-        .metricCard strong {
-          font-size: 44px;
-          display: block;
-        }
-
-        .premium {
-          background: #10291f;
-          color: white;
-        }
-
-        .status {
-          color: #b88a2e;
-          font-weight: 900;
-          text-transform: uppercase;
-        }
-
-        @media(max-width:980px){
-          .hero,
-          .metrics,
-          .cardGrid{
-            grid-template-columns:1fr;
-          }
-
-          h1{
-            font-size:52px;
-          }
-        }
-      `}</style>
+      </div>
     </main>
   );
 }
