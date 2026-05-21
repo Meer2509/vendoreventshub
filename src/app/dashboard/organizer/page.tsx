@@ -20,8 +20,11 @@ export default function OrganizerDashboardPage() {
   const [myEvents, setMyEvents] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
   async function loadDashboard() {
+    setLoading(true);
+
     const { data: userData } = await supabase.auth.getUser();
 
     if (!userData.user) {
@@ -76,10 +79,6 @@ export default function OrganizerDashboardPage() {
     (app) => app.status === "approved"
   ).length;
 
-  const waitlistCount = applications.filter(
-    (app) => app.status === "waitlist"
-  ).length;
-
   const estimatedRevenue = useMemo(() => {
     return myEvents.reduce((total, event) => {
       const booth = Number(event.booth_price || 0);
@@ -99,6 +98,86 @@ export default function OrganizerDashboardPage() {
     }
 
     alert(`Application marked as ${status}.`);
+    loadDashboard();
+  }
+
+  async function deleteEvent(eventId: string, eventTitle: string) {
+    const confirmed = confirm(
+      `Delete "${eventTitle}"?\n\nThis will remove the event and all vendor applications connected to it. This cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setDeletingEventId(eventId);
+
+    const { data: userData } = await supabase.auth.getUser();
+
+    if (!userData.user) {
+      alert("Please login again.");
+      window.location.href = "/login";
+      return;
+    }
+
+    const { data: eventCheck, error: checkError } = await supabase
+      .from("events")
+      .select("id, created_by")
+      .eq("id", eventId)
+      .eq("created_by", userData.user.id)
+      .single();
+
+    if (checkError || !eventCheck) {
+      alert("You can only delete events you created.");
+      setDeletingEventId(null);
+      return;
+    }
+
+    const { error: attendanceError } = await supabase
+      .from("event_attendance")
+      .delete()
+      .eq("event_id", eventId);
+
+    if (attendanceError) {
+      alert(attendanceError.message);
+      setDeletingEventId(null);
+      return;
+    }
+
+    const { error: savedError } = await supabase
+      .from("saved_events")
+      .delete()
+      .eq("event_id", eventId);
+
+    if (savedError) {
+      alert(savedError.message);
+      setDeletingEventId(null);
+      return;
+    }
+
+    const { error: reviewError } = await supabase
+      .from("reviews")
+      .delete()
+      .eq("event_id", eventId);
+
+    if (reviewError) {
+      alert(reviewError.message);
+      setDeletingEventId(null);
+      return;
+    }
+
+    const { error: eventError } = await supabase
+      .from("events")
+      .delete()
+      .eq("id", eventId)
+      .eq("created_by", userData.user.id);
+
+    if (eventError) {
+      alert(eventError.message);
+      setDeletingEventId(null);
+      return;
+    }
+
+    alert("Event deleted successfully.");
+    setDeletingEventId(null);
     loadDashboard();
   }
 
@@ -231,7 +310,11 @@ export default function OrganizerDashboardPage() {
                   <div className="pillGrid">
                     <span>${event.booth_price || "TBD"} Booth</span>
                     <span>{event.expected_visitors || "TBD"} Visitors</span>
-                    <span>{event.accepting_vendors === false ? "Closed" : "Accepting Vendors"}</span>
+                    <span>
+                      {event.accepting_vendors === false
+                        ? "Closed"
+                        : "Accepting Vendors"}
+                    </span>
                   </div>
 
                   <div className="buttonRow">
@@ -248,6 +331,14 @@ export default function OrganizerDashboardPage() {
                       onClick={() => (window.location.href = "/advertise")}
                     >
                       Boost
+                    </button>
+
+                    <button
+                      className="danger"
+                      disabled={deletingEventId === event.id}
+                      onClick={() => deleteEvent(event.id, event.title)}
+                    >
+                      {deletingEventId === event.id ? "Deleting..." : "Delete"}
                     </button>
                   </div>
                 </div>
@@ -292,7 +383,9 @@ export default function OrganizerDashboardPage() {
                   </p>
 
                   <div className="pillGrid">
-                    <span>Vendor ID: {application.vendor_id?.slice(0, 8)}...</span>
+                    <span>
+                      Vendor ID: {application.vendor_id?.slice(0, 8)}...
+                    </span>
                     <span>
                       {event?.city}, {event?.state}
                     </span>
@@ -451,7 +544,13 @@ export default function OrganizerDashboardPage() {
           transition: 0.2s ease;
         }
 
-        button:hover {
+        button:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        button:hover:not(:disabled) {
           transform: translateY(-2px);
           box-shadow: 0 16px 34px rgba(16, 41, 31, 0.2);
         }
