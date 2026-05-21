@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import PremiumEmptyState from "@/components/PremiumEmptyState";
-import { detectColumns } from "@/lib/admin";
+import { approveVendor, detectColumns, runAdminMutation } from "@/lib/admin";
 import { supabase } from "@/lib/supabase";
 
 const VENDOR_COLUMNS = ["verified", "featured"] as const;
@@ -16,6 +16,7 @@ export default function AdminVendorsPage() {
     verified: true,
     featured: true,
   });
+  const [actingId, setActingId] = useState<string | null>(null);
 
   async function loadVendors() {
     setLoading(true);
@@ -60,14 +61,63 @@ export default function AdminVendorsPage() {
     });
   }, [vendors, search]);
 
-  async function updateVendor(userId: string, updates: Record<string, unknown>) {
-    const { error } = await supabase
-      .from("vendor_profiles")
-      .update(updates)
-      .eq("user_id", userId);
+  function patchVendor(userId: string, updates: Record<string, unknown>) {
+    setVendors((prev) =>
+      prev.map((row) =>
+        String(row.user_id) === userId ? { ...row, ...updates } : row
+      )
+    );
+  }
 
-    if (error) alert(error.message);
-    else await loadVendors();
+  async function toggleVendorVerified(
+    userId: string,
+    currentlyVerified: boolean
+  ) {
+    setActingId(userId);
+
+    if (!currentlyVerified) {
+      await approveVendor(supabase, userId, columns.verified, async () => {
+        patchVendor(userId, { verified: true });
+        await loadVendors();
+      });
+      setActingId(null);
+      return;
+    }
+
+    await runAdminMutation({
+      actionLabel: "Unverify vendor",
+      table: "vendor_profiles",
+      column: "verified",
+      hasColumn: columns.verified,
+      run: async () =>
+        supabase
+          .from("vendor_profiles")
+          .update({ verified: false })
+          .eq("user_id", userId),
+      onSuccess: async () => {
+        patchVendor(userId, { verified: false });
+        await loadVendors();
+      },
+    });
+
+    setActingId(null);
+  }
+
+  async function updateVendor(userId: string, updates: Record<string, unknown>) {
+    setActingId(userId);
+    await runAdminMutation({
+      actionLabel: "Update vendor",
+      table: "vendor_profiles",
+      column: "featured" in updates ? "featured" : undefined,
+      hasColumn: "featured" in updates ? columns.featured : true,
+      run: async () =>
+        supabase.from("vendor_profiles").update(updates).eq("user_id", userId),
+      onSuccess: async () => {
+        patchVendor(userId, updates);
+        await loadVendors();
+      },
+    });
+    setActingId(null);
   }
 
   async function deleteVendor(userId: string, name: string) {
@@ -183,14 +233,16 @@ export default function AdminVendorsPage() {
                         <button
                           type="button"
                           className="adminBtn adminBtnGold"
-                          disabled={!columns.verified}
+                          disabled={!columns.verified || actingId === userId}
                           onClick={() =>
-                            updateVendor(userId, {
-                              verified: !Boolean(vendor.verified),
-                            })
+                            toggleVendorVerified(userId, Boolean(vendor.verified))
                           }
                         >
-                          {vendor.verified ? "Unverify" : "Verify"}
+                          {actingId === userId
+                            ? "…"
+                            : vendor.verified
+                            ? "Unverify"
+                            : "Approve"}
                         </button>
                         <button
                           type="button"

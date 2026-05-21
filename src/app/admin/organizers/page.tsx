@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import PremiumEmptyState from "@/components/PremiumEmptyState";
+import { approveOrganizer, runAdminMutation } from "@/lib/admin";
 import { supabase } from "@/lib/supabase";
 
 type OrganizerRow = {
@@ -20,6 +21,7 @@ export default function AdminOrganizersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [hasVerifiedColumn, setHasVerifiedColumn] = useState(true);
+  const [actingId, setActingId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -68,16 +70,43 @@ export default function AdminOrganizersPage() {
     });
   }, [organizers, search]);
 
-  async function toggleVerified(userId: string, verified: boolean) {
-    if (!hasVerifiedColumn) return;
+  function patchOrganizer(userId: string, verified: boolean) {
+    setOrganizers((prev) =>
+      prev.map((row) =>
+        row.user_id === userId ? { ...row, verified } : row
+      )
+    );
+  }
 
-    const { error } = await supabase
-      .from("organizer_profiles")
-      .update({ verified })
-      .eq("user_id", userId);
+  async function toggleVerified(userId: string, currentlyVerified: boolean) {
+    setActingId(userId);
 
-    if (error) alert(error.message);
-    else await load();
+    if (!currentlyVerified) {
+      await approveOrganizer(supabase, userId, hasVerifiedColumn, async () => {
+        patchOrganizer(userId, true);
+        await load();
+      });
+      setActingId(null);
+      return;
+    }
+
+    await runAdminMutation({
+      actionLabel: "Unverify organizer",
+      table: "organizer_profiles",
+      column: "verified",
+      hasColumn: hasVerifiedColumn,
+      run: async () =>
+        supabase
+          .from("organizer_profiles")
+          .update({ verified: false })
+          .eq("user_id", userId),
+      onSuccess: async () => {
+        patchOrganizer(userId, false);
+        await load();
+      },
+    });
+
+    setActingId(null);
   }
 
   return (
@@ -138,11 +167,16 @@ export default function AdminOrganizersPage() {
                         <button
                           type="button"
                           className="adminBtn adminBtnGold"
+                          disabled={actingId === org.user_id}
                           onClick={() =>
-                            toggleVerified(org.user_id, !Boolean(org.verified))
+                            toggleVerified(org.user_id, Boolean(org.verified))
                           }
                         >
-                          {org.verified ? "Verified" : "Verify"}
+                          {actingId === org.user_id
+                            ? "…"
+                            : org.verified
+                            ? "Verified"
+                            : "Approve"}
                         </button>
                       ) : (
                         <span className="adminBadge">Verify N/A</span>

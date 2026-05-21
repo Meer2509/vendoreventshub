@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import PremiumEmptyState from "@/components/PremiumEmptyState";
-import { detectColumns } from "@/lib/admin";
+import {
+  approveEventOrganizer,
+  detectColumns,
+  runAdminMutation,
+} from "@/lib/admin";
 import { supabase } from "@/lib/supabase";
 
 const EVENT_COLUMNS = [
@@ -21,6 +25,7 @@ export default function AdminEventsPage() {
     verified_organizer: true,
     accepting_vendors: true,
   });
+  const [actingId, setActingId] = useState<string | null>(null);
 
   async function loadEvents() {
     setLoading(true);
@@ -42,13 +47,69 @@ export default function AdminEventsPage() {
     setLoading(false);
   }
 
-  async function updateEvent(id: string, updates: Record<string, unknown>) {
-    const { error } = await supabase.from("events").update(updates).eq("id", id);
-    if (error) {
-      alert(error.message);
+  function patchEvent(id: string, updates: Record<string, unknown>) {
+    setEvents((prev) =>
+      prev.map((row) =>
+        String(row.id) === id ? { ...row, ...updates } : row
+      )
+    );
+  }
+
+  async function mutateEvent(
+    id: string,
+    updates: Record<string, unknown>,
+    actionLabel: string,
+    column?: keyof typeof columns
+  ) {
+    setActingId(id);
+    await runAdminMutation({
+      actionLabel,
+      table: "events",
+      column: column as string | undefined,
+      hasColumn: column ? columns[column] : true,
+      run: async () => supabase.from("events").update(updates).eq("id", id),
+      onSuccess: async () => {
+        patchEvent(id, updates);
+        await loadEvents();
+      },
+    });
+    setActingId(null);
+  }
+
+  async function toggleEventVerified(id: string, currentlyVerified: boolean) {
+    setActingId(id);
+
+    if (!currentlyVerified) {
+      await approveEventOrganizer(
+        supabase,
+        id,
+        columns.verified_organizer,
+        async () => {
+          patchEvent(id, { verified_organizer: true });
+          await loadEvents();
+        }
+      );
+      setActingId(null);
       return;
     }
-    await loadEvents();
+
+    await runAdminMutation({
+      actionLabel: "Unverify event organizer",
+      table: "events",
+      column: "verified_organizer",
+      hasColumn: columns.verified_organizer,
+      run: async () =>
+        supabase
+          .from("events")
+          .update({ verified_organizer: false })
+          .eq("id", id),
+      onSuccess: async () => {
+        patchEvent(id, { verified_organizer: false });
+        await loadEvents();
+      },
+    });
+
+    setActingId(null);
   }
 
   async function deleteEvent(id: string, title: string) {
@@ -206,16 +267,19 @@ export default function AdminEventsPage() {
                         <button
                           type="button"
                           className="adminBtn adminBtnGold"
-                          disabled={!columns.is_featured}
+                          disabled={!columns.is_featured || actingId === id}
                           title={
                             columns.is_featured
                               ? "Toggle featured"
                               : "Add events.is_featured column"
                           }
                           onClick={() =>
-                            updateEvent(id, {
-                              is_featured: !Boolean(event.is_featured),
-                            })
+                            mutateEvent(
+                              id,
+                              { is_featured: !Boolean(event.is_featured) },
+                              event.is_featured ? "Unfeature event" : "Feature event",
+                              "is_featured"
+                            )
                           }
                         >
                           {event.is_featured ? "Unfeature" : "Feature"}
@@ -223,31 +287,38 @@ export default function AdminEventsPage() {
                         <button
                           type="button"
                           className="adminBtn adminBtnSecondary"
-                          disabled={!columns.verified_organizer}
+                          disabled={!columns.verified_organizer || actingId === id}
                           title={
                             columns.verified_organizer
-                              ? "Toggle verified organizer badge on event"
+                              ? "Sets events.verified_organizer = true"
                               : "Add events.verified_organizer column"
                           }
                           onClick={() =>
-                            updateEvent(id, {
-                              verified_organizer: !Boolean(event.verified_organizer),
-                            })
+                            toggleEventVerified(id, Boolean(event.verified_organizer))
                           }
                         >
-                          {event.verified_organizer ? "Unverify" : "Verify"}
+                          {actingId === id
+                            ? "…"
+                            : event.verified_organizer
+                            ? "Unverify"
+                            : "Approve"}
                         </button>
                         <button
                           type="button"
                           className="adminBtn adminBtnSecondary"
-                          disabled={!columns.accepting_vendors}
+                          disabled={!columns.accepting_vendors || actingId === id}
                           title={
                             columns.accepting_vendors
                               ? "Toggle vendor applications"
                               : "Add events.accepting_vendors column"
                           }
                           onClick={() =>
-                            updateEvent(id, { accepting_vendors: !isOpen })
+                            mutateEvent(
+                              id,
+                              { accepting_vendors: !isOpen },
+                              isOpen ? "Close vendors" : "Open vendors",
+                              "accepting_vendors"
+                            )
                           }
                         >
                           {isOpen ? "Close" : "Open"}

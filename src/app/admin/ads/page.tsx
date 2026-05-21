@@ -1,9 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import PremiumEmptyState from "@/components/PremiumEmptyState";
-import { formatAdminMoney, getAdminAccessToken } from "@/lib/admin";
+import {
+  approveAdOrderViaApi,
+  detectColumns,
+  formatAdminMoney,
+  isMissingColumnError,
+  isRlsOrPermissionError,
+  missingColumnAlert,
+  missingTableAlert,
+  runAdminMutation,
+} from "@/lib/admin";
 import { supabase } from "@/lib/supabase";
 
 type AdOrder = {
@@ -29,8 +37,8 @@ export default function AdminAdsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [tableMissing, setTableMissing] = useState(false);
-  const [apiReady, setApiReady] = useState(true);
-  const [renewingId, setRenewingId] = useState("");
+  const [actingId, setActingId] = useState<string | null>(null);
+  const [hasApprovalColumn, setHasApprovalColumn] = useState(true);
 
   async function loadAds() {
     setLoading(true);
@@ -41,51 +49,129 @@ export default function AdminAdsPage() {
       .order("created_at", { ascending: false });
 
     if (error) {
+      console.error("[Admin] load ad_orders:", error);
       setTableMissing(true);
       setAds([]);
+      if (error.message.includes("does not exist")) {
+        alert(missingTableAlert("ad_orders"));
+      }
     } else {
       setTableMissing(false);
-      setAds((data as AdOrder[]) || []);
+      const rows = (data as AdOrder[]) || [];
+      setAds(rows);
+      if (rows.length > 0) {
+        const cols = detectColumns(
+          rows as unknown as Record<string, unknown>[],
+          ["approval_status"]
+        );
+        setHasApprovalColumn(cols.approval_status);
+      }
     }
 
     setLoading(false);
   }
 
-  async function updateStatus(id: string, status: string) {
-    const token = await getAdminAccessToken();
+  function patchAdStatus(id: string, approval_status: string) {
+    setAds((prev) =>
+      prev.map((ad) => (ad.id === id ? { ...ad, approval_status } : ad))
+    );
+  }
 
-    if (!token) {
-      alert("Session expired. Please log in again.");
+  async function approveAd(id: string) {
+    setActingId(id);
+
+    const onDone = async () => {
+      patchAdStatus(id, "approved");
+      await loadAds();
+    };
+
+    const { error } = await supabase
+      .from("ad_orders")
+      .update({ approval_status: "approved" })
+      .eq("id", id);
+
+    if (!error) {
+      console.log("[Admin] Approve ad: ad_orders.approval_status = approved", id);
+      alert("Approve ad succeeded.");
+      await onDone();
+      setActingId(null);
       return;
     }
 
-    const res = await fetch("/api/update-ad-status", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+    console.error("[Admin] Approve ad failed (ad_orders.approval_status):", error);
+
+    if (!hasApprovalColumn || isMissingColumnError(error.message)) {
+      alert(missingColumnAlert("ad_orders", "approval_status"));
+    } else if (isRlsOrPermissionError(error.message)) {
+      await approveAdOrderViaApi(id, onDone);
+    } else {
+      alert(`Approve ad failed: ${error.message}`);
+    }
+
+    setActingId(null);
+  }
+
+  async function updateStatus(id: string, status: string) {
+    setActingId(id);
+
+    const label =
+      status === "paused"
+        ? "Pause ad"
+        : status === "rejected"
+        ? "Reject ad"
+        : "Update ad";
+
+    const ok = await runAdminMutation({
+      actionLabel: label,
+      table: "ad_orders",
+      column: "approval_status",
+      hasColumn: hasApprovalColumn,
+      run: async () =>
+        supabase
+          .from("ad_orders")
+          .update({ approval_status: status })
+          .eq("id", id),
+      onSuccess: async () => {
+        patchAdStatus(id, status);
+        await loadAds();
       },
-      body: JSON.stringify({ id, status }),
     });
 
-    const data = await res.json();
+    if (!ok) {
+      const { error } = await supabase
+        .from("ad_orders")
+        .update({ approval_status: status })
+        .eq("id", id);
 
-    if (!res.ok) {
-      setApiReady(false);
-      alert(
-        data.error ||
-          "Could not update ad status. Ensure SUPABASE_SERVICE_ROLE_KEY is set on the server."
-      );
-      return;
+      if (error && isRlsOrPermissionError(error.message) && status !== "approved") {
+        const token = await import("@/lib/admin").then((m) => m.getAdminAccessToken());
+        if (token) {
+          const res = await fetch("/api/update-ad-status", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ id, status }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            alert(`${label} succeeded.`);
+            patchAdStatus(id, status);
+            await loadAds();
+          } else {
+            alert(data.error || `${label} failed.`);
+          }
+        }
+      }
     }
 
-    setApiReady(true);
-    await loadAds();
+    setActingId(null);
   }
 
   async function renewAd(adId: string) {
     try {
-      setRenewingId(adId);
+      setActingId(adId);
 
       const res = await fetch("/api/create-renewal-checkout", {
         method: "POST",
@@ -97,16 +183,17 @@ export default function AdminAdsPage() {
 
       if (!res.ok || !data.clientSecret) {
         alert(data.error || "Renewal checkout failed.");
-        setRenewingId("");
+        setActingId(null);
         return;
       }
 
       window.location.href = `/checkout-renew?client_secret=${encodeURIComponent(
         data.clientSecret
       )}`;
-    } catch {
+    } catch (err) {
+      console.error("[Admin] renew ad:", err);
       alert("Something went wrong starting renewal checkout.");
-      setRenewingId("");
+      setActingId(null);
     }
   }
 
@@ -141,10 +228,7 @@ export default function AdminAdsPage() {
         <section className="adminHero">
           <p className="adminEyebrow">Ads</p>
           <h1>Sponsored placements</h1>
-          <p className="adminMuted">
-            The <code>ad_orders</code> table is not available. Create it in Supabase
-            to enable approve/reject workflows.
-          </p>
+          <p className="adminMuted">{missingTableAlert("ad_orders")}</p>
         </section>
       </main>
     );
@@ -156,13 +240,12 @@ export default function AdminAdsPage() {
         <p className="adminEyebrow">Ads</p>
         <h1>Paid advertising review</h1>
         <p className="adminMuted">
-          Approve, reject, pause, or re-open ads. Status updates use the secure
-          admin API (service role + admin session).
+          Approve updates <code>ad_orders.approval_status</code> to{" "}
+          <code>approved</code> via Supabase (API fallback if RLS blocks).
         </p>
-        {!apiReady && (
+        {!hasApprovalColumn && (
           <p className="adminMuted">
-            Server API may be misconfigured. Set{" "}
-            <code>SUPABASE_SERVICE_ROLE_KEY</code> in your environment.
+            Missing <code>ad_orders.approval_status</code> — Approve is disabled.
           </p>
         )}
       </section>
@@ -198,6 +281,7 @@ export default function AdminAdsPage() {
               {filtered.map((ad) => {
                 const isExpired =
                   ad.expires_at && new Date(ad.expires_at) < new Date();
+                const busy = actingId === ad.id;
 
                 return (
                   <tr key={ad.id}>
@@ -237,27 +321,22 @@ export default function AdminAdsPage() {
                             Open
                           </button>
                         )}
-                        {ad.approval_status === "pending_review" ? (
+                        {(ad.approval_status === "pending_review" ||
+                          ad.approval_status === "paused" ||
+                          ad.approval_status === "rejected") && (
                           <button
                             type="button"
                             className="adminBtn adminBtnGold"
-                            onClick={() => updateStatus(ad.id, "approved")}
+                            disabled={!hasApprovalColumn || busy}
+                            onClick={() => approveAd(ad.id)}
                           >
-                            Approve
+                            {busy ? "…" : "Approve"}
                           </button>
-                        ) : ad.approval_status === "paused" ||
-                          ad.approval_status === "rejected" ? (
-                          <button
-                            type="button"
-                            className="adminBtn adminBtnGold"
-                            onClick={() => updateStatus(ad.id, "approved")}
-                          >
-                            Open
-                          </button>
-                        ) : null}
+                        )}
                         <button
                           type="button"
                           className="adminBtn adminBtnSecondary"
+                          disabled={!hasApprovalColumn || busy}
                           onClick={() => updateStatus(ad.id, "paused")}
                         >
                           Pause
@@ -265,6 +344,7 @@ export default function AdminAdsPage() {
                         <button
                           type="button"
                           className="adminBtn adminBtnDanger"
+                          disabled={!hasApprovalColumn || busy}
                           onClick={() => updateStatus(ad.id, "rejected")}
                         >
                           Reject
@@ -272,10 +352,10 @@ export default function AdminAdsPage() {
                         <button
                           type="button"
                           className="adminBtn adminBtnSecondary"
-                          disabled={renewingId === ad.id}
+                          disabled={busy}
                           onClick={() => renewAd(ad.id)}
                         >
-                          {renewingId === ad.id ? "…" : "Renew"}
+                          {busy ? "…" : "Renew"}
                         </button>
                       </div>
                     </td>
