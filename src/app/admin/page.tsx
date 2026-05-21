@@ -3,34 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { getAuthUser } from "@/lib/auth";
-
-const ADMIN_EMAILS = ["meerhamzakhan2020@gmail.com"];
-
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
-  const [allowed, setAllowed] = useState(false);
   const [ads, setAds] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [vendors, setVendors] = useState<any[]>([]);
 
   useEffect(() => {
     async function init() {
-      const { user } = await getAuthUser();
-
-      if (!user) {
-        window.location.href = "/login";
-        return;
-      }
-
-      if (!ADMIN_EMAILS.includes(user.email || "")) {
-        setAllowed(false);
-        setLoading(false);
-        return;
-      }
-
-      setAllowed(true);
-
       const [{ data: adRows }, { data: eventRows }, { data: vendorRows }] =
         await Promise.all([
           supabase.from("ad_orders").select("*").order("created_at", { ascending: false }),
@@ -99,25 +79,15 @@ export default function AdminDashboardPage() {
   }, [ads, events, vendors]);
 
   if (loading) {
-    return <main style={styles.page}>Loading admin command center...</main>;
-  }
-
-  if (!allowed) {
     return (
-      <main style={styles.page}>
-        <section style={styles.hero}>
-          <p style={styles.eyebrow}>Access Denied</p>
-          <h1 style={styles.title}>You are not authorized.</h1>
-          <p style={styles.text}>
-            This area is only available to approved VendorEventsHub admins.
-          </p>
-        </section>
+      <main className="adminPage">
+        <p className="adminMuted">Loading command center...</p>
       </main>
     );
   }
 
   return (
-    <main style={styles.page}>
+    <main className="adminPage">
       <section style={styles.hero}>
         <div>
           <p style={styles.eyebrow}>VendorEventsHub Admin</p>
@@ -128,21 +98,21 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-        <div style={styles.heroActions}>
-          <Link href="/admin/ads" style={styles.goldButton}>Review Ads</Link>
-          <Link href="/create-event" style={styles.darkButton}>+ Add Event</Link>
-          <Link href="/advertise" style={styles.lightButton}>View Ads Page</Link>
+        <div className="adminToolbar">
+          <Link href="/admin/ads" className="adminBtn adminBtnGold">Review Ads</Link>
+          <Link href="/admin/users" className="adminBtn">Users</Link>
+          <Link href="/admin/seo" className="adminBtn adminBtnSecondary">SEO</Link>
         </div>
       </section>
 
-      <section style={styles.statsGrid}>
+      <div className="adminStatsGrid">
         <Stat title="Total Revenue" value={`$${(stats.totalRevenue / 100).toFixed(2)}`} />
         <Stat title="Today Revenue" value={`$${(stats.todayRevenue / 100).toFixed(2)}`} />
         <Stat title="Pending Ads" value={String(stats.pendingAds)} />
         <Stat title="Live Ads" value={String(stats.liveAds)} />
         <Stat title="Events" value={String(stats.totalEvents)} />
         <Stat title="Vendors" value={String(stats.totalVendors)} />
-      </section>
+      </div>
 
       <section style={styles.panelGrid}>
         <Panel title="Advertising Health">

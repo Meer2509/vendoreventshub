@@ -56,7 +56,7 @@ export default function Navbar() {
         </button>
 
         <div className={`vhMenu ${open ? "isOpen" : ""}`}>
-          <Link href="/events" onClick={() => setOpen(false)}>Explore</Link>
+          <Link href="/events" onClick={() => setOpen(false)}>Events</Link>
           <Link href="/vendors" onClick={() => setOpen(false)}>Vendors</Link>
           <Link href="/pricing" onClick={() => setOpen(false)}>Pricing</Link>
           <Link href="/advertise" onClick={() => setOpen(false)}>Advertise</Link>

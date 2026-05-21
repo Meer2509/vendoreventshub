@@ -1,8 +1,10 @@
 "use client";
 
+import JsonLd from "@/components/JsonLd";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import PremiumEmptyState from "@/components/PremiumEmptyState";
+import { absoluteUrl } from "@/lib/seo";
 import {
   formatEventDate,
   getBoothValue,
@@ -59,6 +61,47 @@ export default function LocationEventsClient({
 
   const cityLabel = citySlug ? formatCityLabel(citySlug) : "";
 
+  const heading = state
+    ? citySlug
+      ? `Vendor Events in ${cityLabel}, ${state.abbr}`
+      : `Vendor Events in ${state.name}`
+    : "Vendor Events";
+
+  const structuredData = useMemo(() => {
+    if (!state) return [];
+
+    const path = citySlug
+      ? `/events/${state.slug}/${citySlug}`
+      : `/events/${state.slug}`;
+
+    return [
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: absoluteUrl("/"),
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Events",
+            item: absoluteUrl("/events"),
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: heading,
+            item: absoluteUrl(path),
+          },
+        ],
+      },
+    ];
+  }, [state, citySlug, heading]);
+
   if (!state) {
     return (
       <main className="luxuryPage">
@@ -74,12 +117,9 @@ export default function LocationEventsClient({
     );
   }
 
-  const heading = citySlug
-    ? `Vendor Events in ${cityLabel}, ${state.abbr}`
-    : `Vendor Events in ${state.name}`;
-
   return (
     <main className="luxuryPage">
+      <JsonLd data={structuredData} />
       <section className="vhHero">
         <div className="vhHeroContent">
           <p className="goldEyebrow">Vendor Events Near Me</p>

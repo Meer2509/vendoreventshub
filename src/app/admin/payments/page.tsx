@@ -1,81 +1,119 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import PremiumEmptyState from "@/components/PremiumEmptyState";
 import { supabase } from "@/lib/supabase";
-import { getAuthUser } from "@/lib/auth";
-
-const ADMIN_EMAILS = ["meerhamzakhan2020@gmail.com"];
 
 export default function AdminPaymentsPage() {
-  const [allowed, setAllowed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState<any[]>([]);
+  const [tableMissing, setTableMissing] = useState(false);
 
   useEffect(() => {
     async function init() {
-      const { user } = await getAuthUser();
-      if (!user) {
-        window.location.href = "/login";
-        return;
-      }
-
-      if (!ADMIN_EMAILS.includes(user.email || "")) {
-        setAllowed(false);
-        setLoading(false);
-        return;
-      }
-
-      setAllowed(true);
-
-      const { data: rows } = await supabase
+      const { data, error } = await supabase
         .from("ad_orders")
         .select("*")
         .order("created_at", { ascending: false });
 
-      setPayments(rows || []);
+      if (error) {
+        setTableMissing(true);
+        setPayments([]);
+      } else {
+        setPayments(data || []);
+      }
+
       setLoading(false);
     }
 
     init();
   }, []);
 
-  if (loading) return <main style={styles.page}>Loading payments...</main>;
-  if (!allowed) return <main style={styles.page}>Access denied.</main>;
+  const paid = payments.filter((p) => p.payment_status === "paid");
+  const revenue = paid.reduce((sum, p) => sum + Number(p.amount_total || 0), 0);
+
+  if (loading) {
+    return (
+      <main className="adminPage">
+        <p className="adminMuted">Loading payments...</p>
+      </main>
+    );
+  }
+
+  if (tableMissing) {
+    return (
+      <main className="adminPage">
+        <PremiumEmptyState
+          eyebrow="Payments"
+          title="Ad orders table not connected"
+          description="Create the ad_orders table and Stripe webhook to track premium ad revenue here."
+          actionLabel="View Ads Admin"
+          onAction={() => (window.location.href = "/admin/ads")}
+        />
+      </main>
+    );
+  }
 
   return (
-    <main style={styles.page}>
-      <section style={styles.hero}>
-        <p style={styles.eyebrow}>Admin Payments</p>
-        <h1 style={styles.title}>Payment History</h1>
-        <p style={styles.text}>Track Stripe-paid advertising orders.</p>
+    <main className="adminPage">
+      <section className="adminHero">
+        <p className="adminEyebrow">Payments</p>
+        <h1>Revenue from paid placements</h1>
+        <p className="adminMuted">
+          Stripe-paid ad orders only — no fabricated revenue numbers.
+        </p>
       </section>
 
-      <section style={styles.list}>
+      <div className="adminStatsGrid">
+        <div className="adminStatCard">
+          <p>Total paid revenue</p>
+          <strong>${(revenue / 100).toFixed(2)}</strong>
+        </div>
+        <div className="adminStatCard">
+          <p>Paid orders</p>
+          <strong>{paid.length}</strong>
+        </div>
+        <div className="adminStatCard">
+          <p>All orders</p>
+          <strong>{payments.length}</strong>
+        </div>
+      </div>
+
+      <section className="adminPanel">
         {payments.length === 0 ? (
-          <div style={styles.card}>No payments yet.</div>
+          <PremiumEmptyState
+            title="No payments yet"
+            description="When vendors or businesses purchase sponsored placements, they will appear here."
+            actionLabel="Review Ads"
+            onAction={() => (window.location.href = "/admin/ads")}
+          />
         ) : (
-          payments.map((p) => (
-            <div key={p.id} style={styles.card}>
-              <h2>{p.business_name}</h2>
-              <p><strong>Amount:</strong> ${((p.amount_total || 0) / 100).toFixed(2)}</p>
-              <p><strong>Status:</strong> {p.payment_status}</p>
-              <p><strong>Placement:</strong> {p.placement}</p>
-              <p><strong>Email:</strong> {p.customer_email || "N/A"}</p>
-              <p><strong>Created:</strong> {new Date(p.created_at).toLocaleString()}</p>
-            </div>
-          ))
+          <table className="adminTable">
+            <thead>
+              <tr>
+                <th>Business</th>
+                <th>Status</th>
+                <th>Amount</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payments.map((p) => (
+                <tr key={p.id}>
+                  <td>{p.business_name || "—"}</td>
+                  <td>{p.payment_status}</td>
+                  <td>${((p.amount_total || 0) / 100).toFixed(2)}</td>
+                  <td>
+                    {p.created_at
+                      ? new Date(p.created_at).toLocaleDateString()
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </section>
     </main>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: { minHeight: "100vh", background: "#f7f3ea", padding: 24, color: "#10291f" },
-  hero: { maxWidth: 1100, margin: "0 auto 24px", background: "#fff", padding: 34, borderRadius: 30 },
-  eyebrow: { color: "#14583f", fontWeight: 900, textTransform: "uppercase" },
-  title: { fontSize: 56, margin: 0 },
-  text: { color: "#5f6b66" },
-  list: { maxWidth: 1100, margin: "0 auto", display: "grid", gap: 16 },
-  card: { background: "#fff", padding: 22, borderRadius: 24, border: "1px solid #e7dcc7" },
-};

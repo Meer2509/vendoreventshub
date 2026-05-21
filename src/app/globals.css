@@ -1,12 +1,95 @@
+:root {
+  --veh-green: #10291f;
+  --veh-gold: #b88a2e;
+  --veh-cream: #f7f1e6;
+  --veh-muted: #5f6b66;
+  --veh-hero-size: clamp(56px, 7vw, 88px);
+  --veh-section-size: clamp(36px, 5vw, 58px);
+  --veh-body-size: clamp(17px, 1.2vw, 19px);
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: #f7f2e8;
-  color: #111814;
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--veh-cream);
+  color: var(--veh-green);
+  font-family: var(--font-geist-sans), Inter, system-ui, sans-serif;
+  font-size: var(--veh-body-size);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+.vehHeroTitle,
+.vehPage .hero h1,
+.vhHero h1,
+.luxHero h1 {
+  font-size: var(--veh-hero-size);
+  line-height: 0.92;
+  letter-spacing: -0.06em;
+  font-weight: 900;
+}
+
+.vehSectionTitle,
+.vehPage .sectionHead h2,
+.vhHeroContent h1,
+.luxSection h2 {
+  font-size: var(--veh-section-size);
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+  font-weight: 900;
+}
+
+.vehBodyText,
+.heroText,
+.vhHero .heroText {
+  font-size: var(--veh-body-size);
+  line-height: 1.7;
+  color: var(--veh-muted);
+}
+
+.goldBtn,
+.outlineBtn,
+.fullBtn,
+.heroLinkBtn,
+.eventDetailLink,
+.vehPage button,
+.vhNav button {
+  font-size: clamp(15px, 1.1vw, 16px);
+  font-weight: 900;
+}
+
+@media (max-width: 900px) {
+  .vehHeroTitle,
+  .vehPage .hero h1,
+  .vhHero h1 {
+    font-size: clamp(44px, 12vw, 54px);
+  }
+
+  .luxFooter {
+    padding: 28px 18px;
+  }
+
+  .adminShell {
+    grid-template-columns: 1fr !important;
+  }
+
+  .adminSidebar {
+    position: relative !important;
+    height: auto !important;
+  }
+
+  .marketplaceLayout,
+  .eventGrid,
+  .profileGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .vhMenu {
+    max-width: 100vw;
+  }
 }
 
 .luxuryPage {
@@ -492,7 +575,7 @@ body {
 
 .footerLinks {
   display: grid;
-  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 24px 32px;
   align-items: start;
 }
@@ -2590,5 +2673,263 @@ body {
   .veGoldBtn,
   .veOutlineBtn {
     width: 100%;
+  }
+}
+
+/* ADMIN GOD MODE */
+.adminShell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+  background: var(--veh-cream);
+}
+
+.adminSidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: var(--veh-green);
+  color: #fffaf0;
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow-y: auto;
+}
+
+.adminEyebrow {
+  color: #d4c9a8;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin: 0;
+}
+
+.adminLogo {
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  margin: 10px 0;
+  font-weight: 900;
+}
+
+.adminSub {
+  color: rgba(255, 250, 240, 0.7);
+  margin: 0;
+  font-size: 14px;
+}
+
+.adminNav {
+  display: grid;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.adminNavLink {
+  color: #fffaf0;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 12px 14px;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.adminNavLinkActive {
+  background: var(--veh-gold);
+  color: var(--veh-green);
+  border-color: var(--veh-gold);
+}
+
+.adminSiteLink {
+  color: #d4c9a8;
+  text-decoration: none;
+  font-weight: 900;
+  margin-top: 20px;
+}
+
+.adminContent {
+  min-width: 0;
+}
+
+.adminPage {
+  padding: 28px 20px 60px;
+  color: var(--veh-green);
+}
+
+.adminHero {
+  background: #fff;
+  border: 1px solid #eadfc9;
+  border-radius: 28px;
+  padding: clamp(24px, 4vw, 40px);
+  margin-bottom: 20px;
+  box-shadow: 0 20px 55px rgba(16, 41, 31, 0.1);
+}
+
+.adminHero h1 {
+  font-size: clamp(32px, 5vw, 48px);
+  letter-spacing: -0.05em;
+  margin: 8px 0;
+  font-weight: 900;
+}
+
+.adminStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.adminStatCard {
+  background: var(--veh-green);
+  color: #fffaf0;
+  border-radius: 20px;
+  padding: 18px;
+}
+
+.adminStatCard p {
+  margin: 0 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+}
+
+.adminStatCard strong {
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.adminPanel {
+  background: #fff;
+  border: 1px solid #eadfc9;
+  border-radius: 24px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.adminTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.adminTable th,
+.adminTable td {
+  text-align: left;
+  padding: 12px 10px;
+  border-bottom: 1px solid #eee5d6;
+  vertical-align: top;
+}
+
+.adminToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.adminToolbar input,
+.adminToolbar select {
+  border: 1px solid #ded0b5;
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 200px;
+  font-size: 15px;
+}
+
+.adminBtn {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 900;
+  cursor: pointer;
+  background: var(--veh-green);
+  color: #fff;
+  font-size: 14px;
+}
+
+.adminBtnSecondary {
+  background: #fff;
+  color: var(--veh-green);
+  border: 1px solid #cdbf9f;
+}
+
+.adminBtnGold {
+  background: var(--veh-gold);
+  color: var(--veh-green);
+}
+
+.adminBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.adminBadge {
+  display: inline-block;
+  background: #f7f1e6;
+  border: 1px solid #ded0b5;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.adminMuted {
+  color: var(--veh-muted);
+  font-size: 14px;
+}
+
+.trustGridHome {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.trustCardHome {
+  padding: 28px;
+  border-radius: 28px;
+  border: 1px solid #eadfc9;
+  background: #fff;
+  text-align: left;
+}
+
+.trustCardHome h3 {
+  margin: 0 0 12px;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 900;
+}
+
+.trustCardHome ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--veh-muted);
+  line-height: 1.7;
+}
+
+.trustCardHome.highlight {
+  background: #f7f1e6;
+  border-color: var(--veh-gold);
+}
+
+.categorySeoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+@media (max-width: 900px) {
+  .trustGridHome,
+  .categorySeoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .adminTable {
+    display: block;
+    overflow-x: auto;
   }
 }

@@ -2,9 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getAuthUser } from "@/lib/auth";
-
-const ADMIN_EMAILS = ["meerhamzakhan2020@gmail.com"];
 
 type AdOrder = {
   id: string;
@@ -28,27 +25,8 @@ type AdOrder = {
 export default function AdminAdsPage() {
   const [ads, setAds] = useState<AdOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [allowed, setAllowed] = useState(false);
   const [renewingId, setRenewingId] = useState("");
-
-  async function checkAdmin() {
-    const { user } = await getAuthUser();
-    const email = user?.email || "";
-
-    if (!user) {
-      window.location.href = "/login";
-      return;
-    }
-
-    if (!ADMIN_EMAILS.includes(email)) {
-      setAllowed(false);
-      setLoading(false);
-      return;
-    }
-
-    setAllowed(true);
-    loadAds();
-  }
+  const [tableMissing, setTableMissing] = useState(false);
 
   async function loadAds() {
     setLoading(true);
@@ -59,7 +37,8 @@ export default function AdminAdsPage() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      alert(error.message);
+      setTableMissing(true);
+      setAds([]);
       setLoading(false);
       return;
     }
@@ -130,19 +109,26 @@ export default function AdminAdsPage() {
   }
 
   useEffect(() => {
-    checkAdmin();
+    loadAds();
   }, []);
 
-  if (loading) return <main style={styles.page}>Loading admin ads...</main>;
-
-  if (!allowed) {
+  if (loading) {
     return (
-      <main style={styles.page}>
-        <section style={styles.header}>
-          <p style={styles.eyebrow}>Access Denied</p>
-          <h1 style={styles.title}>You are not authorized.</h1>
-          <p style={styles.subtitle}>
-            This admin page is only available to approved VendorEventsHub admins.
+      <main className="adminPage">
+        <p className="adminMuted">Loading admin ads...</p>
+      </main>
+    );
+  }
+
+  if (tableMissing) {
+    return (
+      <main className="adminPage">
+        <section className="adminHero">
+          <p className="adminEyebrow">Ads</p>
+          <h1>Sponsored placements</h1>
+          <p className="adminMuted">
+            The ad_orders table is not available. Add the table in Supabase to
+            enable approve/reject workflows.
           </p>
         </section>
       </main>

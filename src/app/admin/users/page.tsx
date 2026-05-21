@@ -1,462 +1,184 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { getAuthUser } from "@/lib/auth";
 
-const ADMIN_EMAILS = ["meerhamzakhan2020@gmail.com"];
+type ProfileRow = {
+  id: string;
+  email?: string | null;
+  full_name?: string | null;
+  business_name?: string | null;
+  role?: string | null;
+  created_at?: string | null;
+  suspended?: boolean | null;
+};
 
 export default function AdminUsersPage() {
-  const [allowed, setAllowed] = useState(false);
+  const [users, setUsers] = useState<ProfileRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [hasSuspendedColumn, setHasSuspendedColumn] = useState<boolean | null>(null);
 
-  const [vendors, setVendors] = useState<any[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
-  const [adOrders, setAdOrders] = useState<any[]>([]);
+  async function loadUsers() {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  useEffect(() => {
-    async function init() {
-      const { user } = await getAuthUser();
-
-      if (!user) {
-        window.location.href = "/login";
-        return;
+    if (error) {
+      alert(error.message);
+      setUsers([]);
+    } else {
+      setUsers((data as ProfileRow[]) || []);
+      if (data && data.length > 0) {
+        setHasSuspendedColumn(
+          Object.prototype.hasOwnProperty.call(data[0], "suspended")
+        );
+      } else {
+        setHasSuspendedColumn(false);
       }
-
-      if (!ADMIN_EMAILS.includes(user.email || "")) {
-        setAllowed(false);
-        setLoading(false);
-        return;
-      }
-
-      setAllowed(true);
-
-      const [
-        { data: vendorRows },
-        { data: eventRows },
-        { data: adRows },
-      ] = await Promise.all([
-        supabase
-          .from("vendor_profiles")
-          .select("*")
-          .order("created_at", { ascending: false }),
-
-        supabase
-          .from("events")
-          .select("*")
-          .order("created_at", { ascending: false }),
-
-        supabase
-          .from("ad_orders")
-          .select("*")
-          .order("created_at", { ascending: false }),
-      ]);
-
-      setVendors(vendorRows || []);
-      setEvents(eventRows || []);
-      setAdOrders(adRows || []);
-
-      setLoading(false);
     }
 
-    init();
-  }, []);
-
-  const stats = useMemo(() => {
-    const verifiedVendors = vendors.filter(
-      (v) => v.verified
-    ).length;
-
-    const featuredVendors = vendors.filter(
-      (v) => v.featured
-    ).length;
-
-    const verifiedOrganizers = events.filter(
-      (e) => e.verified_organizer
-    ).length;
-
-    const paidAdvertisers = adOrders.filter(
-      (a) => a.payment_status === "paid"
-    ).length;
-
-    return {
-      verifiedVendors,
-      featuredVendors,
-      verifiedOrganizers,
-      paidAdvertisers,
-    };
-  }, [vendors, events, adOrders]);
-
-  if (loading) {
-    return (
-      <main style={styles.page}>
-        Loading platform users...
-      </main>
-    );
+    setLoading(false);
   }
 
-  if (!allowed) {
-    return (
-      <main style={styles.page}>
-        Access denied.
-      </main>
-    );
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return users.filter((user) => {
+      const matchesRole =
+        roleFilter === "all" || String(user.role || "vendor") === roleFilter;
+      const matchesSearch =
+        !q ||
+        user.email?.toLowerCase().includes(q) ||
+        user.full_name?.toLowerCase().includes(q) ||
+        user.business_name?.toLowerCase().includes(q) ||
+        user.id.toLowerCase().includes(q);
+      return matchesRole && matchesSearch;
+    });
+  }, [users, search, roleFilter]);
+
+  async function updateRole(userId: string, role: string) {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ role })
+      .eq("id", userId);
+
+    if (error) alert(error.message);
+    else await loadUsers();
+  }
+
+  async function toggleSuspend(userId: string, suspended: boolean) {
+    if (!hasSuspendedColumn) return;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ suspended })
+      .eq("id", userId);
+
+    if (error) alert(error.message);
+    else await loadUsers();
   }
 
   return (
-    <main style={styles.page}>
-      <section style={styles.hero}>
-        <p style={styles.eyebrow}>
-          VendorEventsHub Admin
-        </p>
-
-        <h1 style={styles.title}>
-          Platform Users Intelligence
-        </h1>
-
-        <p style={styles.text}>
-          Review vendors, organizers,
-          advertisers, and business activity
-          across VendorEventsHub.
+    <main className="adminPage">
+      <section className="adminHero">
+        <p className="adminEyebrow">Users</p>
+        <h1>Platform accounts</h1>
+        <p className="adminMuted">
+          Search profiles, change roles (vendor / organizer / admin), and manage
+          access.
+          {hasSuspendedColumn === false && (
+            <> Suspend is disabled until you add a <code>profiles.suspended</code> boolean column.</>
+          )}
         </p>
       </section>
 
-      <section style={styles.statsGrid}>
-        <Stat
-          title="Vendor Profiles"
-          value={vendors.length}
+      <div className="adminToolbar">
+        <input
+          placeholder="Search email, name, business, user id..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
-        <Stat
-          title="Verified Vendors"
-          value={stats.verifiedVendors}
-        />
-        <Stat
-          title="Featured Vendors"
-          value={stats.featuredVendors}
-        />
-        <Stat
-          title="Event Organizers"
-          value={events.length}
-        />
-        <Stat
-          title="Verified Organizers"
-          value={stats.verifiedOrganizers}
-        />
-        <Stat
-          title="Paid Advertisers"
-          value={stats.paidAdvertisers}
-        />
-      </section>
+        <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+          <option value="all">All roles</option>
+          <option value="vendor">Vendor</option>
+          <option value="organizer">Organizer</option>
+          <option value="admin">Admin</option>
+          <option value="both">Both</option>
+        </select>
+        <button type="button" className="adminBtn adminBtnSecondary" onClick={loadUsers}>
+          Refresh
+        </button>
+      </div>
 
-      <section style={styles.grid}>
-        <div style={styles.panel}>
-          <div style={styles.panelHeader}>
-            <h2>Recent Vendors</h2>
-
-            <Link
-              href="/admin/vendors"
-              style={styles.link}
-            >
-              View all →
-            </Link>
-          </div>
-
-          {vendors.length === 0 ? (
-            <p style={styles.muted}>
-              No vendor profiles yet.
-            </p>
-          ) : (
-            vendors.slice(0, 8).map((vendor) => (
-              <div
-                key={vendor.id}
-                style={styles.row}
-              >
-                <div>
-                  <strong>
-                    {vendor.business_name ||
-                      "Unnamed Vendor"}
-                  </strong>
-
-                  <p style={styles.rowSub}>
-                    {vendor.city},{" "}
-                    {vendor.state}
-                  </p>
-                </div>
-
-                <div style={styles.rowRight}>
-                  {vendor.verified && (
-                    <span style={styles.badge}>
-                      Verified
-                    </span>
-                  )}
-
-                  {vendor.featured && (
-                    <span style={styles.goldBadge}>
-                      Featured
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div style={styles.panel}>
-          <div style={styles.panelHeader}>
-            <h2>Recent Organizers</h2>
-
-            <Link
-              href="/admin/events"
-              style={styles.link}
-            >
-              View all →
-            </Link>
-          </div>
-
-          {events.length === 0 ? (
-            <p style={styles.muted}>
-              No organizers yet.
-            </p>
-          ) : (
-            events.slice(0, 8).map((event) => (
-              <div
-                key={event.id}
-                style={styles.row}
-              >
-                <div>
-                  <strong>
-                    {event.title ||
-                      "Untitled Event"}
-                  </strong>
-
-                  <p style={styles.rowSub}>
-                    {event.city},{" "}
-                    {event.state}
-                  </p>
-                </div>
-
-                <div style={styles.rowRight}>
-                  {event.verified_organizer && (
-                    <span style={styles.badge}>
-                      Verified
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-
-      <section style={styles.panel}>
-        <div style={styles.panelHeader}>
-          <h2>Paid Advertisers</h2>
-
-          <Link
-            href="/admin/payments"
-            style={styles.link}
-          >
-            Payment history →
-          </Link>
-        </div>
-
-        {adOrders.filter(
-          (a) => a.payment_status === "paid"
-        ).length === 0 ? (
-          <p style={styles.muted}>
-            No advertisers yet.
-          </p>
+      <section className="adminPanel">
+        {loading ? (
+          <p className="adminMuted">Loading users...</p>
+        ) : filtered.length === 0 ? (
+          <p className="adminMuted">No users match this search.</p>
         ) : (
-          adOrders
-            .filter(
-              (a) => a.payment_status === "paid"
-            )
-            .slice(0, 10)
-            .map((ad) => (
-              <div
-                key={ad.id}
-                style={styles.row}
-              >
-                <div>
-                  <strong>
-                    {ad.business_name ||
-                      "Business"}
-                  </strong>
-
-                  <p style={styles.rowSub}>
-                    {ad.customer_email ||
-                      "Email unavailable"}
-                  </p>
-                </div>
-
-                <div style={styles.rowRight}>
-                  <span
-                    style={styles.goldBadge}
-                  >
-                    $
-                    {(
-                      (ad.amount_total ||
-                        0) / 100
-                    ).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            ))
+          <table className="adminTable">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((user) => (
+                <tr key={user.id}>
+                  <td>
+                    <strong>{user.full_name || user.business_name || "Unnamed"}</strong>
+                    <br />
+                    <span className="adminMuted">{user.email || user.id}</span>
+                  </td>
+                  <td>
+                    <select
+                      value={user.role || "vendor"}
+                      onChange={(e) => updateRole(user.id, e.target.value)}
+                    >
+                      <option value="vendor">vendor</option>
+                      <option value="organizer">organizer</option>
+                      <option value="admin">admin</option>
+                      <option value="both">both</option>
+                    </select>
+                  </td>
+                  <td>
+                    {user.created_at
+                      ? new Date(user.created_at).toLocaleDateString()
+                      : "—"}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="adminBtn adminBtnSecondary"
+                      disabled={!hasSuspendedColumn}
+                      title={
+                        hasSuspendedColumn
+                          ? "Toggle suspended"
+                          : "Add profiles.suspended column in Supabase"
+                      }
+                      onClick={() =>
+                        toggleSuspend(user.id, !Boolean(user.suspended))
+                      }
+                    >
+                      {user.suspended ? "Unsuspend" : "Suspend"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </section>
     </main>
   );
 }
-
-function Stat({
-  title,
-  value,
-}: {
-  title: string;
-  value: number;
-}) {
-  return (
-    <div style={styles.statCard}>
-      <p>{title}</p>
-      <h2>{value}</h2>
-    </div>
-  );
-}
-
-const styles: Record<
-  string,
-  React.CSSProperties
-> = {
-  page: {
-    minHeight: "100vh",
-    background: "#f7f3ea",
-    padding: "34px 18px",
-    color: "#10291f",
-    fontFamily:
-      "Inter, system-ui, sans-serif",
-  },
-
-  hero: {
-    maxWidth: 1180,
-    margin: "0 auto 24px",
-    background: "#fff",
-    border: "1px solid #e7dcc7",
-    borderRadius: 34,
-    padding:
-      "clamp(28px, 5vw, 56px)",
-    boxShadow:
-      "0 24px 70px rgba(20,88,63,.12)",
-  },
-
-  eyebrow: {
-    color: "#14583f",
-    fontWeight: 900,
-    textTransform: "uppercase",
-    letterSpacing: ".16em",
-    fontSize: 12,
-  },
-
-  title: {
-    margin: 0,
-    fontSize:
-      "clamp(42px, 7vw, 76px)",
-    lineHeight: 0.95,
-    letterSpacing: "-.06em",
-  },
-
-  text: {
-    maxWidth: 760,
-    color: "#5f6b66",
-    fontSize: 18,
-    lineHeight: 1.7,
-  },
-
-  statsGrid: {
-    maxWidth: 1180,
-    margin: "0 auto 22px",
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit,minmax(180px,1fr))",
-    gap: 14,
-  },
-
-  statCard: {
-    background: "#10291f",
-    color: "#fff",
-    borderRadius: 26,
-    padding: 22,
-  },
-
-  grid: {
-    maxWidth: 1180,
-    margin: "0 auto 22px",
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit,minmax(320px,1fr))",
-    gap: 18,
-  },
-
-  panel: {
-    maxWidth: 1180,
-    margin: "0 auto 22px",
-    background: "#fff",
-    borderRadius: 28,
-    padding: 24,
-    border: "1px solid #e7dcc7",
-  },
-
-  panelHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 18,
-  },
-
-  link: {
-    color: "#14583f",
-    textDecoration: "none",
-    fontWeight: 900,
-  },
-
-  row: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "14px 0",
-    borderTop: "1px solid #eee5d6",
-  },
-
-  rowSub: {
-    color: "#5f6b66",
-    margin: "6px 0 0",
-  },
-
-  rowRight: {
-    display: "flex",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-
-  badge: {
-    background: "#e8ddc7",
-    color: "#14583f",
-    borderRadius: 999,
-    padding: "6px 10px",
-    fontSize: 12,
-    fontWeight: 900,
-  },
-
-  goldBadge: {
-    background: "#14583f",
-    color: "#fff",
-    borderRadius: 999,
-    padding: "6px 10px",
-    fontSize: 12,
-    fontWeight: 900,
-  },
-
-  muted: {
-    color: "#5f6b66",
-  },
-};

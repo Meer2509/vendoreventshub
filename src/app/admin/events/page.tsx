@@ -2,14 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getAuthUser } from "@/lib/auth";
-
-const ADMIN_EMAILS = ["meerhamzakhan2020@gmail.com"];
-
 export default function AdminEventsPage() {
   const [events, setEvents] = useState<any[]>([]);
-  const [allowed, setAllowed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   async function loadEvents() {
     const { data, error } = await supabase
@@ -21,24 +17,6 @@ export default function AdminEventsPage() {
     else setEvents(data || []);
 
     setLoading(false);
-  }
-
-  async function checkAdmin() {
-    const { user } = await getAuthUser();
-
-    if (!user) {
-      window.location.href = "/login";
-      return;
-    }
-
-    if (!ADMIN_EMAILS.includes(user.email || "")) {
-      setAllowed(false);
-      setLoading(false);
-      return;
-    }
-
-    setAllowed(true);
-    await loadEvents();
   }
 
   async function updateEvent(id: string, updates: any) {
@@ -53,8 +31,12 @@ export default function AdminEventsPage() {
   }
 
   async function deleteEvent(id: string) {
-    const confirmed = confirm("Are you sure you want to delete this event?");
+    const confirmed = confirm("Delete this event and related applications?");
     if (!confirmed) return;
+
+    await supabase.from("event_attendance").delete().eq("event_id", id);
+    await supabase.from("saved_events").delete().eq("event_id", id);
+    await supabase.from("reviews").delete().eq("event_id", id);
 
     const { error } = await supabase.from("events").delete().eq("id", id);
 
@@ -67,28 +49,53 @@ export default function AdminEventsPage() {
   }
 
   useEffect(() => {
-    checkAdmin();
+    loadEvents();
   }, []);
 
-  if (loading) return <main style={styles.page}>Loading events...</main>;
-  if (!allowed) return <main style={styles.page}>Access denied.</main>;
+  const filtered = events.filter((event) => {
+    const q = search.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      event.title?.toLowerCase().includes(q) ||
+      event.city?.toLowerCase().includes(q) ||
+      event.state?.toLowerCase().includes(q) ||
+      event.id?.toLowerCase().includes(q) ||
+      event.created_by?.toLowerCase().includes(q)
+    );
+  });
+
+  if (loading) {
+    return (
+      <main className="adminPage">
+        <p className="adminMuted">Loading events...</p>
+      </main>
+    );
+  }
 
   return (
-    <main style={styles.page}>
-      <section style={styles.hero}>
-        <p style={styles.eyebrow}>VendorEventsHub Admin</p>
-        <h1 style={styles.title}>Events Management</h1>
-        <p style={styles.text}>
-          Review event listings, feature premium opportunities, verify
-          organizers, pause visibility, or remove spam/bad event listings.
+    <main className="adminPage">
+      <section className="adminHero">
+        <p className="adminEyebrow">Events</p>
+        <h1>All marketplace events</h1>
+        <p className="adminMuted">
+          Feature listings, toggle accepting vendors, verify organizers, edit, or
+          delete any event safely.
         </p>
       </section>
 
+      <div className="adminToolbar">
+        <input
+          placeholder="Search title, city, state, organizer id..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
       <section style={styles.grid}>
-        {events.length === 0 ? (
+        {filtered.length === 0 ? (
           <div style={styles.card}>No events found.</div>
         ) : (
-          events.map((event) => (
+          filtered.map((event) => (
             <article key={event.id} style={styles.card}>
               {event.image_url && (
                 <img src={event.image_url} alt={event.title} style={styles.image} />
@@ -116,9 +123,19 @@ export default function AdminEventsPage() {
                 <p><strong>Booth Price:</strong> ${event.booth_price || "TBD"}</p>
                 <p><strong>Expected Visitors:</strong> {event.expected_visitors || "TBD"}</p>
                 <p><strong>Rating:</strong> {event.rating || "New"}</p>
+                <p><strong>Organizer ID:</strong> {event.created_by || "N/A"}</p>
               </div>
 
               <div style={styles.actions}>
+                <a href={`/events/${event.id}`} style={styles.approve}>
+                  Open detail
+                </a>
+                <a
+                  href={`/dashboard/organizer/events/${event.id}/edit`}
+                  style={styles.pause}
+                >
+                  Edit
+                </a>
                 <button
                   style={styles.approve}
                   onClick={() =>

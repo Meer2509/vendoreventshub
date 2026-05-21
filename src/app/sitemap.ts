@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { EVENT_SEO_CATEGORIES } from "@/lib/categories";
 import { US_STATES, slugifyLocation } from "@/lib/locations";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
 
@@ -32,6 +33,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: now,
     changeFrequency: "weekly" as const,
     priority: path === "/" ? 1 : 0.8,
+  }));
+
+  const categoryRoutes = EVENT_SEO_CATEGORIES.map((category) => ({
+    url: absoluteUrl(`/events/category/${category.slug}`),
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.75,
   }));
 
   const stateRoutes = US_STATES.map((state) => ({
@@ -102,6 +110,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...staticRoutes,
+    ...categoryRoutes,
     ...stateRoutes,
     ...cityRoutes,
     ...eventRoutes,

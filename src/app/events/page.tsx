@@ -10,6 +10,7 @@ import {
   getTrafficLabel,
   getVendorScore,
 } from "@/lib/event-display";
+import { EVENT_SEO_CATEGORIES } from "@/lib/categories";
 import { US_STATES } from "@/lib/locations";
 import { supabase } from "@/lib/supabase";
 
@@ -452,12 +453,24 @@ export default function EventsPage() {
         </div>
 
         <div className="stateBrowse">
-          <p className="goldEyebrow">Browse by State</p>
-          <h3>Vendor events by state</h3>
+          <p className="goldEyebrow">Vendor Events by State</p>
+          <h3 className="vehSectionTitle">Browse vendor events by state</h3>
           <div className="stateLinkGrid">
             {US_STATES.map((state) => (
               <Link key={state.slug} href={`/events/${state.slug}`}>
                 {state.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="stateBrowse">
+          <p className="goldEyebrow">Vendor Events by Category</p>
+          <h3 className="vehSectionTitle">Find opportunities by event type</h3>
+          <div className="categorySeoGrid">
+            {EVENT_SEO_CATEGORIES.map((cat) => (
+              <Link key={cat.slug} href={`/events/category/${cat.slug}`}>
+                {cat.headline}
               </Link>
             ))}
           </div>

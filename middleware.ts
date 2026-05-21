@@ -10,6 +10,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (segments[1] === "category" || segments[1] === "state") {
+    return NextResponse.next();
+  }
+
   if (segments.length === 2 && !isEventId(segments[1])) {
     const url = request.nextUrl.clone();
     url.pathname = `/events/state/${segments[1]}`;

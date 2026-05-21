@@ -262,12 +262,13 @@ export default function HomePageClient() {
       <section className="hero">
         <div className="heroCopy">
           <p className="eyebrow">America’s Vendor Intelligence Platform</p>
-          <h1>Find profitable vendor events before you waste money.</h1>
-          <p className="heroText">
-            VendorEventsHub helps vendors compare festivals, craft fairs, flea
-            markets, and farmers markets before applying — using booth fees,
-            traffic signals, organizer transparency, and vendor experience when
-            available.
+          <h1 className="vehHeroTitle">
+            Find Vendor Events Worth Your Time &amp; Money
+          </h1>
+          <p className="heroText vehBodyText">
+            Compare festivals, fairs, flea markets, craft shows, expos, and
+            farmers markets before you apply. Vendor reviews, booth fees, traffic
+            signals, and organizer trust — all in one place.
           </p>
 
           <form
@@ -294,6 +295,9 @@ export default function HomePageClient() {
             <Link href="/create-event" className="heroLinkBtn secondary">
               List Your Event
             </Link>
+            <Link href="/signup" className="heroLinkBtn secondary">
+              Join as Vendor
+            </Link>
           </div>
 
           <div className="launchStrip">
@@ -313,7 +317,7 @@ export default function HomePageClient() {
           <p className="panelBadge">Vendor Profit Check</p>
           <h3>Before you book a booth, know the real opportunity.</h3>
 
-          <div className="scoreCircle">95</div>
+          <div className="scoreCircle">VE</div>
 
           <div className="miniGrid">
             <div>
@@ -573,15 +577,53 @@ export default function HomePageClient() {
         </div>
 
         <div className="categoryGrid">
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => (window.location.href = "/events")}
-            >
-              <span>{category}</span>
-              <small>Explore opportunities</small>
-            </button>
-          ))}
+          {categories.map((category) => {
+            const slugMap: Record<string, string> = {
+              "Craft Fairs": "craft-fairs",
+              "Flea Markets": "flea-markets",
+              "Farmers Markets": "farmers-markets",
+              "Food Festivals": "food-festivals",
+              Festivals: "festivals",
+            };
+            const href = slugMap[category]
+              ? `/events/category/${slugMap[category]}`
+              : "/events";
+
+            return (
+              <Link key={category} href={href} className="categoryGridLink">
+                <span>{category}</span>
+                <small>Explore opportunities</small>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="luxSection trustSections">
+        <div className="trustGridHome">
+          <article className="trustCardHome highlight">
+            <p className="eyebrow">Why vendors trust VendorEventsHub</p>
+            <h3>Vendor intelligence before you pay booth fees</h3>
+            <ul>
+              <li>Compare before paying booth fees</li>
+              <li>Real vendor reviews when available</li>
+              <li>Organizer transparency</li>
+              <li>Traffic signals</li>
+              <li>Vendor Score™</li>
+              <li>No more guessing</li>
+            </ul>
+          </article>
+          <article className="trustCardHome">
+            <p className="eyebrow">Why organizers list on VendorEventsHub</p>
+            <h3>Reach qualified, event-ready vendors</h3>
+            <ul>
+              <li>Get discovered by qualified vendors</li>
+              <li>Build trust with organizer profiles</li>
+              <li>Promote events</li>
+              <li>Manage applications</li>
+              <li>Fill booths faster</li>
+            </ul>
+          </article>
         </div>
       </section>
 
@@ -1070,7 +1112,9 @@ export default function HomePageClient() {
           line-height: 1.7;
         }
 
-        .categoryGrid button {
+        .categoryGrid button,
+        .categoryGridLink {
+          display: block;
           background: white;
           color: #10291f;
           border: 1px solid #eadfc9;
@@ -1078,6 +1122,7 @@ export default function HomePageClient() {
           padding: 24px;
           text-align: left;
           box-shadow: 0 16px 40px rgba(20, 88, 63, 0.08);
+          text-decoration: none;
         }
 
         .categoryGrid span {

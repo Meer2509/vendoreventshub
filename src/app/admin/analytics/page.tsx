@@ -2,233 +2,145 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getAuthUser } from "@/lib/auth";
-
-const ADMIN_EMAILS = ["meerhamzakhan2020@gmail.com"];
 
 export default function AdminAnalyticsPage() {
-  const [allowed, setAllowed] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [ads, setAds] = useState<any[]>([]);
-  const [analytics, setAnalytics] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [vendors, setVendors] = useState<any[]>([]);
+  const [organizers, setOrganizers] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [saved, setSaved] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[] | null>(null);
+  const [reviewsAvailable, setReviewsAvailable] = useState(true);
 
   useEffect(() => {
-    async function init() {
-      const { user } = await getAuthUser();
-
-      if (!user) {
-        window.location.href = "/login";
-        return;
-      }
-
-      if (!ADMIN_EMAILS.includes(user.email || "")) {
-        setAllowed(false);
-        setLoading(false);
-        return;
-      }
-
-      setAllowed(true);
-
-      const [{ data: adRows }, { data: analyticsRows }] = await Promise.all([
-        supabase.from("ad_orders").select("*").order("created_at", { ascending: false }),
-        supabase.from("ad_analytics").select("*").order("created_at", { ascending: false }),
+    async function load() {
+      const [
+        eventsRes,
+        vendorsRes,
+        organizersRes,
+        appsRes,
+        savedRes,
+        reviewsRes,
+      ] = await Promise.all([
+        supabase.from("events").select("id, category, state, is_featured, accepting_vendors"),
+        supabase.from("vendor_profiles").select("user_id"),
+        supabase.from("organizer_profiles").select("user_id"),
+        supabase.from("event_attendance").select("id"),
+        supabase.from("saved_events").select("id"),
+        supabase.from("reviews").select("id"),
       ]);
 
-      setAds(adRows || []);
-      setAnalytics(analyticsRows || []);
+      setEvents(eventsRes.data || []);
+      setVendors(vendorsRes.data || []);
+      setOrganizers(organizersRes.data || []);
+      setApplications(appsRes.data || []);
+      setSaved(savedRes.data || []);
+
+      if (reviewsRes.error) {
+        setReviewsAvailable(false);
+        setReviews([]);
+      } else {
+        setReviews(reviewsRes.data || []);
+      }
+
       setLoading(false);
     }
 
-    init();
+    load();
   }, []);
 
-  const report = useMemo(() => {
-    return ads.map((ad) => {
-      const rows = analytics.filter((item) => item.ad_id === ad.id);
-      const views = rows.filter((item) => item.event_type === "view").length;
-      const clicks = rows.filter((item) => item.event_type === "click").length;
-      const ctr = views > 0 ? ((clicks / views) * 100).toFixed(2) : "0.00";
+  const stats = useMemo(() => {
+    const topStates: Record<string, number> = {};
+    const topCategories: Record<string, number> = {};
 
-      return { ad, views, clicks, ctr };
-    });
-  }, [ads, analytics]);
+    for (const event of events) {
+      const state = String(event.state || "Unknown");
+      const category = String(event.category || "Uncategorized");
+      topStates[state] = (topStates[state] || 0) + 1;
+      topCategories[category] = (topCategories[category] || 0) + 1;
+    }
 
-  const totals = useMemo(() => {
-    const views = analytics.filter((item) => item.event_type === "view").length;
-    const clicks = analytics.filter((item) => item.event_type === "click").length;
-    const ctr = views > 0 ? ((clicks / views) * 100).toFixed(2) : "0.00";
+    const sortEntries = (obj: Record<string, number>) =>
+      Object.entries(obj)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8);
 
-    return { views, clicks, ctr };
-  }, [analytics]);
+    return {
+      totalEvents: events.length,
+      totalVendors: vendors.length,
+      totalOrganizers: organizers.length,
+      totalApplications: applications.length,
+      totalSaved: saved.length,
+      totalReviews: reviews?.length || 0,
+      accepting: events.filter((e) => e.accepting_vendors !== false).length,
+      featured: events.filter((e) => e.is_featured).length,
+      topStates: sortEntries(topStates),
+      topCategories: sortEntries(topCategories),
+    };
+  }, [events, vendors, organizers, applications, saved, reviews]);
 
-  if (loading) return <main style={styles.page}>Loading analytics...</main>;
-  if (!allowed) return <main style={styles.page}>Access denied.</main>;
+  if (loading) {
+    return (
+      <main className="adminPage">
+        <p className="adminMuted">Loading analytics...</p>
+      </main>
+    );
+  }
 
   return (
-    <main style={styles.page}>
-      <section style={styles.hero}>
-        <p style={styles.eyebrow}>VendorEventsHub Admin</p>
-        <h1 style={styles.title}>Ad Analytics</h1>
-        <p style={styles.text}>
-          Track sponsored ad views, clicks, click-through rate, placement
-          performance, and advertiser engagement.
-        </p>
+    <main className="adminPage">
+      <section className="adminHero">
+        <p className="adminEyebrow">Analytics</p>
+        <h1>Marketplace intelligence</h1>
+        <p className="adminMuted">Live counts from Supabase — no fake stats.</p>
       </section>
 
-      <section style={styles.statsGrid}>
-        <Stat title="Total Views" value={totals.views} />
-        <Stat title="Total Clicks" value={totals.clicks} />
-        <Stat title="Average CTR" value={`${totals.ctr}%`} />
-        <Stat title="Tracked Ads" value={report.length} />
-      </section>
+      <div className="adminStatsGrid">
+        <div className="adminStatCard"><p>Events</p><strong>{stats.totalEvents}</strong></div>
+        <div className="adminStatCard"><p>Vendors</p><strong>{stats.totalVendors}</strong></div>
+        <div className="adminStatCard"><p>Organizers</p><strong>{stats.totalOrganizers}</strong></div>
+        <div className="adminStatCard"><p>Applications</p><strong>{stats.totalApplications}</strong></div>
+        <div className="adminStatCard"><p>Saved events</p><strong>{stats.totalSaved}</strong></div>
+        <div className="adminStatCard">
+          <p>Reviews</p>
+          <strong>{reviewsAvailable ? stats.totalReviews : "N/A"}</strong>
+        </div>
+        <div className="adminStatCard"><p>Accepting vendors</p><strong>{stats.accepting}</strong></div>
+        <div className="adminStatCard"><p>Featured events</p><strong>{stats.featured}</strong></div>
+      </div>
 
-      <section style={styles.list}>
-        {report.length === 0 ? (
-          <div style={styles.card}>No analytics yet.</div>
-        ) : (
-          report.map(({ ad, views, clicks, ctr }) => (
-            <article key={ad.id} style={styles.card}>
-              <div style={styles.topRow}>
-                <span style={styles.badge}>{ad.placement}</span>
-                <span style={styles.status}>{ad.approval_status}</span>
-              </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+        <section className="adminPanel">
+          <h2>Top states</h2>
+          {stats.topStates.length === 0 ? (
+            <p className="adminMuted">No events yet.</p>
+          ) : (
+            <ul>
+              {stats.topStates.map(([state, count]) => (
+                <li key={state}>
+                  {state}: <strong>{count}</strong>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-              <h2 style={styles.subject}>{ad.business_name}</h2>
-              <p style={styles.meta}>{ad.ad_title}</p>
-
-              <div style={styles.miniGrid}>
-                <div>
-                  <strong>{views}</strong>
-                  <span>Views</span>
-                </div>
-                <div>
-                  <strong>{clicks}</strong>
-                  <span>Clicks</span>
-                </div>
-                <div>
-                  <strong>{ctr}%</strong>
-                  <span>CTR</span>
-                </div>
-                <div>
-                  <strong>${((ad.amount_total || 0) / 100).toFixed(2)}</strong>
-                  <span>Revenue</span>
-                </div>
-              </div>
-            </article>
-          ))
-        )}
-      </section>
+        <section className="adminPanel">
+          <h2>Top categories</h2>
+          {stats.topCategories.length === 0 ? (
+            <p className="adminMuted">No categories yet.</p>
+          ) : (
+            <ul>
+              {stats.topCategories.map(([category, count]) => (
+                <li key={category}>
+                  {category}: <strong>{count}</strong>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </main>
   );
 }
-
-function Stat({ title, value }: { title: string; value: any }) {
-  return (
-    <div style={styles.statCard}>
-      <p>{title}</p>
-      <h2>{value}</h2>
-    </div>
-  );
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    background: "#f7f3ea",
-    padding: "34px 18px",
-    color: "#10291f",
-    fontFamily: "Inter, system-ui, sans-serif",
-  },
-  hero: {
-    maxWidth: 1180,
-    margin: "0 auto 24px",
-    background: "#fff",
-    border: "1px solid #e7dcc7",
-    borderRadius: 34,
-    padding: "clamp(28px, 5vw, 56px)",
-    boxShadow: "0 24px 70px rgba(20,88,63,.12)",
-  },
-  eyebrow: {
-    color: "#14583f",
-    fontWeight: 900,
-    textTransform: "uppercase",
-    letterSpacing: ".16em",
-    fontSize: 12,
-  },
-  title: {
-    margin: 0,
-    fontSize: "clamp(42px, 7vw, 76px)",
-    lineHeight: 0.95,
-    letterSpacing: "-.06em",
-  },
-  text: {
-    maxWidth: 760,
-    color: "#5f6b66",
-    fontSize: 18,
-    lineHeight: 1.7,
-  },
-  statsGrid: {
-    maxWidth: 1180,
-    margin: "0 auto 22px",
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: 14,
-  },
-  statCard: {
-    background: "#10291f",
-    color: "#fff",
-    borderRadius: 26,
-    padding: 22,
-  },
-  list: {
-    maxWidth: 1180,
-    margin: "0 auto",
-    display: "grid",
-    gap: 14,
-  },
-  card: {
-    background: "#fff",
-    border: "1px solid #e7dcc7",
-    borderRadius: 24,
-    padding: 22,
-    boxShadow: "0 16px 40px rgba(20,88,63,.08)",
-  },
-  topRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 10,
-    marginBottom: 12,
-  },
-  badge: {
-    background: "#e8ddc7",
-    color: "#14583f",
-    borderRadius: 999,
-    padding: "7px 12px",
-    fontSize: 12,
-    fontWeight: 900,
-    textTransform: "uppercase",
-  },
-  status: {
-    background: "#10291f",
-    color: "#fff",
-    borderRadius: 999,
-    padding: "7px 12px",
-    fontSize: 12,
-    fontWeight: 900,
-    textTransform: "uppercase",
-  },
-  subject: {
-    margin: 0,
-    fontSize: 26,
-    letterSpacing: "-.04em",
-  },
-  meta: {
-    color: "#5f6b66",
-  },
-  miniGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-    gap: 12,
-    marginTop: 16,
-  },
-};

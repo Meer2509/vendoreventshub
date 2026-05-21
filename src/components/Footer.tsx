@@ -40,6 +40,13 @@ export default function Footer() {
         </div>
 
         <div>
+          <strong>Explore</strong>
+          <Link href="/events">Events</Link>
+          <Link href="/vendors">Vendors</Link>
+          <Link href="/sitemap.xml">Sitemap</Link>
+        </div>
+
+        <div>
           <strong>Legal</strong>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
