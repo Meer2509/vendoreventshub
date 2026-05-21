@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthUser } from "@/lib/auth";
 
 const ADMIN_EMAILS = ["meerhamzakhan2020@gmail.com"];
 
@@ -12,10 +13,13 @@ export default function AdminPaymentsPage() {
 
   useEffect(() => {
     async function init() {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) return (window.location.href = "/login");
+      const { user } = await getAuthUser();
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
 
-      if (!ADMIN_EMAILS.includes(data.user.email || "")) {
+      if (!ADMIN_EMAILS.includes(user.email || "")) {
         setAllowed(false);
         setLoading(false);
         return;

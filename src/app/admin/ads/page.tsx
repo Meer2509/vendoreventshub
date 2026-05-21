@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthUser } from "@/lib/auth";
 
 const ADMIN_EMAILS = ["meerhamzakhan2020@gmail.com"];
 
@@ -31,10 +32,10 @@ export default function AdminAdsPage() {
   const [renewingId, setRenewingId] = useState("");
 
   async function checkAdmin() {
-    const { data } = await supabase.auth.getUser();
-    const email = data.user?.email || "";
+    const { user } = await getAuthUser();
+    const email = user?.email || "";
 
-    if (!data.user) {
+    if (!user) {
       window.location.href = "/login";
       return;
     }

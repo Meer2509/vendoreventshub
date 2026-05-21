@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { getAuthUser } from "@/lib/auth";
 
 const bestFitByCategory: Record<string, string[]> = {
   Festival: ["Food Vendors", "Coffee Brands", "Crafts", "Wellness", "Local Retail"],
@@ -226,16 +227,16 @@ export default function EventDetailPage() {
   }, [event]);
 
   async function saveEvent() {
-    const { data: userData } = await supabase.auth.getUser();
+    const { user } = await getAuthUser();
 
-    if (!userData.user) {
+    if (!user) {
       alert("Please login first to save this event.");
-      window.location.href = "/login";
+      window.location.href = "/login/vendor";
       return;
     }
 
     const { error } = await supabase.from("saved_events").insert({
-      vendor_id: userData.user.id,
+      vendor_id: user.id,
       event_id: eventId,
     });
 
@@ -248,17 +249,17 @@ export default function EventDetailPage() {
   }
 
   async function applyAsVendor() {
-    const { data: userData } = await supabase.auth.getUser();
+    const { user } = await getAuthUser();
 
-    if (!userData.user) {
+    if (!user) {
       alert("Please login first to apply as a vendor.");
-      window.location.href = "/login";
+      window.location.href = "/login/vendor";
       return;
     }
 
     const { error } = await supabase.from("event_attendance").insert({
       event_id: eventId,
-      vendor_id: userData.user.id,
+      vendor_id: user.id,
       status: "requested",
     });
 
@@ -273,11 +274,11 @@ export default function EventDetailPage() {
   async function submitReview(e: React.FormEvent) {
     e.preventDefault();
 
-    const { data: userData } = await supabase.auth.getUser();
+    const { user } = await getAuthUser();
 
-    if (!userData.user) {
+    if (!user) {
       alert("Please login first to leave a review.");
-      window.location.href = "/login";
+      window.location.href = "/login/vendor";
       return;
     }
 
@@ -285,7 +286,7 @@ export default function EventDetailPage() {
       .from("event_attendance")
       .select("*")
       .eq("event_id", eventId)
-      .eq("vendor_id", userData.user.id)
+      .eq("vendor_id", user.id)
       .in("status", ["approved", "attended"])
       .single();
 
@@ -298,7 +299,7 @@ export default function EventDetailPage() {
 
     const { error } = await supabase.from("reviews").insert({
       event_id: eventId,
-      vendor_id: userData.user.id,
+      vendor_id: user.id,
       rating: Number(rating),
       review,
       attended: true,

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthUser } from "@/lib/auth";
 
 const quickFilters = [
   "Top Rated",
@@ -232,16 +233,16 @@ export default function EventsPage() {
   }
 
   async function saveEvent(eventId: string) {
-    const { data: userData } = await supabase.auth.getUser();
+    const { user } = await getAuthUser();
 
-    if (!userData.user) {
+    if (!user) {
       alert("Please login first to save events.");
-      window.location.href = "/login";
+      window.location.href = "/login/vendor";
       return;
     }
 
     const { error } = await supabase.from("saved_events").insert({
-      vendor_id: userData.user.id,
+      vendor_id: user.id,
       event_id: eventId,
     });
 
@@ -254,17 +255,17 @@ export default function EventsPage() {
   }
 
   async function applyToEvent(eventId: string) {
-    const { data: userData } = await supabase.auth.getUser();
+    const { user } = await getAuthUser();
 
-    if (!userData.user) {
+    if (!user) {
       alert("Please login first to apply as a vendor.");
-      window.location.href = "/login";
+      window.location.href = "/login/vendor";
       return;
     }
 
     const { error } = await supabase.from("event_attendance").insert({
       event_id: eventId,
-      vendor_id: userData.user.id,
+      vendor_id: user.id,
       status: "requested",
     });
 

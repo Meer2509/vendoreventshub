@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { getAuthUser } from "@/lib/auth";
 
 const ADMIN_EMAILS = ["meerhamzakhan2020@gmail.com"];
 
@@ -15,14 +16,14 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     async function init() {
-      const { data } = await supabase.auth.getUser();
+      const { user } = await getAuthUser();
 
-      if (!data.user) {
+      if (!user) {
         window.location.href = "/login";
         return;
       }
 
-      if (!ADMIN_EMAILS.includes(data.user.email || "")) {
+      if (!ADMIN_EMAILS.includes(user.email || "")) {
         setAllowed(false);
         setLoading(false);
         return;

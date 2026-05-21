@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthUser, requireVendorAccess } from "@/lib/auth";
 
 const categories = [
   "Food & Beverage",
@@ -43,13 +44,15 @@ export default function VendorProfileSetupPage() {
 
   useEffect(() => {
     async function loadExistingProfile() {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return;
+      const auth = await requireVendorAccess();
+      if (!auth) return;
+
+      const { user } = auth;
 
       const { data } = await supabase
         .from("vendor_profiles")
         .select("*")
-        .eq("user_id", userData.user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
       if (data) {
@@ -138,13 +141,8 @@ export default function VendorProfileSetupPage() {
     e.preventDefault();
     setLoading(true);
 
-    const { data: userData } = await supabase.auth.getUser();
-
-    if (!userData.user) {
-      alert("Please login first.");
-      window.location.href = "/login";
-      return;
-    }
+    const auth = await requireVendorAccess();
+    if (!auth) return;
 
     const cleanSlug =
       profile.slug ||
@@ -155,7 +153,7 @@ export default function VendorProfileSetupPage() {
 
     const { error } = await supabase.from("vendor_profiles").upsert(
       {
-        user_id: userData.user.id,
+        user_id: auth.user.id,
         ...profile,
         slug: cleanSlug,
       },

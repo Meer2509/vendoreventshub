@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthUser, requireOrganizerDashboard } from "@/lib/auth";
 
 function formatDate(date: string) {
   if (!date) return "Date coming soon";
@@ -26,14 +27,10 @@ export default function OrganizerDashboardPage() {
   async function loadDashboard() {
     setLoading(true);
 
-    const { data: userData } = await supabase.auth.getUser();
+    const auth = await requireOrganizerDashboard();
+    if (!auth) return;
 
-    if (!userData.user) {
-      window.location.href = "/login";
-      return;
-    }
-
-    const userId = userData.user.id;
+    const userId = auth.user.id;
 
     const { data: profileData } = await supabase
       .from("profiles")
@@ -166,11 +163,11 @@ export default function OrganizerDashboardPage() {
 
     setDeletingEventId(eventId);
 
-    const { data: userData } = await supabase.auth.getUser();
+    const { user } = await getAuthUser();
 
-    if (!userData.user) {
+    if (!user) {
       alert("Please login again.");
-      window.location.href = "/login";
+      window.location.href = "/login/organizer";
       return;
     }
 
@@ -178,7 +175,7 @@ export default function OrganizerDashboardPage() {
       .from("events")
       .select("id, created_by")
       .eq("id", eventId)
-      .eq("created_by", userData.user.id)
+      .eq("created_by", user.id)
       .single();
 
     if (checkError || !eventCheck) {
@@ -224,7 +221,7 @@ export default function OrganizerDashboardPage() {
       .from("events")
       .delete()
       .eq("id", eventId)
-      .eq("created_by", userData.user.id);
+      .eq("created_by", user.id);
 
     if (eventError) {
       alert(eventError.message);

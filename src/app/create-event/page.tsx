@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { requireOrganizerAccess } from "@/lib/auth";
 
 const categories = [
   "Festival",
@@ -40,12 +41,8 @@ export default function CreateEventPage() {
 
   useEffect(() => {
     async function checkAuth() {
-      const { data: userData } = await supabase.auth.getUser();
-
-      if (!userData.user) {
-        window.location.href = "/login";
-        return;
-      }
+      const auth = await requireOrganizerAccess();
+      if (!auth) return;
 
       setAuthChecked(true);
     }
@@ -147,13 +144,8 @@ export default function CreateEventPage() {
     e.preventDefault();
     setLoading(true);
 
-    const { data: userData } = await supabase.auth.getUser();
-
-    if (!userData.user) {
-      alert("Please login first.");
-      window.location.href = "/login";
-      return;
-    }
+    const auth = await requireOrganizerAccess();
+    if (!auth) return;
 
     const enhancedDescription = `
 ${event.description}
@@ -181,7 +173,7 @@ Vendor Details:
         event_date: event.event_date,
         image_url: event.image_url,
         is_featured: false,
-        created_by: userData.user.id,
+        created_by: auth.user.id,
       })
       .select("id")
       .single();

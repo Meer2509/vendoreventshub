@@ -1,9 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import {
+  dashboardPathForRole,
+  getAuthUser,
+  getProfileRole,
+  normalizeSignupRole,
+} from "@/lib/auth";
 
-type AccountType = "vendor" | "organizer" | "both";
+type AccountType = "vendor" | "organizer";
 
 export default function SignupPage() {
   const [loading, setLoading] = useState(false);
@@ -23,10 +30,21 @@ export default function SignupPage() {
     agree: false,
   });
 
+  useEffect(() => {
+    async function redirectIfLoggedIn() {
+      const { user } = await getAuthUser();
+      if (!user) return;
+
+      const role = await getProfileRole(user.id);
+      window.location.href = dashboardPathForRole(role);
+    }
+
+    redirectIfLoggedIn();
+  }, []);
+
   const redirectPath = useMemo(() => {
-    if (formData.accountType === "vendor") return "/profile/setup";
     if (formData.accountType === "organizer") return "/dashboard/organizer/setup";
-    return "/dashboard";
+    return "/profile/setup";
   }, [formData.accountType]);
 
   async function handleSignup(e: React.FormEvent) {
@@ -44,6 +62,8 @@ export default function SignupPage() {
 
     setLoading(true);
 
+    const role = normalizeSignupRole(formData.accountType);
+
     const { data, error } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
@@ -51,7 +71,7 @@ export default function SignupPage() {
         data: {
           full_name: formData.fullName,
           business_name: formData.businessName,
-          role: formData.accountType,
+          role,
         },
       },
     });
@@ -63,17 +83,20 @@ export default function SignupPage() {
     }
 
     if (data.user) {
-      await supabase.from("profiles").upsert({
-        id: data.user.id,
-        email: formData.email,
-        full_name: formData.fullName,
-        business_name: formData.businessName,
-        role: formData.accountType,
-        city: formData.city || null,
-        state: formData.state || null,
-        website_url: formData.website || null,
-        phone: formData.phone || null,
-      });
+      await supabase.from("profiles").upsert(
+        {
+          id: data.user.id,
+          email: formData.email,
+          full_name: formData.fullName,
+          business_name: formData.businessName,
+          role,
+          city: formData.city || null,
+          state: formData.state || null,
+          website_url: formData.website || null,
+          phone: formData.phone || null,
+        },
+        { onConflict: "id" }
+      );
     }
 
     setLoading(false);
@@ -106,8 +129,6 @@ export default function SignupPage() {
               "Create your vendor profile after signup."}
             {formData.accountType === "organizer" &&
               "List your first event after signup."}
-            {formData.accountType === "both" &&
-              "Access your full command center after signup."}
           </h3>
           <p>
             VendorEventsHub helps vendors discover opportunities and helps
@@ -134,11 +155,6 @@ export default function SignupPage() {
                 value: "organizer",
                 title: "Organizer",
                 text: "List events, reach vendors, and manage event opportunities.",
-              },
-              {
-                value: "both",
-                title: "Both",
-                text: "Use vendor and organizer tools in one premium command center.",
               },
             ].map((option) => (
               <button
@@ -310,7 +326,10 @@ export default function SignupPage() {
           </button>
 
           <p className="loginText">
-            Already have an account? <a href="/login">Login here</a>
+            Already have an account?{" "}
+            <Link href="/login">Choose login</Link> ·{" "}
+            <Link href="/login/vendor">Vendor login</Link> ·{" "}
+            <Link href="/login/organizer">Organizer login</Link>
           </p>
         </form>
       </section>

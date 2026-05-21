@@ -1,40 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { routeDashboardByRole } from "@/lib/auth";
 
 export default function DashboardRouterPage() {
   useEffect(() => {
-    async function routeUser() {
-      const { data: userData } = await supabase.auth.getUser();
-
-      if (!userData.user) {
-        window.location.href = "/login";
-        return;
-      }
-
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", userData.user.id)
-        .single();
-
-      const role = profileData?.role || "vendor";
-
-      if (role === "organizer") {
-        window.location.href = "/dashboard/organizer";
-        return;
-      }
-
-      if (role === "admin") {
-        window.location.href = "/admin";
-        return;
-      }
-
-      window.location.href = "/dashboard/vendor";
-    }
-
-    routeUser();
+    routeDashboardByRole();
   }, []);
 
   return (
@@ -51,9 +22,7 @@ export default function DashboardRouterPage() {
       }}
     >
       <div>
-        <p style={{ color: "#b88a2e", fontWeight: 900 }}>
-          VendorEventsHub
-        </p>
+        <p style={{ color: "#b88a2e", fontWeight: 900 }}>VendorEventsHub</p>
         <h1>Opening your dashboard...</h1>
         <p>Please wait while we load the right dashboard for your account.</p>
       </div>

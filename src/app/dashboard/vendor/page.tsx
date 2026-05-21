@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { requireVendorDashboard } from "@/lib/auth";
 
 export default function VendorDashboardPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -11,14 +12,10 @@ export default function VendorDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   async function loadDashboard() {
-    const { data: userData } = await supabase.auth.getUser();
+    const auth = await requireVendorDashboard();
+    if (!auth) return;
 
-    if (!userData.user) {
-      window.location.href = "/login";
-      return;
-    }
-
-    const userId = userData.user.id;
+    const userId = auth.user.id;
 
     const { data: profileData } = await supabase
       .from("profiles")

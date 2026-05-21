@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthUser, requireOrganizerAccess } from "@/lib/auth";
 
 export default function OrganizerSetupPage() {
   const [loading, setLoading] = useState(false);
@@ -26,13 +27,15 @@ export default function OrganizerSetupPage() {
 
   useEffect(() => {
     async function loadExistingProfile() {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return;
+      const auth = await requireOrganizerAccess();
+      if (!auth) return;
+
+      const { user } = auth;
 
       const { data } = await supabase
         .from("organizer_profiles")
         .select("*")
-        .eq("user_id", userData.user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
       if (data) {
@@ -154,14 +157,8 @@ export default function OrganizerSetupPage() {
 
     setLoading(true);
 
-    const { data: userData } =
-      await supabase.auth.getUser();
-
-    if (!userData.user) {
-      alert("Please login first.");
-      window.location.href = "/login";
-      return;
-    }
+    const auth = await requireOrganizerAccess();
+    if (!auth) return;
 
     const cleanSlug =
       profile.slug ||
@@ -174,7 +171,7 @@ export default function OrganizerSetupPage() {
       .from("organizer_profiles")
       .upsert(
         {
-          user_id: userData.user.id,
+          user_id: auth.user.id,
           ...profile,
           slug: cleanSlug,
         },

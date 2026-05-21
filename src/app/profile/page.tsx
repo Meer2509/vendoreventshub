@@ -2,33 +2,30 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthUser, requireVendorAccess } from "@/lib/auth";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     async function loadProfile() {
-      const { data: userData } = await supabase.auth.getUser();
-
-      if (!userData.user) {
-        window.location.href = "/login";
-        return;
-      }
+      const auth = await requireVendorAccess();
+      if (!auth) return;
 
       let { data } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", userData.user.id)
+        .eq("id", auth.user.id)
         .single();
 
       if (!data) {
         const { data: newProfile } = await supabase
           .from("profiles")
           .insert({
-            id: userData.user.id,
-            email: userData.user.email,
-            full_name: userData.user.user_metadata?.full_name || "",
-            business_name: userData.user.user_metadata?.business_name || "",
+            id: auth.user.id,
+            email: auth.user.email,
+            full_name: auth.user.user_metadata?.full_name || "",
+            business_name: auth.user.user_metadata?.business_name || "",
             account_type: "vendor",
           })
           .select()
@@ -44,10 +41,10 @@ export default function ProfilePage() {
   }, []);
 
   async function saveProfile() {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return;
+    const { user } = await getAuthUser();
+    if (!user) return;
 
-    await supabase.from("profiles").update(profile).eq("id", userData.user.id);
+    await supabase.from("profiles").update(profile).eq("id", user.id);
 
     alert("Profile saved successfully.");
   }

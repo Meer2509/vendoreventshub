@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthUser } from "@/lib/auth";
 
 const placements = [
   {
@@ -165,9 +166,9 @@ export default function AdvertisePage() {
     e.preventDefault();
     setLoading(true);
 
-    const { data: userData } = await supabase.auth.getUser();
+    const { user } = await getAuthUser();
 
-    if (!userData.user) {
+    if (!user) {
       alert("Please login first.");
       window.location.href = "/login";
       return;
