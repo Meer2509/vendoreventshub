@@ -4,6 +4,20 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+function cleanSocialUrl(type: string, value: string) {
+  if (!value) return "";
+
+  if (value.startsWith("http")) return value;
+
+  const cleanValue = value.replace("@", "").trim();
+
+  if (type === "instagram") return `https://instagram.com/${cleanValue}`;
+  if (type === "tiktok") return `https://tiktok.com/@${cleanValue}`;
+  if (type === "facebook") return `https://facebook.com/${cleanValue}`;
+
+  return value;
+}
+
 export default function VendorProfilePage() {
   const params = useParams();
   const vendorSlug = params.vendor as string;
@@ -47,13 +61,43 @@ export default function VendorProfilePage() {
         <section className="luxSection">
           <h1>Vendor not found</h1>
           <p className="muted">This vendor profile may not exist yet.</p>
-          <button className="goldBtn" onClick={() => (window.location.href = "/vendors")}>
+          <button
+            className="goldBtn"
+            onClick={() => (window.location.href = "/vendors")}
+          >
             Back To Vendors
           </button>
         </section>
       </main>
     );
   }
+
+  const socialLinks = [
+    {
+      label: "Website",
+      icon: "🌐",
+      className: "website",
+      url: vendor.website,
+    },
+    {
+      label: "Instagram",
+      icon: "📸",
+      className: "instagram",
+      url: cleanSocialUrl("instagram", vendor.instagram),
+    },
+    {
+      label: "TikTok",
+      icon: "🎵",
+      className: "tiktok",
+      url: cleanSocialUrl("tiktok", vendor.tiktok),
+    },
+    {
+      label: "Facebook",
+      icon: "📘",
+      className: "facebook",
+      url: cleanSocialUrl("facebook", vendor.facebook),
+    },
+  ].filter((item) => item.url);
 
   return (
     <main className="vendorProfilePage">
@@ -86,7 +130,9 @@ export default function VendorProfilePage() {
             </p>
 
             <div className="trustRow">
-              <span>{vendor.city || "City"}, {vendor.state || "State"}</span>
+              <span>
+                {vendor.city || "City"}, {vendor.state || "State"}
+              </span>
               <span>{vendor.years_in_business || "New business"}</span>
               <span>{vendor.verified ? "Verified Vendor" : "Profile Listed"}</span>
             </div>
@@ -97,6 +143,7 @@ export default function VendorProfilePage() {
                   Visit Website
                 </button>
               )}
+
               <button
                 className="secondary"
                 onClick={() => (window.location.href = "/events")}
@@ -130,14 +177,17 @@ export default function VendorProfilePage() {
                   <strong>{vendor.category || "Vendor"}</strong>
                   <span>Business Category</span>
                 </div>
+
                 <div>
                   <strong>{vendor.city || "Local"}</strong>
                   <span>Base City</span>
                 </div>
+
                 <div>
                   <strong>{vendor.state || "USA"}</strong>
                   <span>State</span>
                 </div>
+
                 <div>
                   <strong>{vendor.verified ? "Verified" : "Listed"}</strong>
                   <span>Profile Status</span>
@@ -176,7 +226,9 @@ export default function VendorProfilePage() {
 
               <div className="sidebarInfo">
                 <span>Location</span>
-                <strong>{vendor.city || "City"}, {vendor.state || "State"}</strong>
+                <strong>
+                  {vendor.city || "City"}, {vendor.state || "State"}
+                </strong>
               </div>
 
               <div className="sidebarInfo">
@@ -192,56 +244,24 @@ export default function VendorProfilePage() {
               )}
             </div>
 
-            <div className="sidebarCard">
-              <p className="eyebrow">Connect</p>
+            {socialLinks.length > 0 && (
+              <div className="sidebarCard">
+                <p className="eyebrow">Connect With This Vendor</p>
 
-              {vendor.website && (
-                <button onClick={() => window.open(vendor.website, "_blank")}>
-                  Website
-                </button>
-              )}
-
-              {vendor.instagram && (
-                <button
-                  className="secondary"
-                  onClick={() =>
-                    window.open(
-                      vendor.instagram.startsWith("http")
-                        ? vendor.instagram
-                        : `https://instagram.com/${vendor.instagram.replace("@", "")}`,
-                      "_blank"
-                    )
-                  }
-                >
-                  Instagram
-                </button>
-              )}
-
-              {vendor.tiktok && (
-                <button
-                  className="secondary"
-                  onClick={() =>
-                    window.open(
-                      vendor.tiktok.startsWith("http")
-                        ? vendor.tiktok
-                        : `https://tiktok.com/@${vendor.tiktok.replace("@", "")}`,
-                      "_blank"
-                    )
-                  }
-                >
-                  TikTok
-                </button>
-              )}
-
-              {vendor.facebook && (
-                <button
-                  className="secondary"
-                  onClick={() => window.open(vendor.facebook, "_blank")}
-                >
-                  Facebook
-                </button>
-              )}
-            </div>
+                <div className="socialGrid">
+                  {socialLinks.map((item) => (
+                    <button
+                      key={item.label}
+                      className={`socialButton ${item.className}`}
+                      onClick={() => window.open(item.url, "_blank")}
+                    >
+                      <span>{item.icon}</span>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="sidebarCard sponsorCard">
               <p className="eyebrow">For Organizers</p>
@@ -474,6 +494,40 @@ export default function VendorProfilePage() {
 
         .sidebarCard button {
           margin-top: 12px;
+        }
+
+        .socialGrid {
+          display: grid;
+          gap: 12px;
+          margin-top: 12px;
+        }
+
+        .socialButton {
+          width: 100%;
+          border-radius: 20px;
+          font-size: 15px;
+          padding: 16px 18px;
+          font-weight: 950;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .website {
+          background: #10291f;
+        }
+
+        .instagram {
+          background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+        }
+
+        .tiktok {
+          background: #000;
+        }
+
+        .facebook {
+          background: #1877f2;
         }
 
         @media (max-width: 980px) {
