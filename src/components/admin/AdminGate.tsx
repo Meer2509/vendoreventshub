@@ -23,11 +23,11 @@ export default function AdminGate({ children }: { children: React.ReactNode }) {
         <PremiumEmptyState
           eyebrow="Access Denied"
           title="Admin access required"
-          description="Only accounts with profiles.role = admin can access this area. Other users are redirected to their dashboard."
-          actionLabel="Go to Dashboard"
-          onAction={() => (window.location.href = "/dashboard")}
-          secondaryLabel="Back to Site"
-          onSecondary={() => (window.location.href = "/")}
+          description="Sign in with an account where profiles.role = admin. Navigation does not sign you out — use Log In if your session expired."
+          actionLabel="Log In"
+          onAction={() => (window.location.href = "/login")}
+          secondaryLabel="Go to Dashboard"
+          onSecondary={() => (window.location.href = "/dashboard")}
         />
       </main>
     );

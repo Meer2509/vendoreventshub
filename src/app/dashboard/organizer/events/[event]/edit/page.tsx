@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { requireOrganizerAccess } from "@/lib/auth";
+import { requireOrganizerOrAdminAccess } from "@/lib/auth";
 import {
   EVENT_CATEGORIES,
   VENDOR_FIT_OPTIONS,
@@ -44,19 +44,20 @@ export default function EditEventPage() {
 
   useEffect(() => {
     async function loadEvent() {
-      const auth = await requireOrganizerAccess();
+      const auth = await requireOrganizerOrAdminAccess();
       if (!auth) return;
 
-      const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .eq("id", eventId)
-        .eq("created_by", auth.user.id)
-        .single();
+      let query = supabase.from("events").select("*").eq("id", eventId);
+
+      if (!auth.isAdmin) {
+        query = query.eq("created_by", auth.user.id);
+      }
+
+      const { data, error } = await query.single();
 
       if (error || !data) {
         alert("Event not found or you do not have permission to edit it.");
-        window.location.href = "/dashboard/organizer";
+        window.location.href = auth.isAdmin ? "/admin/events" : "/dashboard/organizer";
         return;
       }
 
@@ -138,10 +139,10 @@ export default function EditEventPage() {
     e.preventDefault();
     setLoading(true);
 
-    const auth = await requireOrganizerAccess();
+    const auth = await requireOrganizerOrAdminAccess();
     if (!auth) return;
 
-    const { error } = await supabase
+    let updateQuery = supabase
       .from("events")
       .update({
         title: event.title,
@@ -156,8 +157,13 @@ export default function EditEventPage() {
         image_url: event.image_url,
         accepting_vendors: event.accepting_vendors,
       })
-      .eq("id", eventId)
-      .eq("created_by", auth.user.id);
+      .eq("id", eventId);
+
+    if (!auth.isAdmin) {
+      updateQuery = updateQuery.eq("created_by", auth.user.id);
+    }
+
+    const { error } = await updateQuery;
 
     setLoading(false);
 

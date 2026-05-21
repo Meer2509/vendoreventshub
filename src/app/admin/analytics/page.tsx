@@ -31,6 +31,13 @@ export default function AdminAnalyticsPage() {
         supabase.from("reviews").select("id"),
       ]);
 
+      if (eventsRes.error) alert(`events: ${eventsRes.error.message}`);
+      if (vendorsRes.error) alert(`vendor_profiles: ${vendorsRes.error.message}`);
+      if (organizersRes.error)
+        alert(`organizer_profiles: ${organizersRes.error.message}`);
+      if (appsRes.error) alert(`event_attendance: ${appsRes.error.message}`);
+      if (savedRes.error) alert(`saved_events: ${savedRes.error.message}`);
+
       setEvents(eventsRes.data || []);
       setVendors(vendorsRes.data || []);
       setOrganizers(organizersRes.data || []);

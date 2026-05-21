@@ -127,8 +127,15 @@ button.btn {
 .adminActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
+}
+
+.adminTable .adminActions .adminBtn {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 8px;
 }
 
 .vehHeroTitle,

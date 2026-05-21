@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import {
-  dashboardPathForRole,
   getAuthSession,
   getProfileRole,
-  resolveAdminAccess,
+  isAdminRole,
 } from "@/lib/auth";
 
 export type AdminAccessStatus = "loading" | "allowed" | "denied";
@@ -16,36 +16,48 @@ export function useAdminAccess(): AdminAccessStatus {
   useEffect(() => {
     let active = true;
 
-    async function check() {
-      for (let attempt = 0; attempt < 4; attempt += 1) {
-        const auth = await resolveAdminAccess();
+    async function verify() {
+      for (let attempt = 0; attempt < 10; attempt += 1) {
         if (!active) return;
-        if (auth) {
+
+        const { user } = await getAuthSession();
+        if (!user) {
+          if (attempt < 9) {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+            continue;
+          }
+          setStatus("denied");
+          return;
+        }
+
+        const role = await getProfileRole(user.id);
+        if (isAdminRole(role)) {
           setStatus("allowed");
           return;
         }
-        await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
-      }
 
-      if (!active) return;
-
-      const { user } = await getAuthSession();
-      if (!user) {
-        window.location.assign("/login");
+        setStatus("denied");
         return;
       }
-
-      const role = await getProfileRole(user.id);
-      if (role !== "admin") {
-        window.location.assign(dashboardPathForRole(role));
-      }
-      setStatus("denied");
     }
 
-    check();
+    verify();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setStatus("denied");
+        return;
+      }
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+        verify();
+      }
+    });
 
     return () => {
       active = false;
+      subscription.unsubscribe();
     };
   }, []);
 

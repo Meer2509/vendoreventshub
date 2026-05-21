@@ -103,6 +103,32 @@ export function canAccessOrganizerDashboard(role: UserRole): boolean {
   return role === "organizer" || role === "both";
 }
 
+export function isAdminRole(role: UserRole): boolean {
+  return role === "admin";
+}
+
+/** Organizer tools + full admin override (edit any event, etc.). */
+export async function requireOrganizerOrAdminAccess(): Promise<{
+  user: User;
+  isAdmin: boolean;
+} | null> {
+  const auth = await requireAuth("/login");
+  if (!auth) return null;
+
+  const role = await getProfileRole(auth.user.id);
+
+  if (isAdminRole(role)) {
+    return { user: auth.user, isAdmin: true };
+  }
+
+  if (canAccessOrganizerDashboard(role)) {
+    return { user: auth.user, isAdmin: false };
+  }
+
+  window.location.assign(dashboardPathForRole(role));
+  return null;
+}
+
 async function waitForUser(maxAttempts = 8): Promise<User | null> {
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const { user } = await getAuthSession();

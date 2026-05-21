@@ -2,18 +2,17 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail } from "@/lib/sendEmail";
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-  process.env.SUPABASE_SERVICE_ROLE_KEY as string
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
 
-function getEmailContent(status: string, ad: any) {
+function getEmailContent(status: string, ad: Record<string, unknown>) {
   if (status === "approved") {
     return {
       subject: "Your VendorEventsHub Ad Is Now Live",
       html: `
         <div style="font-family:Arial,sans-serif;padding:20px;">
-          <h1 style="color:#14583f;">Your ad is live 🎉</h1>
+          <h1 style="color:#14583f;">Your ad is live</h1>
           <p>Good news — your VendorEventsHub ad has been approved and is now live.</p>
           <p><strong>${ad.ad_title || "Sponsored Placement"}</strong></p>
           <p>Your placement will run for 30 days based on your approved advertising plan.</p>
@@ -73,8 +72,45 @@ function getEmailContent(status: string, ad: any) {
   };
 }
 
+async function verifyAdminRequest(req: Request) {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return { error: "Missing admin authorization token." };
+  }
+
+  const token = authHeader.slice(7);
+  const authClient = createClient(supabaseUrl, supabaseAnonKey);
+  const { data: userData, error: userError } = await authClient.auth.getUser(token);
+
+  if (userError || !userData.user) {
+    return { error: "Invalid or expired session." };
+  }
+
+  if (!serviceRoleKey) {
+    return { error: "SUPABASE_SERVICE_ROLE_KEY is not configured on the server." };
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from("profiles")
+    .select("role")
+    .eq("id", userData.user.id)
+    .maybeSingle();
+
+  if (profileError || profile?.role !== "admin") {
+    return { error: "Admin role required." };
+  }
+
+  return { supabaseAdmin, user: userData.user };
+}
+
 export async function POST(req: Request) {
   try {
+    const verified = await verifyAdminRequest(req);
+    if ("error" in verified) {
+      return NextResponse.json({ error: verified.error }, { status: 401 });
+    }
+
     const { id, status } = await req.json();
 
     if (!id || !status) {
@@ -83,6 +119,13 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    const allowed = ["approved", "rejected", "paused", "pending_review"];
+    if (!allowed.includes(status)) {
+      return NextResponse.json({ error: "Invalid status." }, { status: 400 });
+    }
+
+    const { supabaseAdmin } = verified;
 
     const { data: ad, error: fetchError } = await supabaseAdmin
       .from("ad_orders")
@@ -100,15 +143,11 @@ export async function POST(req: Request) {
       .eq("id", id);
 
     if (updateError) {
-      return NextResponse.json(
-        { error: updateError.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
     if (ad.customer_email) {
       const email = getEmailContent(status, ad);
-
       await sendEmail({
         to: ad.customer_email,
         subject: email.subject,
@@ -119,7 +158,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Update ad status error:", error);
-
     return NextResponse.json(
       { error: "Could not update ad status." },
       { status: 500 }

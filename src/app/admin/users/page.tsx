@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { clearProfileRoleCache } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -14,8 +15,14 @@ type ProfileRow = {
   suspended?: boolean | null;
 };
 
+type ProfileLink = {
+  type: "vendor" | "organizer";
+  slug: string;
+};
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<ProfileRow[]>([]);
+  const [profileLinks, setProfileLinks] = useState<Record<string, ProfileLink>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -31,14 +38,45 @@ export default function AdminUsersPage() {
     if (error) {
       alert(error.message);
       setUsers([]);
+      setProfileLinks({});
     } else {
-      setUsers((data as ProfileRow[]) || []);
-      if (data && data.length > 0) {
+      const rows = (data as ProfileRow[]) || [];
+      setUsers(rows);
+      if (rows.length > 0) {
         setHasSuspendedColumn(
-          Object.prototype.hasOwnProperty.call(data[0], "suspended")
+          Object.prototype.hasOwnProperty.call(rows[0], "suspended")
         );
       } else {
         setHasSuspendedColumn(false);
+      }
+
+      const userIds = rows.map((user) => user.id);
+      if (userIds.length > 0) {
+        const [{ data: vendors }, { data: organizers }] = await Promise.all([
+          supabase
+            .from("vendor_profiles")
+            .select("user_id, slug")
+            .in("user_id", userIds),
+          supabase
+            .from("organizer_profiles")
+            .select("user_id, slug")
+            .in("user_id", userIds),
+        ]);
+
+        const links: Record<string, ProfileLink> = {};
+        for (const vendor of vendors || []) {
+          if (vendor.slug) {
+            links[vendor.user_id] = { type: "vendor", slug: vendor.slug };
+          }
+        }
+        for (const organizer of organizers || []) {
+          if (organizer.slug) {
+            links[organizer.user_id] = { type: "organizer", slug: organizer.slug };
+          }
+        }
+        setProfileLinks(links);
+      } else {
+        setProfileLinks({});
       }
     }
 
@@ -95,10 +133,14 @@ export default function AdminUsersPage() {
         <p className="adminEyebrow">Users</p>
         <h1>Platform accounts</h1>
         <p className="adminMuted">
-          Search profiles, change roles (vendor / organizer / admin), and manage
-          access.
+          Search profiles, change roles (vendor / organizer / admin / both), and
+          manage access.
           {hasSuspendedColumn === false && (
-            <> Suspend is disabled until you add a <code>profiles.suspended</code> boolean column.</>
+            <>
+              {" "}
+              Suspend is disabled until you add a{" "}
+              <code>profiles.suspended</code> boolean column.
+            </>
           )}
         </p>
       </section>
@@ -137,50 +179,85 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((user) => (
-                <tr key={user.id}>
-                  <td>
-                    <strong>{user.full_name || user.business_name || "Unnamed"}</strong>
-                    <br />
-                    <span className="adminMuted">{user.email || user.id}</span>
-                  </td>
-                  <td>
-                    <select
-                      value={user.role || "vendor"}
-                      onChange={(e) => updateRole(user.id, e.target.value)}
-                    >
-                      <option value="vendor">vendor</option>
-                      <option value="organizer">organizer</option>
-                      <option value="admin">admin</option>
-                      <option value="both">both</option>
-                    </select>
-                  </td>
-                  <td>
-                    {user.created_at
-                      ? new Date(user.created_at).toLocaleDateString()
-                      : "—"}
-                  </td>
-                  <td>
-                    <div className="adminActions">
-                      <button
-                        type="button"
-                        className="adminBtn adminBtnSecondary"
-                        disabled={!hasSuspendedColumn}
-                        title={
-                          hasSuspendedColumn
-                            ? "Toggle suspended"
-                            : "Add profiles.suspended column in Supabase"
-                        }
-                        onClick={() =>
-                          toggleSuspend(user.id, !Boolean(user.suspended))
-                        }
+              {filtered.map((user) => {
+                const link = profileLinks[user.id];
+                const viewHref = link
+                  ? link.type === "vendor"
+                    ? `/vendors/${link.slug}`
+                    : `/organizers/${link.slug}`
+                  : null;
+
+                return (
+                  <tr key={user.id}>
+                    <td>
+                      <strong>
+                        {user.full_name || user.business_name || "Unnamed"}
+                      </strong>
+                      <br />
+                      <span className="adminMuted">{user.email || user.id}</span>
+                      {user.suspended && (
+                        <>
+                          <br />
+                          <span className="adminBadge">Suspended</span>
+                        </>
+                      )}
+                    </td>
+                    <td>
+                      <select
+                        value={user.role || "vendor"}
+                        onChange={(e) => updateRole(user.id, e.target.value)}
                       >
-                        {user.suspended ? "Unsuspend" : "Suspend"}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        <option value="vendor">vendor</option>
+                        <option value="organizer">organizer</option>
+                        <option value="admin">admin</option>
+                        <option value="both">both</option>
+                      </select>
+                    </td>
+                    <td>
+                      {user.created_at
+                        ? new Date(user.created_at).toLocaleDateString()
+                        : "—"}
+                    </td>
+                    <td>
+                      <div className="adminActions">
+                        {viewHref ? (
+                          <Link
+                            href={viewHref}
+                            className="adminBtn adminBtnSecondary"
+                            target="_blank"
+                          >
+                            View
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            className="adminBtn adminBtnSecondary"
+                            disabled
+                            title="No public vendor or organizer profile yet"
+                          >
+                            View
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="adminBtn adminBtnDanger"
+                          disabled={!hasSuspendedColumn}
+                          title={
+                            hasSuspendedColumn
+                              ? "Toggle suspended"
+                              : "Add profiles.suspended column in Supabase"
+                          }
+                          onClick={() =>
+                            toggleSuspend(user.id, !Boolean(user.suspended))
+                          }
+                        >
+                          {user.suspended ? "Unsuspend" : "Suspend"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

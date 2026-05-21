@@ -151,10 +151,20 @@ export default function AdminOrganizersPage() {
                         <Link
                           href={`/organizers/${org.slug}`}
                           className="adminBtn adminBtnSecondary"
+                          target="_blank"
                         >
-                          View
+                          Open
                         </Link>
-                      ) : null}
+                      ) : (
+                        <button
+                          type="button"
+                          className="adminBtn adminBtnSecondary"
+                          disabled
+                          title="No public slug"
+                        >
+                          Open
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

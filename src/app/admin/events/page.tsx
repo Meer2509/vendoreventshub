@@ -3,12 +3,24 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import PremiumEmptyState from "@/components/PremiumEmptyState";
+import { detectColumns } from "@/lib/admin";
 import { supabase } from "@/lib/supabase";
 
+const EVENT_COLUMNS = [
+  "is_featured",
+  "verified_organizer",
+  "accepting_vendors",
+] as const;
+
 export default function AdminEventsPage() {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [columns, setColumns] = useState<Record<string, boolean>>({
+    is_featured: true,
+    verified_organizer: true,
+    accepting_vendors: true,
+  });
 
   async function loadEvents() {
     setLoading(true);
@@ -17,23 +29,44 @@ export default function AdminEventsPage() {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error) alert(error.message);
-    else setEvents(data || []);
+    if (error) {
+      alert(error.message);
+      setEvents([]);
+    } else {
+      const rows = (data || []) as Record<string, unknown>[];
+      setEvents(rows);
+      if (rows.length > 0) {
+        setColumns(detectColumns(rows, [...EVENT_COLUMNS]));
+      }
+    }
     setLoading(false);
   }
 
   async function updateEvent(id: string, updates: Record<string, unknown>) {
     const { error } = await supabase.from("events").update(updates).eq("id", id);
-    if (error) alert(error.message);
-    else await loadEvents();
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await loadEvents();
   }
 
-  async function deleteEvent(id: string) {
-    if (!confirm("Delete this event and related applications?")) return;
+  async function deleteEvent(id: string, title: string) {
+    if (!confirm(`Delete "${title}" and related applications?`)) return;
 
-    await supabase.from("event_attendance").delete().eq("event_id", id);
-    await supabase.from("saved_events").delete().eq("event_id", id);
-    await supabase.from("reviews").delete().eq("event_id", id);
+    const relatedTables = [
+      "event_attendance",
+      "saved_events",
+      "reviews",
+    ] as const;
+
+    for (const table of relatedTables) {
+      const { error } = await supabase.from(table).delete().eq("event_id", id);
+      if (error) {
+        alert(`${table}: ${error.message}`);
+        return;
+      }
+    }
 
     const { error } = await supabase.from("events").delete().eq("id", id);
     if (error) alert(error.message);
@@ -49,9 +82,15 @@ export default function AdminEventsPage() {
     return events.filter((event) => {
       if (!q) return true;
       return (
-        event.title?.toLowerCase().includes(q) ||
-        event.city?.toLowerCase().includes(q) ||
-        event.state?.toLowerCase().includes(q) ||
+        String(event.title || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(event.city || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(event.state || "")
+          .toLowerCase()
+          .includes(q) ||
         String(event.id).toLowerCase().includes(q) ||
         String(event.created_by || "").toLowerCase().includes(q)
       );
@@ -64,8 +103,24 @@ export default function AdminEventsPage() {
         <p className="adminEyebrow">Events</p>
         <h1>Event listings</h1>
         <p className="adminMuted">
-          Feature, verify, toggle vendor applications, edit, or remove events.
+          Feature, verify organizer badge, toggle vendor applications, edit, or
+          remove events. Updates write directly to Supabase.
         </p>
+        {!columns.is_featured && (
+          <p className="adminMuted">
+            Missing <code>events.is_featured</code> — Feature button disabled.
+          </p>
+        )}
+        {!columns.verified_organizer && (
+          <p className="adminMuted">
+            Missing <code>events.verified_organizer</code> — Verify button disabled.
+          </p>
+        )}
+        {!columns.accepting_vendors && (
+          <p className="adminMuted">
+            Missing <code>events.accepting_vendors</code> — Open/Close disabled.
+          </p>
+        )}
       </section>
 
       <div className="adminToolbar">
@@ -100,87 +155,117 @@ export default function AdminEventsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((event) => (
-                <tr key={event.id}>
-                  <td>
-                    <strong>{event.title || "Untitled"}</strong>
-                    <br />
-                    <span className="adminMuted">{event.category || "—"}</span>
-                  </td>
-                  <td>
-                    {event.city}, {event.state}
-                    <br />
-                    <span className="adminMuted">{formatEventDate(event.event_date)}</span>
-                  </td>
-                  <td>
-                    <div className="adminBadgeRow">
-                      {event.is_featured && <span className="adminBadge">Featured</span>}
-                      {event.verified_organizer && (
-                        <span className="adminBadge">Verified</span>
-                      )}
-                      {event.accepting_vendors !== false ? (
-                        <span className="adminBadge">Open</span>
-                      ) : (
-                        <span className="adminBadge">Closed</span>
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="adminActions">
-                      <Link
-                        href={`/events/${event.id}`}
-                        className="adminBtn adminBtnSecondary"
-                      >
-                        View
-                      </Link>
-                      <Link
-                        href={`/dashboard/organizer/events/${event.id}/edit`}
-                        className="adminBtn adminBtnSecondary"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        type="button"
-                        className="adminBtn adminBtnGold"
-                        onClick={() =>
-                          updateEvent(event.id, { is_featured: !event.is_featured })
-                        }
-                      >
-                        {event.is_featured ? "Unfeature" : "Feature"}
-                      </button>
-                      <button
-                        type="button"
-                        className="adminBtn adminBtnSecondary"
-                        onClick={() =>
-                          updateEvent(event.id, {
-                            verified_organizer: !event.verified_organizer,
-                          })
-                        }
-                      >
-                        {event.verified_organizer ? "Unverify" : "Verify"}
-                      </button>
-                      <button
-                        type="button"
-                        className="adminBtn adminBtnSecondary"
-                        onClick={() =>
-                          updateEvent(event.id, {
-                            accepting_vendors: event.accepting_vendors === false,
-                          })
-                        }
-                      >
-                        {event.accepting_vendors === false ? "Open" : "Close"}
-                      </button>
-                      <button
-                        type="button"
-                        className="adminBtn adminBtnDanger"
-                        onClick={() => deleteEvent(event.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filtered.map((event) => {
+                const id = String(event.id);
+                const isOpen = event.accepting_vendors !== false;
+
+                return (
+                  <tr key={id}>
+                    <td>
+                      <strong>{String(event.title || "Untitled")}</strong>
+                      <br />
+                      <span className="adminMuted">{String(event.category || "—")}</span>
+                    </td>
+                    <td>
+                      {String(event.city || "")}, {String(event.state || "")}
+                      <br />
+                      <span className="adminMuted">
+                        {formatEventDate(String(event.event_date || ""))}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="adminBadgeRow">
+                        {Boolean(event.is_featured) && (
+                          <span className="adminBadge">Featured</span>
+                        )}
+                        {Boolean(event.verified_organizer) && (
+                          <span className="adminBadge">Verified</span>
+                        )}
+                        {isOpen ? (
+                          <span className="adminBadge">Open</span>
+                        ) : (
+                          <span className="adminBadge">Closed</span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="adminActions">
+                        <Link
+                          href={`/events/${id}`}
+                          className="adminBtn adminBtnSecondary"
+                          target="_blank"
+                        >
+                          View
+                        </Link>
+                        <Link
+                          href={`/dashboard/organizer/events/${id}/edit`}
+                          className="adminBtn adminBtnSecondary"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          type="button"
+                          className="adminBtn adminBtnGold"
+                          disabled={!columns.is_featured}
+                          title={
+                            columns.is_featured
+                              ? "Toggle featured"
+                              : "Add events.is_featured column"
+                          }
+                          onClick={() =>
+                            updateEvent(id, {
+                              is_featured: !Boolean(event.is_featured),
+                            })
+                          }
+                        >
+                          {event.is_featured ? "Unfeature" : "Feature"}
+                        </button>
+                        <button
+                          type="button"
+                          className="adminBtn adminBtnSecondary"
+                          disabled={!columns.verified_organizer}
+                          title={
+                            columns.verified_organizer
+                              ? "Toggle verified organizer badge on event"
+                              : "Add events.verified_organizer column"
+                          }
+                          onClick={() =>
+                            updateEvent(id, {
+                              verified_organizer: !Boolean(event.verified_organizer),
+                            })
+                          }
+                        >
+                          {event.verified_organizer ? "Unverify" : "Verify"}
+                        </button>
+                        <button
+                          type="button"
+                          className="adminBtn adminBtnSecondary"
+                          disabled={!columns.accepting_vendors}
+                          title={
+                            columns.accepting_vendors
+                              ? "Toggle vendor applications"
+                              : "Add events.accepting_vendors column"
+                          }
+                          onClick={() =>
+                            updateEvent(id, { accepting_vendors: !isOpen })
+                          }
+                        >
+                          {isOpen ? "Close" : "Open"}
+                        </button>
+                        <button
+                          type="button"
+                          className="adminBtn adminBtnDanger"
+                          onClick={() =>
+                            deleteEvent(id, String(event.title || "Event"))
+                          }
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

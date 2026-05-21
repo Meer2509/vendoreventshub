@@ -36,6 +36,17 @@ export default function AdminSettingsPage() {
           Footer and about page links are static until a settings table exists.
         </p>
       </section>
+
+      <section className="adminPanel">
+        <h2>Save settings</h2>
+        <p className="adminMuted">
+          Live save is not enabled yet. Add a <code>platform_settings</code> table
+          before wiring write actions — no fake save buttons.
+        </p>
+        <button type="button" className="adminBtn adminBtnSecondary" disabled>
+          Save (coming soon)
+        </button>
+      </section>
     </main>
   );
 }
