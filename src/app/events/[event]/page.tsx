@@ -4,7 +4,12 @@ import JsonLd from "@/components/JsonLd";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { getAuthUser } from "@/lib/auth";
+import {
+  canAccessVendorDashboard,
+  getAuthUser,
+  getProfileRole,
+} from "@/lib/auth";
+import { isEventId } from "@/lib/locations";
 import { absoluteUrl } from "@/lib/seo";
 import { buildSocialLinks } from "@/lib/social";
 import { supabase } from "@/lib/supabase";
@@ -61,6 +66,12 @@ export default function EventDetailPage() {
 
   useEffect(() => {
     async function loadPage() {
+      if (!eventId || !isEventId(eventId)) {
+        setEvent(null);
+        setLoading(false);
+        return;
+      }
+
       const now = new Date().toISOString();
 
       const { data: eventData } = await supabase
@@ -266,6 +277,13 @@ export default function EventDetailPage() {
       return;
     }
 
+    const role = await getProfileRole(user.id);
+    if (!canAccessVendorDashboard(role)) {
+      alert("Please sign in with a vendor account to save events.");
+      window.location.href = "/login/vendor";
+      return;
+    }
+
     const { error } = await supabase.from("saved_events").insert({
       vendor_id: user.id,
       event_id: eventId,
@@ -285,6 +303,18 @@ export default function EventDetailPage() {
     if (!user) {
       alert("Please login first to apply as a vendor.");
       window.location.href = "/login/vendor";
+      return;
+    }
+
+    const role = await getProfileRole(user.id);
+    if (!canAccessVendorDashboard(role)) {
+      alert("Please sign in with a vendor account to apply.");
+      window.location.href = "/login/vendor";
+      return;
+    }
+
+    if (event?.accepting_vendors === false) {
+      alert("This event is not currently accepting vendor applications.");
       return;
     }
 

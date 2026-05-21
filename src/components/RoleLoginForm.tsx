@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import {
   canAccessOrganizerDashboard,
   canAccessVendorDashboard,
+  clearProfileRoleCache,
   getAuthUser,
   getProfileRole,
   type UserRole,
@@ -99,6 +100,7 @@ export default function RoleLoginForm({
       return;
     }
 
+    clearProfileRoleCache(user.id);
     const role: UserRole = await getProfileRole(user.id);
 
     if (role === "admin") {

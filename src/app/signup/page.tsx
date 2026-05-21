@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
+  clearProfileRoleCache,
   dashboardPathForRole,
   getAuthUser,
   getProfileRole,
@@ -97,6 +98,7 @@ export default function SignupPage() {
         },
         { onConflict: "id" }
       );
+      clearProfileRoleCache(data.user.id);
     }
 
     setLoading(false);

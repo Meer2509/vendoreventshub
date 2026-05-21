@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { clearProfileRoleCache } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
 type ProfileRow = {
@@ -70,7 +71,10 @@ export default function AdminUsersPage() {
       .eq("id", userId);
 
     if (error) alert(error.message);
-    else await loadUsers();
+    else {
+      clearProfileRoleCache(userId);
+      await loadUsers();
+    }
   }
 
   async function toggleSuspend(userId: string, suspended: boolean) {

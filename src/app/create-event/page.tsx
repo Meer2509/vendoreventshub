@@ -139,6 +139,7 @@ export default function CreateEventPage() {
         event_date: event.event_date,
         image_url: event.image_url,
         is_featured: false,
+        accepting_vendors: true,
         created_by: auth.user.id,
       })
       .select("id")

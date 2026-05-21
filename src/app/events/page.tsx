@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { getAuthUser } from "@/lib/auth";
+import {
+  canAccessVendorDashboard,
+  getAuthUser,
+  getProfileRole,
+} from "@/lib/auth";
 import {
   formatEventDate,
   getBoothValue,
@@ -231,6 +235,13 @@ export default function EventsPage() {
       return;
     }
 
+    const role = await getProfileRole(user.id);
+    if (!canAccessVendorDashboard(role)) {
+      alert("Please sign in with a vendor account to save events.");
+      window.location.href = "/login/vendor";
+      return;
+    }
+
     const { error } = await supabase.from("saved_events").insert({
       vendor_id: user.id,
       event_id: eventId,
@@ -249,6 +260,13 @@ export default function EventsPage() {
 
     if (!user) {
       alert("Please login first to apply as a vendor.");
+      window.location.href = "/login/vendor";
+      return;
+    }
+
+    const role = await getProfileRole(user.id);
+    if (!canAccessVendorDashboard(role)) {
+      alert("Please sign in with a vendor account to apply.");
       window.location.href = "/login/vendor";
       return;
     }

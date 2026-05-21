@@ -43,6 +43,31 @@ export function clearProfileRoleCache(userId?: string) {
 }
 
 export async function getProfileRole(userId: string): Promise<UserRole> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!error && data?.role) {
+    const resolved: UserRole =
+      data.role === "organizer" ||
+      data.role === "admin" ||
+      data.role === "both"
+        ? data.role
+        : "vendor";
+
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(roleCacheKey(userId), resolved);
+    }
+
+    return resolved;
+  }
+
+  if (error) {
+    console.warn("getProfileRole:", error.message);
+  }
+
   if (typeof window !== "undefined") {
     const cached = sessionStorage.getItem(roleCacheKey(userId));
     if (
@@ -55,27 +80,7 @@ export async function getProfileRole(userId: string): Promise<UserRole> {
     }
   }
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (error) {
-    console.warn("getProfileRole:", error.message);
-  }
-
-  const role = data?.role;
-  const resolved: UserRole =
-    role === "organizer" || role === "admin" || role === "both"
-      ? role
-      : "vendor";
-
-  if (typeof window !== "undefined" && data?.role) {
-    sessionStorage.setItem(roleCacheKey(userId), resolved);
-  }
-
-  return resolved;
+  return "vendor";
 }
 
 export function dashboardPathForRole(role: UserRole): string {
@@ -178,11 +183,13 @@ export async function routeDashboardByRole(): Promise<void> {
 }
 
 export async function requireVendorAccess(): Promise<{ user: User } | null> {
-  return requireAuth("/login/vendor");
+  const auth = await requireVendorDashboard();
+  return auth ? { user: auth.user } : null;
 }
 
 export async function requireOrganizerAccess(): Promise<{ user: User } | null> {
-  return requireAuth("/login/organizer");
+  const auth = await requireOrganizerDashboard();
+  return auth ? { user: auth.user } : null;
 }
 
 /** Non-destructive admin check for layouts — does not redirect. */
