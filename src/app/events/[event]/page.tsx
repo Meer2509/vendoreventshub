@@ -41,11 +41,25 @@ function formatDate(date: string) {
   });
 }
 
+function cleanSocialUrl(type: string, value: string) {
+  if (!value) return "";
+  if (value.startsWith("http")) return value;
+
+  const cleanValue = value.replace("@", "").trim();
+
+  if (type === "instagram") return `https://instagram.com/${cleanValue}`;
+  if (type === "tiktok") return `https://tiktok.com/@${cleanValue}`;
+  if (type === "facebook") return `https://facebook.com/${cleanValue}`;
+
+  return value;
+}
+
 export default function EventDetailPage() {
   const params = useParams();
-  const eventId = params.event as string;
+  const eventId = params.events as string;
 
   const [event, setEvent] = useState<any>(null);
+  const [organizer, setOrganizer] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [sponsoredAds, setSponsoredAds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +76,17 @@ export default function EventDetailPage() {
         .eq("id", eventId)
         .single();
 
-      setEvent(eventData);
+      setEvent(eventData || null);
+
+      if (eventData?.created_by) {
+        const { data: organizerData } = await supabase
+          .from("organizer_profiles")
+          .select("*")
+          .eq("user_id", eventData.created_by)
+          .single();
+
+        setOrganizer(organizerData || null);
+      }
 
       const { data: reviewData } = await supabase
         .from("reviews_with_vendors")
@@ -86,6 +110,37 @@ export default function EventDetailPage() {
 
     loadPage();
   }, [eventId]);
+
+  const organizerSocialLinks = useMemo(() => {
+    if (!organizer) return [];
+
+    return [
+      {
+        label: "Website",
+        icon: "🌐",
+        className: "website",
+        url: organizer.website,
+      },
+      {
+        label: "Instagram",
+        icon: "📸",
+        className: "instagram",
+        url: cleanSocialUrl("instagram", organizer.instagram),
+      },
+      {
+        label: "TikTok",
+        icon: "🎵",
+        className: "tiktok",
+        url: cleanSocialUrl("tiktok", organizer.tiktok),
+      },
+      {
+        label: "Facebook",
+        icon: "📘",
+        className: "facebook",
+        url: cleanSocialUrl("facebook", organizer.facebook),
+      },
+    ].filter((item) => item.url);
+  }, [organizer]);
 
   const intelligence = useMemo(() => {
     if (!event) return null;
@@ -334,6 +389,51 @@ export default function EventDetailPage() {
       <section className="contentSection">
         <div className="eventGrid">
           <div className="mainColumn">
+            {organizer && (
+              <section className="detailCard organizerFeatureCard">
+                <div className="organizerFeatureHeader">
+                  <img
+                    src={
+                      organizer.logo_url ||
+                      "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=400&auto=format&fit=crop"
+                    }
+                    alt={organizer.organizer_name || "Organizer"}
+                    className="organizerLogo"
+                  />
+
+                  <div>
+                    <p className="eyebrow">Hosted By</p>
+                    <h2>{organizer.organizer_name}</h2>
+                    <p>
+                      {organizer.short_description ||
+                        "This organizer has added a public profile to help vendors learn more before applying."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="organizerActions">
+                  {organizer.slug && (
+                    <button
+                      onClick={() => (window.location.href = `/organizers/${organizer.slug}`)}
+                    >
+                      View Organizer Profile
+                    </button>
+                  )}
+
+                  {organizerSocialLinks.map((item) => (
+                    <button
+                      key={item.label}
+                      className={`socialButton ${item.className}`}
+                      onClick={() => window.open(item.url, "_blank")}
+                    >
+                      <span>{item.icon}</span>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
             <section className="detailCard">
               <div className="sectionHead">
                 <p className="eyebrow">Event Intelligence</p>
@@ -396,7 +496,7 @@ export default function EventDetailPage() {
 
               <div className="trustGrid">
                 <div>
-                  <strong>{event.verified_organizer ? "Verified" : "Listed"}</strong>
+                  <strong>{event.verified_organizer ? "Verified" : organizer ? "Profile Added" : "Listed"}</strong>
                   <span>Organizer Status</span>
                 </div>
                 <div>
@@ -408,8 +508,8 @@ export default function EventDetailPage() {
                   <span>Vendor Reviews</span>
                 </div>
                 <div>
-                  <strong>{event.is_featured ? "Featured" : "Standard"}</strong>
-                  <span>Listing Type</span>
+                  <strong>{organizerSocialLinks.length > 0 ? "Available" : "Not Added"}</strong>
+                  <span>Social Proof</span>
                 </div>
               </div>
             </section>
@@ -541,11 +641,50 @@ export default function EventDetailPage() {
                 <strong>{formatDate(event.event_date)}</strong>
               </div>
 
+              {organizer && (
+                <div className="sidebarInfo">
+                  <span>Organizer</span>
+                  <strong>{organizer.organizer_name}</strong>
+                </div>
+              )}
+
               <button onClick={applyAsVendor}>Apply As Vendor</button>
               <button className="secondary" onClick={saveEvent}>
                 Save Event
               </button>
             </div>
+
+            {organizer && (
+              <div className="sidebarCard organizerMiniCard">
+                <p className="eyebrow">Organizer</p>
+                <h3>{organizer.organizer_name}</h3>
+                <p>
+                  {organizer.short_description ||
+                    "View this organizer’s public profile and social channels before applying."}
+                </p>
+
+                {organizer.slug && (
+                  <button onClick={() => (window.location.href = `/organizers/${organizer.slug}`)}>
+                    View Profile
+                  </button>
+                )}
+
+                {organizerSocialLinks.length > 0 && (
+                  <div className="miniSocialGrid">
+                    {organizerSocialLinks.map((item) => (
+                      <button
+                        key={item.label}
+                        className={`socialButton ${item.className}`}
+                        onClick={() => window.open(item.url, "_blank")}
+                      >
+                        <span>{item.icon}</span>
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {primaryAd ? (
               <div className="sidebarCard sponsorCard">
@@ -601,7 +740,7 @@ export default function EventDetailPage() {
               </div>
               <div className="sidebarInfo">
                 <span>Organizer Signal</span>
-                <strong>{event.verified_organizer ? "Verified" : "Standard"}</strong>
+                <strong>{organizer ? "Profile Added" : "Standard"}</strong>
               </div>
             </div>
           </aside>
@@ -754,7 +893,9 @@ export default function EventDetailPage() {
           text-align: center;
         }
 
-        .scorePanel p {
+        .scorePanel p,
+        .organizerFeatureCard p,
+        .organizerMiniCard p {
           color: #5f6b66;
           line-height: 1.6;
         }
@@ -806,6 +947,57 @@ export default function EventDetailPage() {
         .detailCard,
         .sidebarCard {
           padding: 30px;
+        }
+
+        .organizerFeatureHeader {
+          display: grid;
+          grid-template-columns: 96px 1fr;
+          gap: 18px;
+          align-items: center;
+        }
+
+        .organizerLogo {
+          width: 96px;
+          height: 96px;
+          border-radius: 24px;
+          object-fit: cover;
+          border: 4px solid #f7f1e6;
+          box-shadow: 0 14px 32px rgba(16, 41, 31, 0.16);
+        }
+
+        .organizerActions,
+        .miniSocialGrid {
+          display: grid;
+          gap: 10px;
+          margin-top: 20px;
+        }
+
+        .organizerActions {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .socialButton {
+          border-radius: 20px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .website {
+          background: #10291f;
+        }
+
+        .instagram {
+          background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+        }
+
+        .tiktok {
+          background: #000;
+        }
+
+        .facebook {
+          background: #1877f2;
         }
 
         .sectionHead {
@@ -979,7 +1171,9 @@ export default function EventDetailPage() {
           .heroInner,
           .eventGrid,
           .intelligenceGrid,
-          .trustGrid {
+          .trustGrid,
+          .organizerFeatureHeader,
+          .organizerActions {
             grid-template-columns: 1fr;
           }
 
