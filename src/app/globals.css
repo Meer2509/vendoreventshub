@@ -191,6 +191,14 @@ button.btn {
   .adminSidebar {
     position: relative !important;
     height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .adminNav {
+    flex: none !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
   .marketplaceLayout,
@@ -3136,13 +3144,21 @@ button.btn {
   position: sticky;
   top: 0;
   height: 100vh;
+  max-height: 100vh;
   background: var(--veh-green);
   color: #fffaf0;
-  padding: 26px;
+  padding: 22px 18px 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  overflow-y: auto;
+  gap: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.adminSidebarHeader {
+  flex-shrink: 0;
+  padding-bottom: 4px;
 }
 
 .adminEyebrow {
@@ -3169,20 +3185,45 @@ button.btn {
 }
 
 .adminNav {
-  display: grid;
-  gap: 8px;
-  margin-top: 24px;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 18px 0 14px;
+  padding: 4px 4px 4px 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 201, 168, 0.45) transparent;
+}
+
+.adminNav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.adminNav::-webkit-scrollbar-thumb {
+  background: rgba(212, 201, 168, 0.45);
+  border-radius: 999px;
 }
 
 .adminNavLink {
+  flex-shrink: 0;
   color: #fffaf0;
   text-decoration: none;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  padding: 12px 14px;
+  border-radius: 14px;
+  padding: 11px 14px;
   font-weight: 800;
   font-size: 14px;
+  line-height: 1.2;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.adminNavLink:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .adminNavLinkActive {
@@ -3191,45 +3232,59 @@ button.btn {
   border-color: var(--veh-gold);
 }
 
-.adminSidebarTop {
+.adminSidebarFooter {
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-.adminSidebarFooter {
-  display: grid;
-  gap: 12px;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.adminSiteLink {
-  color: #d4c9a8;
+.adminBackBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 40px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fffaf0;
   text-decoration: none;
-  font-weight: 900;
-  font-size: 14px;
+  font-weight: 800;
+  font-size: 13px;
+  text-align: center;
+  box-sizing: border-box;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.adminBackBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(212, 201, 168, 0.55);
+  color: var(--veh-gold);
 }
 
 .adminLogoutBtn {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 12px;
+  min-height: 40px;
   padding: 10px 14px;
-  min-height: 36px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fffaf0;
+  border-radius: 12px;
+  border: 1px solid rgba(232, 140, 128, 0.5);
+  background: rgba(139, 30, 30, 0.28);
+  color: #ffe8e4;
   font-weight: 800;
   font-size: 13px;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  box-sizing: border-box;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .adminLogoutBtn:hover {
-  background: rgba(232, 221, 199, 0.18);
-  border-color: var(--veh-gold);
-  color: var(--veh-gold);
+  background: rgba(139, 30, 30, 0.42);
+  border-color: rgba(255, 180, 168, 0.65);
+  color: #fff;
 }
 
 .adminContent {

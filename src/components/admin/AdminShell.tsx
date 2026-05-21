@@ -36,42 +36,36 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     <AdminGate>
       <div className="adminShell">
         <aside className="adminSidebar">
-          <div className="adminSidebarTop">
-            <div>
-              <p className="adminEyebrow">VendorEventsHub</p>
-              <h2 className="adminLogo">Admin</h2>
-              <p className="adminSub">Marketplace operations</p>
-            </div>
+          <header className="adminSidebarHeader">
+            <p className="adminEyebrow">VendorEventsHub</p>
+            <h2 className="adminLogo">Admin</h2>
+            <p className="adminSub">Marketplace operations</p>
+          </header>
 
-            <nav className="adminNav">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={
-                    pathname === link.href
-                      ? "adminNavLink adminNavLinkActive"
-                      : "adminNavLink"
-                  }
-                >
-                  {link.name}
-                </Link>
-              ))}
-            </nav>
-          </div>
+          <nav className="adminNav" aria-label="Admin navigation">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={
+                  pathname === link.href
+                    ? "adminNavLink adminNavLinkActive"
+                    : "adminNavLink"
+                }
+              >
+                {link.name}
+              </Link>
+            ))}
+          </nav>
 
-          <div className="adminSidebarFooter">
-            <Link href="/" className="adminSiteLink">
-              ← Back to website
+          <footer className="adminSidebarFooter">
+            <Link href="/" className="adminBackBtn">
+              Back to Website
             </Link>
-            <button
-              type="button"
-              className="adminLogoutBtn"
-              onClick={logout}
-            >
+            <button type="button" className="adminLogoutBtn" onClick={logout}>
               Log Out
             </button>
-          </div>
+          </footer>
         </aside>
 
         <main className="adminContent">{children}</main>
