@@ -177,8 +177,34 @@ button.btn {
     font-size: clamp(44px, 12vw, 54px);
   }
 
-  .luxFooter {
-    padding: 28px 18px;
+  .vehFooter {
+    margin: 48px 14px 20px;
+  }
+
+  .vehFooterShell {
+    padding: 28px 20px 22px;
+    border-radius: 22px;
+  }
+
+  .vehFooterMain {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .vehFooterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 16px;
+  }
+
+  .vehFooterBottom {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .vehFooterLaunch {
+    text-align: left;
+    flex: none;
   }
 
   .adminShell {
@@ -650,62 +676,212 @@ button.btn {
   background: #ffffff;
   transform: translateY(-2px);
 }
-.luxFooter {
-  max-width: 1240px;
-  margin: 80px auto 30px;
-  padding: 38px 24px;
-  border-radius: 34px;
-  background: #0f3d2e;
+/* ——— Premium footer (scoped) ——— */
+.vehFooter {
+  margin: 64px 18px 28px;
   color: #fffaf0;
-  display: flex;
-  justify-content: space-between;
-  gap: 30px;
 }
 
-.luxFooter h2 {
-  margin: 0 0 12px;
-  font-size: 30px;
+.vehFooter a {
+  color: #fffaf0;
+  text-decoration: none;
+  transition: color 0.15s ease, opacity 0.15s ease;
 }
 
-.luxFooter p {
-  max-width: 520px;
-  color: #efe7d6;
-  line-height: 1.6;
+.vehFooter a:hover {
+  color: #b88a2e;
 }
 
-.footerLinks {
+.vehFooter a:visited {
+  color: #fffaf0;
+}
+
+.vehFooter a:visited:hover {
+  color: #b88a2e;
+}
+
+.vehFooterShell {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 40px 36px 28px;
+  border-radius: 28px;
+  background: linear-gradient(165deg, #10291f 0%, #0f3d2e 48%, #10291f 100%);
+  border: 1px solid rgba(184, 138, 46, 0.22);
+  box-shadow:
+    0 28px 80px rgba(16, 41, 31, 0.2),
+    inset 0 1px 0 rgba(255, 250, 240, 0.06);
+}
+
+.vehFooterMain {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 24px 32px;
-  align-items: start;
+  grid-template-columns: minmax(240px, 1.1fr) minmax(0, 2fr);
+  gap: 40px 48px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid rgba(247, 241, 230, 0.12);
 }
 
-.footerLinks > div {
+.vehFooterBrandLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.vehFooterBrandLink:hover {
+  color: #fffaf0;
+}
+
+.vehFooterMark {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #b88a2e, #d4b06a);
+  color: #10291f;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  font-weight: 900;
+  flex-shrink: 0;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+}
+
+.vehFooterBrandText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vehFooterBrandText strong {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: #fffaf0;
+}
+
+.vehFooterBrandText small {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #b88a2e;
+}
+
+.vehFooterDesc {
+  margin: 0;
+  max-width: 340px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(247, 241, 230, 0.82);
+}
+
+.vehFooterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 28px 24px;
+}
+
+.vehFooterColTitle {
+  margin: 0 0 14px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #b88a2e;
+}
+
+.vehFooterList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.footerLinks strong {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 13px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #d4c9a8;
-}
-
-.footerLinks a {
-  color: #fffaf0;
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 15px;
-}
-
-.footerTrust {
-  margin-top: 14px;
+.vehFooterList a {
   font-size: 14px;
-  opacity: 0.92;
+  font-weight: 600;
+  color: rgba(247, 241, 230, 0.92);
+}
+
+.vehFooterList a:hover {
+  color: #f7f1e6;
+  padding-left: 2px;
+}
+
+.vehFooterPopular {
+  padding: 28px 0 24px;
+  border-bottom: 1px solid rgba(247, 241, 230, 0.12);
+}
+
+.vehFooterPopularLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.vehFooterChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #10291f !important;
+  background: #f7f1e6;
+  border: 1px solid rgba(184, 138, 46, 0.35);
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.vehFooterChip:hover {
+  background: #fffaf0;
+  color: #10291f !important;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.vehFooterChip:visited {
+  color: #10291f !important;
+}
+
+.vehFooterBottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding-top: 22px;
+  font-size: 13px;
+}
+
+.vehFooterCopy,
+.vehFooterLaunch {
+  margin: 0;
+  color: rgba(247, 241, 230, 0.72);
+}
+
+.vehFooterLaunch {
+  flex: 1;
+  text-align: center;
+  font-weight: 600;
+  color: rgba(184, 138, 46, 0.95);
+}
+
+.vehFooterSitemap {
+  font-weight: 700;
+  color: #f7f1e6 !important;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(247, 241, 230, 0.2);
+}
+
+.vehFooterSitemap:hover {
+  border-color: #b88a2e;
+  color: #b88a2e !important;
 }
 
 .stateBrowse {
@@ -747,9 +923,19 @@ button.btn {
   font-weight: 800;
 }
 
-@media (max-width: 900px) {
-  .luxFooter {
+@media (max-width: 640px) {
+  .vehFooterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .vehFooterPopularLinks {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vehFooterChip {
+    justify-content: center;
+    text-align: center;
   }
 }
 .eventsSearch {
