@@ -3191,11 +3191,45 @@ button.btn {
   border-color: var(--veh-gold);
 }
 
+.adminSidebarTop {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.adminSidebarFooter {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 .adminSiteLink {
   color: #d4c9a8;
   text-decoration: none;
   font-weight: 900;
-  margin-top: 20px;
+  font-size: 14px;
+}
+
+.adminLogoutBtn {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-height: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fffaf0;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.adminLogoutBtn:hover {
+  background: rgba(232, 221, 199, 0.18);
+  border-color: var(--veh-gold);
+  color: var(--veh-gold);
 }
 
 .adminContent {
