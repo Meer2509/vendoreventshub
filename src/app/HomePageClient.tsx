@@ -3,6 +3,11 @@
 import JsonLd from "@/components/JsonLd";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {
+  canAccessOrganizerDashboard,
+  getAuthSession,
+  getProfileRole,
+} from "@/lib/auth";
 import { absoluteUrl } from "@/lib/seo";
 import { supabase } from "@/lib/supabase";
 
@@ -85,64 +90,66 @@ function getBoothValue(event: any) {
   return "Premium Booth Fee";
 }
 
-const founderCards = [
-  {
-    id: "founder-1",
-    title: "Coming Soon: Live Event Listings",
-    city: "Connecticut",
-    state: "CT",
-    category: "Founder Access",
-    booth_price: null,
-    expected_visitors: null,
-    is_featured: false,
-    event_date: "Listings launching now",
-    image_url:
-      "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop",
-    founder: true,
-    cta: "/signup",
-    ctaLabel: "Join as Founding Vendor",
-  },
-  {
-    id: "founder-2",
-    title: "Founding Organizers: List Your First Event",
-    city: "Connecticut",
-    state: "CT",
-    category: "Organizer Opportunity",
-    booth_price: null,
-    expected_visitors: null,
-    is_featured: false,
-    event_date: "Founder listings open",
-    image_url:
-      "https://images.unsplash.com/photo-1505236858219-8359eb29e329?q=80&w=1400&auto=format&fit=crop",
-    founder: true,
-    cta: "/create-event",
-    ctaLabel: "List Your Event",
-  },
-  {
-    id: "founder-3",
-    title: "Vendor Intelligence, Not Just Event Listings",
-    city: "Nationwide",
-    state: "USA",
-    category: "Platform Launch",
-    booth_price: null,
-    expected_visitors: null,
-    is_featured: false,
-    event_date: "Expanding state by state",
-    image_url:
-      "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1400&auto=format&fit=crop",
-    founder: true,
-    cta: "/events",
-    ctaLabel: "Explore Events",
-  },
-];
+function buildFounderCards(listEventHref: string) {
+  return [
+    {
+      id: "founder-1",
+      title: "Founding Vendors: Join Early",
+      city: "Connecticut",
+      state: "CT",
+      category: "Founding Access",
+      booth_price: null,
+      expected_visitors: null,
+      is_featured: false,
+      event_date: "Early access open now",
+      image_url:
+        "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop",
+      founder: true,
+      cta: "/signup",
+      ctaLabel: "Join as Vendor",
+    },
+    {
+      id: "founder-2",
+      title: "Founding Organizers: List Your Event",
+      city: "Connecticut",
+      state: "CT",
+      category: "Organizer Opportunity",
+      booth_price: null,
+      expected_visitors: null,
+      is_featured: false,
+      event_date: "Founder listings open",
+      image_url:
+        "https://images.unsplash.com/photo-1505236858219-8359eb29e329?q=80&w=1400&auto=format&fit=crop",
+      founder: true,
+      cta: listEventHref,
+      ctaLabel: "List Your Event",
+    },
+    {
+      id: "founder-3",
+      title: "Vendor Intelligence Platform Expanding Nationwide",
+      city: "Nationwide",
+      state: "USA",
+      category: "Platform Launch",
+      booth_price: null,
+      expected_visitors: null,
+      is_featured: false,
+      event_date: "Connecticut live — more states next",
+      image_url:
+        "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1400&auto=format&fit=crop",
+      founder: true,
+      cta: "/events",
+      ctaLabel: "Find Events",
+    },
+  ];
+}
 
 const fallbackAds = [
   {
     id: "ad-fallback-1",
-    business_name: "Promote Your Festival",
-    ad_title: "Get discovered by event-ready vendors.",
+    business_name: "Launch Partner Program",
+    ad_title: "Organizers: reserve early visibility",
     ad_description:
-      "Feature your fair, festival, flea market, farmers market, expo, or pop-up directly in front of vendors.",
+      "Fairs, festivals, markets, and expos can inquire about launch partner placement as we expand statewide.",
     image_url:
       "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1400&auto=format&fit=crop",
     link_url: "/advertise",
@@ -150,10 +157,10 @@ const fallbackAds = [
   },
   {
     id: "ad-fallback-2",
-    business_name: "Vendor Services",
-    ad_title: "Advertise to small businesses and local vendors.",
+    business_name: "Vendor Services Partners",
+    ad_title: "Connect with event-ready businesses",
     ad_description:
-      "Perfect for insurance, tents, signage, POS systems, packaging, marketing services, and booth suppliers.",
+      "Insurance, tents, signage, POS, packaging, and marketing partners — launch partner slots available.",
     image_url:
       "https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=1400&auto=format&fit=crop",
     link_url: "/advertise",
@@ -161,10 +168,10 @@ const fallbackAds = [
   },
   {
     id: "ad-fallback-3",
-    business_name: "Premium Placement",
-    ad_title: "Homepage sponsored spotlight available.",
+    business_name: "Platform Partnerships",
+    ad_title: "Homepage launch partner opportunities",
     ad_description:
-      "Launch your brand in front of vendors, organizers, and event businesses across the platform.",
+      "Partner with VendorEventsHub during launch — not a paid placement until you inquire and approve.",
     image_url:
       "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1400&auto=format&fit=crop",
     link_url: "/advertise",
@@ -176,6 +183,26 @@ export default function HomePageClient() {
   const [ads, setAds] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [listEventHref, setListEventHref] = useState("/login/organizer");
+
+  useEffect(() => {
+    async function resolveListEventHref() {
+      const { user } = await getAuthSession();
+      if (!user) {
+        setListEventHref("/login/organizer");
+        return;
+      }
+
+      const role = await getProfileRole(user.id);
+      if (canAccessOrganizerDashboard(role) || role === "admin") {
+        setListEventHref("/create-event");
+      } else {
+        setListEventHref("/login/organizer");
+      }
+    }
+
+    resolveListEventHref();
+  }, []);
 
   useEffect(() => {
     async function loadHomepageData() {
@@ -232,6 +259,14 @@ export default function HomePageClient() {
     window.location.href = q ? `/events?search=${encodeURIComponent(q)}` : "/events";
   }
 
+  const founderCards = useMemo(
+    () => buildFounderCards(listEventHref),
+    [listEventHref]
+  );
+
+  const hasPaidAds = ads.length > 0;
+  const displayAds = hasPaidAds ? ads : fallbackAds;
+
   const trendingEvents = useMemo(() => {
     const sourceEvents = events.length > 0 ? events : founderCards;
 
@@ -242,9 +277,7 @@ export default function HomePageClient() {
         return getVendorScore(b) - getVendorScore(a);
       })
       .slice(0, 6);
-  }, [events]);
-
-  const displayAds = ads.length > 0 ? ads : fallbackAds;
+  }, [events, founderCards]);
 
   const organizationJsonLd = {
     "@context": "https://schema.org",
@@ -292,18 +325,21 @@ export default function HomePageClient() {
             <Link href="/events" className="btn btn-primary">
               Find Events
             </Link>
-            <Link href="/create-event" className="btn btn-secondary">
+            <Link href={listEventHref} className="btn btn-secondary">
               List Your Event
             </Link>
             <Link href="/signup" className="btn btn-secondary">
               Join as Vendor
             </Link>
+            <Link href="/signup" className="btn btn-secondary">
+              Join as Organizer
+            </Link>
           </div>
 
           <div className="launchStrip">
-            <span>Launching in Connecticut — expanding nationwide</span>
-            <span>Founding vendors welcome</span>
-            <span>Founding organizers can list events</span>
+            <span>Live in Connecticut — expanding nationwide</span>
+            <span>Founding vendors: join early</span>
+            <span>Founding organizers: list your event</span>
           </div>
 
           <div className="trustStrip">
@@ -343,11 +379,17 @@ export default function HomePageClient() {
       <section className="adSection">
         <div className="sectionHead">
           <div>
-            <p className="eyebrow">Sponsored Spotlight</p>
-            <h2>Premium ads below the hero.</h2>
+            <p className="eyebrow">
+              {hasPaidAds ? "Sponsored Spotlight" : "Launch Partner Opportunities"}
+            </p>
+            <h2>
+              {hasPaidAds
+                ? "Premium ads below the hero."
+                : "Partner with us during launch — advertising slots open."}
+            </h2>
           </div>
           <button onClick={() => (window.location.href = "/advertise")}>
-            Advertise Here
+            {hasPaidAds ? "Advertise Here" : "Become a Launch Partner"}
           </button>
         </div>
 
@@ -367,14 +409,14 @@ export default function HomePageClient() {
                   })`,
                 }}
               >
-                <span>Sponsored</span>
+                <span>{ad.fallback ? "Launch Partner" : "Sponsored"}</span>
               </div>
               <div className="adBody">
-                <p>{ad.business_name || "Sponsored Partner"}</p>
-                <h3>{ad.ad_title || "Premium Sponsored Placement"}</h3>
+                <p>{ad.business_name || "Launch Partner"}</p>
+                <h3>{ad.ad_title || "Launch partner opportunity"}</h3>
                 <small>
                   {ad.ad_description ||
-                    "A premium partner promoted through VendorEventsHub."}
+                    "Inquire about launch partner visibility on VendorEventsHub."}
                 </small>
                 <button
                   onClick={() => {
@@ -382,7 +424,7 @@ export default function HomePageClient() {
                     window.location.href = ad.link_url || "/advertise";
                   }}
                 >
-                  Learn More
+                  {ad.fallback ? "Inquire" : "Learn More"}
                 </button>
               </div>
             </article>
@@ -636,9 +678,9 @@ export default function HomePageClient() {
         </p>
 
         <div className="actions center">
-          <button onClick={() => (window.location.href = "/create-event")}>
+          <Link href={listEventHref} className="btn btn-primary">
             List Your Event
-          </button>
+          </Link>
           <button
             className="secondary"
             onClick={() => (window.location.href = "/pricing")}
@@ -656,22 +698,22 @@ export default function HomePageClient() {
           <div>
             <h3>For Vendors</h3>
             <p>Join free, save events, review events, and find profitable opportunities.</p>
-            <button onClick={() => (window.location.href = "/signup")}>
+            <Link href="/signup" className="btn btn-primary">
               Join as Vendor
-            </button>
+            </Link>
           </div>
           <div>
             <h3>For Organizers</h3>
             <p>First founding organizers can list events, attract vendors, and build trust early.</p>
-            <button onClick={() => (window.location.href = "/create-event")}>
+            <Link href="/signup" className="btn btn-primary">
               Join as Organizer
-            </button>
+            </Link>
           </div>
         </div>
       </section>
 
       <section className="seo">
-        <p className="eyebrow">Launching In Connecticut, Expanding Nationwide</p>
+        <p className="eyebrow">Live In Connecticut, Expanding Nationwide</p>
         <h2>Vendor events near me, craft fairs looking for vendors, flea market vendor opportunities, farmers market vendor registration, and festival vendor applications — all in one trusted platform.</h2>
       </section>
 
@@ -1082,9 +1124,12 @@ export default function HomePageClient() {
 
         .eventBody button,
         .adBody button,
-        .foundingGrid button {
+        .foundingGrid button,
+        .foundingGrid :global(a.btn) {
           width: 100%;
           margin-top: 10px;
+          display: inline-flex;
+          justify-content: center;
         }
 
         .scoreSection,

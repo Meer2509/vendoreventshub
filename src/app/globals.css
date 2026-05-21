@@ -860,19 +860,6 @@ button.btn {
   color: rgba(184, 138, 46, 0.95);
 }
 
-.vehFooterSitemap {
-  font-weight: 700;
-  color: #f7f1e6 !important;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(247, 241, 230, 0.2);
-}
-
-.vehFooterSitemap:hover {
-  border-color: #b88a2e;
-  color: #b88a2e !important;
-}
-
 /* Footer: desktop layout only */
 @media (min-width: 769px) {
   .vehFooterMain {
