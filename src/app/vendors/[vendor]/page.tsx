@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import JsonLd from "@/components/JsonLd";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { absoluteUrl } from "@/lib/seo";
 import { buildSocialLinks } from "@/lib/social";
+import { supabase } from "@/lib/supabase";
 
 export default function VendorProfilePage() {
   const params = useParams();
@@ -31,6 +34,45 @@ export default function VendorProfilePage() {
 
     loadVendor();
   }, [vendorSlug]);
+
+  const structuredData = useMemo(() => {
+    if (!vendor) return [];
+
+    return [
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: absoluteUrl("/"),
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Vendors",
+            item: absoluteUrl("/vendors"),
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: vendor.business_name || "Vendor",
+            item: absoluteUrl(`/vendors/${vendor.slug}`),
+          },
+        ],
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        name: vendor.business_name,
+        description: vendor.short_description || vendor.description,
+        url: absoluteUrl(`/vendors/${vendor.slug}`),
+        image: vendor.logo_url || undefined,
+      },
+    ];
+  }, [vendor]);
 
   if (loading) {
     return (
@@ -74,6 +116,7 @@ export default function VendorProfilePage() {
 
   return (
     <main className="vendorProfilePage">
+      <JsonLd data={structuredData} />
       <section
         className="vendorHero"
         style={{

@@ -149,12 +149,14 @@ export default function SignupPage() {
               {
                 value: "vendor",
                 title: "Vendor",
-                text: "Find events, save opportunities, apply smarter, and build your vendor profile.",
+                text: "Find Events — save opportunities, apply smarter, and create your vendor profile.",
+                cta: "Create Vendor Profile",
               },
               {
                 value: "organizer",
                 title: "Organizer",
-                text: "List events, reach vendors, and manage event opportunities.",
+                text: "List Your Event — reach vendors and manage applications in one place.",
+                cta: "Create Organizer Profile",
               },
             ].map((option) => (
               <button
@@ -174,6 +176,7 @@ export default function SignupPage() {
               >
                 <strong>{option.title}</strong>
                 <small>{option.text}</small>
+                <span className="accountCta">{option.cta}</span>
               </button>
             ))}
           </div>

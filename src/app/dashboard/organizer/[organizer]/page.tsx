@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import JsonLd from "@/components/JsonLd";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { absoluteUrl } from "@/lib/seo";
 import PremiumEmptyState from "@/components/PremiumEmptyState";
 import { buildSocialLinks } from "@/lib/social";
+import { supabase } from "@/lib/supabase";
 
 export default function OrganizerProfilePage() {
   const params = useParams();
@@ -52,6 +55,45 @@ export default function OrganizerProfilePage() {
     loadOrganizer();
   }, [organizerSlug]);
 
+  const structuredData = useMemo(() => {
+    if (!organizer) return [];
+
+    return [
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: absoluteUrl("/"),
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Events",
+            item: absoluteUrl("/events"),
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: organizer.organizer_name || "Organizer",
+            item: absoluteUrl(`/organizers/${organizer.slug}`),
+          },
+        ],
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        name: organizer.organizer_name,
+        description: organizer.short_description,
+        url: absoluteUrl(`/organizers/${organizer.slug}`),
+        logo: organizer.logo_url || undefined,
+      },
+    ];
+  }, [organizer]);
+
   if (loading) {
     return (
       <main className="page">
@@ -86,6 +128,7 @@ export default function OrganizerProfilePage() {
 
   return (
     <main className="page">
+      <JsonLd data={structuredData} />
       <section
         className="hero"
         style={{
@@ -196,14 +239,9 @@ export default function OrganizerProfilePage() {
                           "TBD"}
                       </p>
 
-                      <button
-                        onClick={() =>
-                          (window.location.href =
-                            `/events/${event.id}`)
-                        }
-                      >
+                      <Link href={`/events/${event.id}`} className="viewEventLink">
                         View Event
-                      </button>
+                      </Link>
                     </div>
                   ))
                 )}
@@ -220,25 +258,17 @@ export default function OrganizerProfilePage() {
                 </p>
 
                 <div className="socialGrid">
-                  {socialLinks.map(
-                    (item) => (
-                      <button
-                        key={
-                          item.label
-                        }
-                        className={`socialButton ${item.className}`}
-                        onClick={() =>
-                          window.open(
-                            item.url,
-                            "_blank"
-                          )
-                        }
-                      >
-                        {item.icon}{" "}
-                        {item.label}
-                      </button>
-                    )
-                  )}
+                  {socialLinks.map((item) => (
+                    <a
+                      key={item.label}
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`socialButton ${item.className}`}
+                    >
+                      {item.icon} {item.label}
+                    </a>
+                  ))}
                 </div>
               </div>
             )}

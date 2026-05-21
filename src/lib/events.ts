@@ -137,7 +137,7 @@ export async function duplicateEventRecord(
   const parsed = parseEventDescription(String(source.description || ""));
 
   const form: EventFormState = {
-    title: `${String(source.title || "Event")} (Copy)`,
+    title: `Copy of ${String(source.title || "Event").replace(/^Copy of\s+/i, "")}`,
     city: String(source.city || ""),
     state: String(source.state || ""),
     zip_code: String(source.zip_code || ""),

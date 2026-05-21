@@ -1,8 +1,17 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { getAuthUser } from "@/lib/auth";
+import {
+  formatEventDate,
+  getBoothValue,
+  getTrafficLabel,
+  getVendorScore,
+} from "@/lib/event-display";
+import { US_STATES } from "@/lib/locations";
+import { supabase } from "@/lib/supabase";
 
 const quickFilters = [
   "Top Rated",
@@ -30,69 +39,19 @@ function getBestFitBadges(event: any) {
   return bestFitByCategory[event?.category] || ["Coffee", "Food", "Handmade", "Wellness", "Local Retail"];
 }
 
-function getVendorScore(event: any) {
-  const booth = Number(event?.booth_price || 0);
-  const visitors = Number(event?.expected_visitors || 0);
-  const rating = Number(event?.rating || 0);
-  const featured = Boolean(event?.is_featured);
-  const verified = Boolean(event?.verified_organizer);
-  const accepting = event?.accepting_vendors !== false;
-
-  let score = 55;
-
-  if (visitors >= 10000) score += 20;
-  else if (visitors >= 5000) score += 15;
-  else if (visitors >= 1000) score += 10;
-  else if (visitors > 0) score += 5;
-
-  if (booth > 0 && booth <= 100) score += 15;
-  else if (booth <= 250) score += 10;
-  else if (booth <= 500) score += 5;
-
-  if (rating >= 4.8) score += 10;
-  else if (rating >= 4.3) score += 7;
-  else if (rating >= 3.8) score += 4;
-
-  if (featured) score += 5;
-  if (verified) score += 4;
-  if (accepting) score += 2;
-
-  return Math.min(score, 99);
-}
-
-function getTrafficLabel(event: any) {
-  const visitors = Number(event?.expected_visitors || 0);
-  if (visitors >= 10000) return "Very High Traffic";
-  if (visitors >= 5000) return "High Traffic";
-  if (visitors >= 1000) return "Strong Local Traffic";
-  if (visitors > 0) return "Local Opportunity";
-  return "Traffic TBD";
-}
-
-function getBoothValue(event: any) {
-  const booth = Number(event?.booth_price || 0);
-  if (!booth) return "Booth Fee TBD";
-  if (booth <= 100) return "Excellent Booth Value";
-  if (booth <= 250) return "Strong Booth Value";
-  if (booth <= 500) return "Moderate Booth Value";
-  return "Premium Booth Fee";
-}
-
-function formatDate(date: string) {
-  if (!date) return "Date coming soon";
-  const parsedDate = new Date(date);
-  if (Number.isNaN(parsedDate.getTime())) return date;
-
-  return parsedDate.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+type OrganizerSummary = {
+  user_id: string;
+  slug?: string | null;
+  organizer_name?: string | null;
+};
 
 export default function EventsPage() {
+  const searchParams = useSearchParams();
   const [events, setEvents] = useState<any[]>([]);
   const [sponsoredAds, setSponsoredAds] = useState<any[]>([]);
+  const [organizerByUserId, setOrganizerByUserId] = useState<
+    Record<string, OrganizerSummary>
+  >({});
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
@@ -124,7 +83,27 @@ export default function EventsPage() {
         .order("created_at", { ascending: false });
 
       if (error) alert(error.message);
-      else setEvents(data || []);
+      else {
+        const rows = data || [];
+        setEvents(rows);
+
+        const creatorIds = [
+          ...new Set(rows.map((row) => row.created_by).filter(Boolean)),
+        ] as string[];
+
+        if (creatorIds.length > 0) {
+          const { data: organizers } = await supabase
+            .from("organizer_profiles")
+            .select("user_id, slug, organizer_name")
+            .in("user_id", creatorIds);
+
+          const map: Record<string, OrganizerSummary> = {};
+          for (const org of organizers || []) {
+            map[org.user_id] = org;
+          }
+          setOrganizerByUserId(map);
+        }
+      }
 
       setSponsoredAds(adData || []);
       setLoading(false);
@@ -132,6 +111,11 @@ export default function EventsPage() {
 
     loadEvents();
   }, []);
+
+  useEffect(() => {
+    const q = searchParams.get("search");
+    if (q) setSearch(q);
+  }, [searchParams]);
 
   const availableStates = useMemo(() => {
     const states = events
@@ -218,6 +202,11 @@ export default function EventsPage() {
     if (filter === "Featured Events") setFeaturedOnly(true);
     if (filter === "Verified Organizers") setVerifiedOnly(true);
     if (filter === "Vendors Wanted") setVendorsWantedOnly(true);
+  }
+
+  async function goListEvent() {
+    const { user } = await getAuthUser();
+    window.location.href = user ? "/create-event" : "/login/organizer";
   }
 
   function clearFilters() {
@@ -339,7 +328,7 @@ export default function EventsPage() {
             <button className="goldBtn" onClick={() => (window.location.href = "/events")}>
               Explore Events
             </button>
-            <button className="outlineBtn" onClick={() => (window.location.href = "/create-event")}>
+            <button className="outlineBtn" type="button" onClick={goListEvent}>
               List Your Event
             </button>
           </div>
@@ -399,7 +388,7 @@ export default function EventsPage() {
                 </div>
 
                 <div className="eventBody">
-                  <div className="eventDate">{formatDate(event.event_date)}</div>
+                  <div className="eventDate">{formatEventDate(event.event_date)}</div>
                   <h3>{event.title}</h3>
                   <p className="muted">{event.city}, {event.state} {event.zip_code}</p>
 
@@ -411,9 +400,9 @@ export default function EventsPage() {
                     <span>{getBoothValue(event)}</span>
                   </div>
 
-                  <button className="fullBtn" onClick={() => (window.location.href = `/events/${event.id}`)}>
+                  <Link className="fullBtn eventDetailLink" href={`/events/${event.id}`}>
                     View Intelligence
-                  </button>
+                  </Link>
                 </div>
               </article>
             ))}
@@ -460,6 +449,18 @@ export default function EventsPage() {
             </button>
           ))}
           <button onClick={clearFilters}>Clear Filters</button>
+        </div>
+
+        <div className="stateBrowse">
+          <p className="goldEyebrow">Browse by State</p>
+          <h3>Vendor events by state</h3>
+          <div className="stateLinkGrid">
+            {US_STATES.map((state) => (
+              <Link key={state.slug} href={`/events/${state.slug}`}>
+                {state.name}
+              </Link>
+            ))}
+          </div>
         </div>
 
         <div className="marketplaceLayout">
@@ -567,7 +568,7 @@ export default function EventsPage() {
                 <p>Try another state, category, booth price, or trust filter.</p>
                 <div className="premiumEmptyActions">
                   <button className="goldBtn" onClick={clearFilters}>Reset Search</button>
-                  <button className="outlineBtn" onClick={() => (window.location.href = "/create-event")}>
+                  <button className="outlineBtn" type="button" onClick={goListEvent}>
                     List An Event
                   </button>
                 </div>
@@ -577,6 +578,20 @@ export default function EventsPage() {
                 {filteredEvents.map((event, index) => {
                   const vendorScore = getVendorScore(event);
                   const badges = getBestFitBadges(event);
+                  const organizer = event.created_by
+                    ? organizerByUserId[event.created_by]
+                    : null;
+                  const boothLabel =
+                    event.booth_price != null && event.booth_price !== ""
+                      ? `$${event.booth_price} Booth`
+                      : "Booth Fee TBD";
+                  const visitorsLabel = event.expected_visitors
+                    ? `${event.expected_visitors} Visitors`
+                    : "Visitors TBD";
+                  const acceptingLabel =
+                    event.accepting_vendors === false
+                      ? "Applications Closed"
+                      : "Accepting Vendors";
 
                   return (
                     <div key={event.id}>
@@ -597,20 +612,30 @@ export default function EventsPage() {
                         </div>
 
                         <div className="marketEventBody">
-                          <div className="eventDate">{formatDate(event.event_date)}</div>
+                          <div className="eventDate">{formatEventDate(event.event_date)}</div>
                           <h3>{event.title}</h3>
-                          <p className="muted">{event.city}, {event.state} {event.zip_code}</p>
+                          <p className="muted">
+                            {event.city}, {event.state} {event.zip_code}
+                          </p>
+
+                          {organizer?.slug && (
+                            <p className="muted organizerLine">
+                              Organizer:{" "}
+                              <Link href={`/organizers/${organizer.slug}`}>
+                                {organizer.organizer_name || "View profile"}
+                              </Link>
+                            </p>
+                          )}
 
                           <div className="marketStats">
                             <span>{vendorScore}/100 Vendor Score</span>
-                            <span>★ {event.rating || "New"} Rating</span>
-                            <span>${event.booth_price || "TBD"} Booth</span>
-                            <span>{event.expected_visitors || "TBD"} Visitors</span>
+                            <span>{boothLabel}</span>
+                            <span>{visitorsLabel}</span>
                             <span>{getTrafficLabel(event)}</span>
                             <span>{getBoothValue(event)}</span>
+                            <span>{acceptingLabel}</span>
                             {event.is_featured && <span>Featured Event</span>}
                             {event.verified_organizer && <span>Verified Organizer</span>}
-                            {event.accepting_vendors !== false && <span>Vendors Wanted</span>}
                           </div>
 
                           <div className="pillGrid">
@@ -620,13 +645,13 @@ export default function EventsPage() {
                           </div>
 
                           <div className="eventActions">
-                            <button className="fullBtn" onClick={() => (window.location.href = `/events/${event.id}`)}>
+                            <Link className="fullBtn eventDetailLink" href={`/events/${event.id}`}>
                               View Details
-                            </button>
-                            <button className="outlineBtn" onClick={() => saveEvent(event.id)}>
+                            </Link>
+                            <button className="outlineBtn" type="button" onClick={() => saveEvent(event.id)}>
                               Save
                             </button>
-                            <button className="outlineBtn" onClick={() => applyToEvent(event.id)}>
+                            <button className="outlineBtn" type="button" onClick={() => applyToEvent(event.id)}>
                               Apply
                             </button>
                           </div>
@@ -651,10 +676,10 @@ export default function EventsPage() {
           </p>
 
           <div className="heroActions">
-            <button className="goldBtn" onClick={() => (window.location.href = "/create-event")}>
+            <button className="goldBtn" type="button" onClick={goListEvent}>
               List Your Event
             </button>
-            <button className="outlineBtn" onClick={() => (window.location.href = "/advertise")}>
+            <button className="outlineBtn" type="button" onClick={() => (window.location.href = "/advertise")}>
               Boost An Event
             </button>
           </div>

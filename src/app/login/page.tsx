@@ -75,17 +75,12 @@ export default function LoginChooserPage() {
           <div className="roleGrid">
             <Link href="/login/vendor" className="roleCard">
               <strong>Vendor Login</strong>
-              <span>
-                Save events, apply to markets, and manage your vendor profile.
-              </span>
+              <span>Find Events — save opportunities, apply, and manage your vendor profile.</span>
             </Link>
 
             <Link href="/login/organizer" className="roleCard gold">
               <strong>Organizer Login</strong>
-              <span>
-                List events, review applications, and manage your organizer
-                profile.
-              </span>
+              <span>List Your Event — manage listings, applications, and organizer profile.</span>
             </Link>
           </div>
 

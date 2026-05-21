@@ -1,10 +1,13 @@
 "use client";
 
+import JsonLd from "@/components/JsonLd";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { getAuthUser } from "@/lib/auth";
+import { absoluteUrl } from "@/lib/seo";
 import { buildSocialLinks } from "@/lib/social";
+import { supabase } from "@/lib/supabase";
 
 const bestFitByCategory: Record<string, string[]> = {
   Festival: ["Food Vendors", "Coffee Brands", "Crafts", "Wellness", "Local Retail"],
@@ -188,6 +191,72 @@ export default function EventDetailPage() {
     };
   }, [event]);
 
+  const structuredData = useMemo(() => {
+    if (!event) return [];
+
+    const breadcrumbs = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: absoluteUrl("/"),
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Events",
+          item: absoluteUrl("/events"),
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: event.title,
+          item: absoluteUrl(`/events/${event.id}`),
+        },
+      ],
+    };
+
+    const eventSchema: Record<string, unknown> = {
+      "@context": "https://schema.org",
+      "@type": "Event",
+      name: event.title,
+      description: event.description || undefined,
+      startDate: event.event_date || undefined,
+      url: absoluteUrl(`/events/${event.id}`),
+      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+      eventStatus: "https://schema.org/EventScheduled",
+      location: {
+        "@type": "Place",
+        name: [event.city, event.state].filter(Boolean).join(", "),
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: event.city || undefined,
+          addressRegion: event.state || undefined,
+          postalCode: event.zip_code || undefined,
+          addressCountry: "US",
+        },
+      },
+    };
+
+    if (event.booth_price) {
+      eventSchema.offers = {
+        "@type": "Offer",
+        price: event.booth_price,
+        priceCurrency: "USD",
+        url: absoluteUrl(`/events/${event.id}`),
+      };
+    }
+
+    if (event.image_url) {
+      eventSchema.image = event.image_url;
+    }
+
+    return [breadcrumbs, eventSchema];
+  }, [event]);
+
   async function saveEvent() {
     const { user } = await getAuthUser();
 
@@ -306,6 +375,7 @@ export default function EventDetailPage() {
 
   return (
     <main className="eventPage">
+      <JsonLd data={structuredData} />
       <section
         className="eventHero"
         style={{
@@ -377,22 +447,22 @@ export default function EventDetailPage() {
 
                 <div className="organizerActions">
                   {organizer.slug && (
-                    <button
-                      onClick={() => (window.location.href = `/organizers/${organizer.slug}`)}
-                    >
+                    <Link className="organizerProfileLink" href={`/organizers/${organizer.slug}`}>
                       View Organizer Profile
-                    </button>
+                    </Link>
                   )}
 
                   {organizerSocialLinks.map((item) => (
-                    <button
+                    <a
                       key={item.label}
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className={`socialButton ${item.className}`}
-                      onClick={() => window.open(item.url, "_blank")}
                     >
                       <span>{item.icon}</span>
                       {item.label}
-                    </button>
+                    </a>
                   ))}
                 </div>
               </section>
@@ -628,22 +698,24 @@ export default function EventDetailPage() {
                 </p>
 
                 {organizer.slug && (
-                  <button onClick={() => (window.location.href = `/organizers/${organizer.slug}`)}>
-                    View Profile
-                  </button>
+                  <Link className="organizerProfileLink" href={`/organizers/${organizer.slug}`}>
+                    View Organizer Profile
+                  </Link>
                 )}
 
                 {organizerSocialLinks.length > 0 && (
                   <div className="miniSocialGrid">
                     {organizerSocialLinks.map((item) => (
-                      <button
+                      <a
                         key={item.label}
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className={`socialButton ${item.className}`}
-                        onClick={() => window.open(item.url, "_blank")}
                       >
                         <span>{item.icon}</span>
                         {item.label}
-                      </button>
+                      </a>
                     ))}
                   </div>
                 )}

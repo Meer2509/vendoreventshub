@@ -204,7 +204,7 @@ export default function OrganizerDashboardPage() {
       return;
     }
 
-    window.location.href = `/dashboard/organizer/events/${data.id}/edit`;
+    window.location.href = `/events/${data.id}`;
   }
 
   async function logout() {
