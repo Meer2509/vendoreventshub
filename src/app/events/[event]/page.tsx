@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getAuthUser } from "@/lib/auth";
+import { buildSocialLinks } from "@/lib/social";
 
 const bestFitByCategory: Record<string, string[]> = {
   Festival: ["Food Vendors", "Coffee Brands", "Crafts", "Wellness", "Local Retail"],
@@ -40,19 +41,6 @@ function formatDate(date: string) {
     day: "numeric",
     year: "numeric",
   });
-}
-
-function cleanSocialUrl(type: string, value: string) {
-  if (!value) return "";
-  if (value.startsWith("http")) return value;
-
-  const cleanValue = value.replace("@", "").trim();
-
-  if (type === "instagram") return `https://instagram.com/${cleanValue}`;
-  if (type === "tiktok") return `https://tiktok.com/@${cleanValue}`;
-  if (type === "facebook") return `https://facebook.com/${cleanValue}`;
-
-  return value;
 }
 
 export default function EventDetailPage() {
@@ -115,33 +103,7 @@ export default function EventDetailPage() {
 
   const organizerSocialLinks = useMemo(() => {
     if (!organizer) return [];
-
-    return [
-      {
-        label: "Website",
-        icon: "🌐",
-        className: "website",
-        url: organizer.website,
-      },
-      {
-        label: "Instagram",
-        icon: "📸",
-        className: "instagram",
-        url: cleanSocialUrl("instagram", organizer.instagram),
-      },
-      {
-        label: "TikTok",
-        icon: "🎵",
-        className: "tiktok",
-        url: cleanSocialUrl("tiktok", organizer.tiktok),
-      },
-      {
-        label: "Facebook",
-        icon: "📘",
-        className: "facebook",
-        url: cleanSocialUrl("facebook", organizer.facebook),
-      },
-    ].filter((item) => item.url);
+    return buildSocialLinks(organizer);
   }, [organizer]);
 
   const intelligence = useMemo(() => {

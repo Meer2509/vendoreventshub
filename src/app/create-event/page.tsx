@@ -3,36 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { requireOrganizerAccess } from "@/lib/auth";
-
-const categories = [
-  "Festival",
-  "Farmers Market",
-  "Craft Fair",
-  "Flea Market",
-  "Food Truck Event",
-  "Holiday Market",
-  "Expo",
-  "Community Fair",
-  "Artisan Market",
-  "Wellness Event",
-  "Pop-Up Market",
-  "Trade Show",
-];
-
-const vendorFitOptions = [
-  "Food",
-  "Coffee",
-  "Handmade",
-  "Jewelry",
-  "Art",
-  "Wellness",
-  "Boutique",
-  "Farm",
-  "Desserts",
-  "Home Goods",
-  "Beauty",
-  "Pet Products",
-];
+import {
+  EVENT_CATEGORIES,
+  VENDOR_FIT_OPTIONS,
+  buildEnhancedDescription,
+} from "@/lib/events";
 
 export default function CreateEventPage() {
   const [loading, setLoading] = useState(false);
@@ -147,18 +122,6 @@ export default function CreateEventPage() {
     const auth = await requireOrganizerAccess();
     if (!auth) return;
 
-    const enhancedDescription = `
-${event.description}
-
-Vendor Details:
-- Application Deadline: ${event.application_deadline || "Not provided"}
-- Booth Size: ${event.booth_size || "Not provided"}
-- Electricity: ${event.electricity || "Not provided"}
-- Parking: ${event.parking || "Not provided"}
-- Food Vendor Rules: ${event.food_rules || "Not provided"}
-- Best Vendor Fit: ${event.vendor_fit.join(", ") || "Not provided"}
-`.trim();
-
     const { data: created, error } = await supabase
       .from("events")
       .insert({
@@ -167,7 +130,10 @@ Vendor Details:
         state: event.state,
         zip_code: event.zip_code,
         category: event.category,
-        description: enhancedDescription,
+        description: buildEnhancedDescription({
+          ...event,
+          accepting_vendors: true,
+        }),
         booth_price: Number(event.booth_price),
         expected_visitors: event.expected_visitors,
         event_date: event.event_date,
@@ -185,7 +151,6 @@ Vendor Details:
       return;
     }
 
-    alert("Event submitted successfully!");
     window.location.href = created?.id
       ? `/events/${created.id}`
       : "/dashboard/organizer";
@@ -396,7 +361,7 @@ Vendor Details:
               onChange={(e) => updateField("category", e.target.value)}
             >
               <option value="">Choose category</option>
-              {categories.map((category) => (
+              {EVENT_CATEGORIES.map((category) => (
                 <option key={category}>{category}</option>
               ))}
             </select>
@@ -440,7 +405,7 @@ Vendor Details:
         </div>
 
         <div className="tagGrid">
-          {vendorFitOptions.map((item) => (
+          {VENDOR_FIT_OPTIONS.map((item) => (
             <button
               key={item}
               type="button"

@@ -185,10 +185,12 @@ export default function OrganizerSetupPage() {
       return;
     }
 
-    alert("Organizer profile saved!");
+    if (!cleanSlug) {
+      alert("Please add an organizer name or profile URL slug.");
+      return;
+    }
 
-    window.location.href =
-      `/organizers/${cleanSlug}`;
+    window.location.href = `/organizers/${cleanSlug}`;
   }
 
   return (

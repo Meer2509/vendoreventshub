@@ -1,10 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import {
+  dashboardPathForRole,
+  getAuthUser,
+  getProfileRole,
+} from "@/lib/auth";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [dashboardHref, setDashboardHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function resolveDashboard() {
+      const { user } = await getAuthUser();
+      if (!user) {
+        setDashboardHref(null);
+        return;
+      }
+
+      const role = await getProfileRole(user.id);
+      setDashboardHref(dashboardPathForRole(role));
+    }
+
+    resolveDashboard();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      resolveDashboard();
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <header className="vhNavWrap">
@@ -33,13 +63,21 @@ export default function Navbar() {
           <Link href="/about" onClick={() => setOpen(false)}>About</Link>
 
           <div className="vhMenuActions">
-            <Link href="/login" onClick={() => setOpen(false)}>
-              <button className="outlineBtn">Log In</button>
-            </Link>
+            {dashboardHref ? (
+              <Link href={dashboardHref} onClick={() => setOpen(false)}>
+                <button className="outlineBtn">Dashboard</button>
+              </Link>
+            ) : (
+              <Link href="/login" onClick={() => setOpen(false)}>
+                <button className="outlineBtn">Log In</button>
+              </Link>
+            )}
 
-            <Link href="/signup" onClick={() => setOpen(false)}>
-              <button className="goldBtn">Join Free</button>
-            </Link>
+            {!dashboardHref && (
+              <Link href="/signup" onClick={() => setOpen(false)}>
+                <button className="goldBtn">Join Free</button>
+              </Link>
+            )}
           </div>
         </div>
       </nav>

@@ -167,7 +167,11 @@ export default function VendorProfileSetupPage() {
       return;
     }
 
-    alert("Vendor profile saved successfully!");
+    if (!cleanSlug) {
+      alert("Please add a business name or profile URL slug.");
+      return;
+    }
+
     window.location.href = `/vendors/${cleanSlug}`;
   }
 

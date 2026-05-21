@@ -423,7 +423,7 @@ export default function HomePage() {
                 <button
                   onClick={() =>
                     event.fallback
-                      ? (window.location.href = "/events")
+                      ? (window.location.href = "/signup")
                       : (window.location.href = `/events/${event.id}`)
                   }
                 >

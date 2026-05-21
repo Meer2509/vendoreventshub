@@ -1268,12 +1268,48 @@ body {
   padding: 0 24px 70px;
 }
 
-.emptyStateCard {
+.emptyStateCard,
+.premiumEmptyState,
+.dashboardPage .emptyState {
   background: rgba(255,255,255,0.86);
   border: 1px solid rgba(15,61,46,0.08);
   border-radius: 34px;
   padding: 42px;
   box-shadow: 0 22px 60px rgba(15,61,46,0.08);
+}
+
+.premiumEmptyState {
+  text-align: left;
+}
+
+.premiumEmptyEyebrow {
+  color: #b88a2e;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+}
+
+.premiumEmptyState h3 {
+  color: #0b1f18;
+  font-size: clamp(26px, 4vw, 34px);
+  margin: 0 0 12px;
+  letter-spacing: -0.04em;
+}
+
+.premiumEmptyState > p {
+  color: #526058;
+  line-height: 1.65;
+  max-width: 640px;
+  margin: 0;
+}
+
+.premiumEmptyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
 }
 
 .emptyStateCard h3 {

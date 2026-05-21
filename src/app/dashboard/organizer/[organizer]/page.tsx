@@ -3,25 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-
-function cleanSocialUrl(type: string, value: string) {
-  if (!value) return "";
-
-  if (value.startsWith("http")) return value;
-
-  const cleanValue = value.replace("@", "").trim();
-
-  if (type === "instagram")
-    return `https://instagram.com/${cleanValue}`;
-
-  if (type === "tiktok")
-    return `https://tiktok.com/@${cleanValue}`;
-
-  if (type === "facebook")
-    return `https://facebook.com/${cleanValue}`;
-
-  return value;
-}
+import PremiumEmptyState from "@/components/PremiumEmptyState";
+import { buildSocialLinks } from "@/lib/social";
 
 export default function OrganizerProfilePage() {
   const params = useParams();
@@ -83,51 +66,23 @@ export default function OrganizerProfilePage() {
     return (
       <main className="page">
         <div className="container">
-          <h1>Organizer not found</h1>
-          <p>
-            This organizer profile may
-            not exist yet.
-          </p>
+          <PremiumEmptyState
+            eyebrow="Organizer Profile"
+            title="Organizer not found"
+            description="This organizer profile may not exist yet or the public URL slug may be incorrect."
+            actionLabel="Explore Events"
+            onAction={() => (window.location.href = "/events")}
+            secondaryLabel="Organizer Setup"
+            onSecondary={() =>
+              (window.location.href = "/dashboard/organizer/setup")
+            }
+          />
         </div>
       </main>
     );
   }
 
-  const socialLinks = [
-    {
-      label: "Website",
-      icon: "🌐",
-      className: "website",
-      url: organizer.website,
-    },
-    {
-      label: "Instagram",
-      icon: "📸",
-      className: "instagram",
-      url: cleanSocialUrl(
-        "instagram",
-        organizer.instagram
-      ),
-    },
-    {
-      label: "TikTok",
-      icon: "🎵",
-      className: "tiktok",
-      url: cleanSocialUrl(
-        "tiktok",
-        organizer.tiktok
-      ),
-    },
-    {
-      label: "Facebook",
-      icon: "📘",
-      className: "facebook",
-      url: cleanSocialUrl(
-        "facebook",
-        organizer.facebook
-      ),
-    },
-  ].filter((item) => item.url);
+  const socialLinks = buildSocialLinks(organizer);
 
   return (
     <main className="page">
@@ -213,9 +168,13 @@ export default function OrganizerProfilePage() {
 
               <div className="eventGrid">
                 {events.length === 0 ? (
-                  <p>
-                    No events listed yet.
-                  </p>
+                  <PremiumEmptyState
+                    eyebrow="Organizer Events"
+                    title="No public events yet"
+                    description="When this organizer publishes listings, they will appear here for vendors to explore."
+                    actionLabel="Explore Marketplace"
+                    onAction={() => (window.location.href = "/events")}
+                  />
                 ) : (
                   events.map((event) => (
                     <div

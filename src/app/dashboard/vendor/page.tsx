@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import PremiumEmptyState from "@/components/PremiumEmptyState";
 import { requireVendorDashboard } from "@/lib/auth";
 
 export default function VendorDashboardPage() {
@@ -182,13 +183,13 @@ export default function VendorDashboardPage() {
         {loading ? (
           <p>Loading...</p>
         ) : savedEvents.length === 0 ? (
-          <div className="emptyState">
-            <h3>No saved events yet</h3>
-            <p>Browse events and save opportunities you want to revisit.</p>
-            <button onClick={() => (window.location.href = "/events")}>
-              Explore Events
-            </button>
-          </div>
+          <PremiumEmptyState
+            eyebrow="Saved Opportunities"
+            title="No saved events yet"
+            description="Browse the marketplace and save festivals, fairs, and markets you want to revisit before applying."
+            actionLabel="Explore Events"
+            onAction={() => (window.location.href = "/events")}
+          />
         ) : (
           <div className="cardGrid">
             {savedEvents.map((saved) => (
@@ -221,13 +222,13 @@ export default function VendorDashboardPage() {
         {loading ? (
           <p>Loading...</p>
         ) : applications.length === 0 ? (
-          <div className="emptyState">
-            <h3>No applications yet</h3>
-            <p>
-              Apply to events and track your
-              approvals here.
-            </p>
-          </div>
+          <PremiumEmptyState
+            eyebrow="Your Applications"
+            title="No applications yet"
+            description="Apply to events as a vendor and track approvals, waitlist status, and attendance here."
+            actionLabel="Find Events"
+            onAction={() => (window.location.href = "/events")}
+          />
         ) : (
           <div className="cardGrid">
             {applications.map((app) => (

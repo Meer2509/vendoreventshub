@@ -3,20 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-
-function cleanSocialUrl(type: string, value: string) {
-  if (!value) return "";
-
-  if (value.startsWith("http")) return value;
-
-  const cleanValue = value.replace("@", "").trim();
-
-  if (type === "instagram") return `https://instagram.com/${cleanValue}`;
-  if (type === "tiktok") return `https://tiktok.com/@${cleanValue}`;
-  if (type === "facebook") return `https://facebook.com/${cleanValue}`;
-
-  return value;
-}
+import { buildSocialLinks } from "@/lib/social";
 
 export default function VendorProfilePage() {
   const params = useParams();
@@ -59,45 +46,31 @@ export default function VendorProfilePage() {
     return (
       <main className="luxuryPage">
         <section className="luxSection">
-          <h1>Vendor not found</h1>
-          <p className="muted">This vendor profile may not exist yet.</p>
-          <button
-            className="goldBtn"
-            onClick={() => (window.location.href = "/vendors")}
-          >
-            Back To Vendors
-          </button>
+          <div className="premiumEmptyState">
+            <p className="premiumEmptyEyebrow">Vendor Profile</p>
+            <h3>Vendor not found</h3>
+            <p>This vendor profile may not exist yet or the URL may be incorrect.</p>
+            <div className="premiumEmptyActions">
+              <button
+                className="goldBtn"
+                onClick={() => (window.location.href = "/vendors")}
+              >
+                Browse Vendors
+              </button>
+              <button
+                className="outlineBtn"
+                onClick={() => (window.location.href = "/profile/setup")}
+              >
+                Create Vendor Profile
+              </button>
+            </div>
+          </div>
         </section>
       </main>
     );
   }
 
-  const socialLinks = [
-    {
-      label: "Website",
-      icon: "🌐",
-      className: "website",
-      url: vendor.website,
-    },
-    {
-      label: "Instagram",
-      icon: "📸",
-      className: "instagram",
-      url: cleanSocialUrl("instagram", vendor.instagram),
-    },
-    {
-      label: "TikTok",
-      icon: "🎵",
-      className: "tiktok",
-      url: cleanSocialUrl("tiktok", vendor.tiktok),
-    },
-    {
-      label: "Facebook",
-      icon: "📘",
-      className: "facebook",
-      url: cleanSocialUrl("facebook", vendor.facebook),
-    },
-  ].filter((item) => item.url);
+  const socialLinks = buildSocialLinks(vendor);
 
   return (
     <main className="vendorProfilePage">

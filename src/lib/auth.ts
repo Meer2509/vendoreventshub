@@ -61,13 +61,27 @@ export function canAccessOrganizerDashboard(role: UserRole): boolean {
   return role === "organizer" || role === "both";
 }
 
+async function waitForUser(maxAttempts = 8): Promise<User | null> {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const { user } = await getAuthSession();
+    if (user) return user;
+
+    if (attempt < maxAttempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 120));
+    }
+  }
+
+  const { user } = await getAuthUser();
+  return user;
+}
+
 export async function requireAuth(
   loginPath = "/login"
 ): Promise<{ user: User } | null> {
-  const { user } = await getAuthUser();
+  const user = await waitForUser();
 
   if (!user) {
-    window.location.href = loginPath;
+    window.location.assign(loginPath);
     return null;
   }
 
@@ -84,12 +98,12 @@ export async function requireVendorDashboard(): Promise<{
   const role = await getProfileRole(auth.user.id);
 
   if (role === "admin") {
-    window.location.href = "/admin";
+    window.location.assign("/admin");
     return null;
   }
 
   if (!canAccessVendorDashboard(role)) {
-    window.location.href = "/dashboard/organizer";
+    window.location.assign("/dashboard/organizer");
     return null;
   }
 
@@ -106,12 +120,12 @@ export async function requireOrganizerDashboard(): Promise<{
   const role = await getProfileRole(auth.user.id);
 
   if (role === "admin") {
-    window.location.href = "/admin";
+    window.location.assign("/admin");
     return null;
   }
 
   if (!canAccessOrganizerDashboard(role)) {
-    window.location.href = "/dashboard/vendor";
+    window.location.assign("/dashboard/vendor");
     return null;
   }
 
@@ -123,7 +137,7 @@ export async function routeDashboardByRole(): Promise<void> {
   if (!auth) return;
 
   const role = await getProfileRole(auth.user.id);
-  window.location.href = dashboardPathForRole(role);
+  window.location.assign(dashboardPathForRole(role));
 }
 
 export async function requireVendorAccess(): Promise<{ user: User } | null> {
@@ -140,7 +154,7 @@ export async function requireAdmin(): Promise<{ user: User } | null> {
 
   const role = await getProfileRole(auth.user.id);
   if (role !== "admin") {
-    window.location.href = dashboardPathForRole(role);
+    window.location.assign(dashboardPathForRole(role));
     return null;
   }
 

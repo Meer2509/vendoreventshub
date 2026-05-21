@@ -555,12 +555,22 @@ export default function EventsPage() {
             </div>
 
             {loading ? (
-              <p className="muted">Loading events...</p>
+              <div className="premiumEmptyState">
+                <p className="premiumEmptyEyebrow">Marketplace</p>
+                <h3>Loading vendor opportunities...</h3>
+                <p>Curating events, booth fees, and trust signals for your search.</p>
+              </div>
             ) : filteredEvents.length === 0 ? (
-              <div className="emptyStateCard">
-                <h3>No matching events found.</h3>
+              <div className="emptyStateCard premiumEmptyState">
+                <p className="premiumEmptyEyebrow">Search Results</p>
+                <h3>No matching events found</h3>
                 <p>Try another state, category, booth price, or trust filter.</p>
-                <button className="goldBtn" onClick={clearFilters}>Reset Search</button>
+                <div className="premiumEmptyActions">
+                  <button className="goldBtn" onClick={clearFilters}>Reset Search</button>
+                  <button className="outlineBtn" onClick={() => (window.location.href = "/create-event")}>
+                    List An Event
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="eventsList">

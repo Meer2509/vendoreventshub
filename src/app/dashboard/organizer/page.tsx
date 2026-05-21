@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import PremiumEmptyState from "@/components/PremiumEmptyState";
 import { getAuthUser, requireOrganizerDashboard } from "@/lib/auth";
+import { deleteEventCascade, duplicateEventRecord } from "@/lib/events";
 
 function formatDate(date: string) {
   if (!date) return "Date coming soon";
@@ -23,6 +25,7 @@ export default function OrganizerDashboardPage() {
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const [duplicatingEventId, setDuplicatingEventId] = useState<string | null>(null);
 
   async function loadDashboard() {
     setLoading(true);
@@ -171,67 +174,37 @@ export default function OrganizerDashboardPage() {
       return;
     }
 
-    const { data: eventCheck, error: checkError } = await supabase
-      .from("events")
-      .select("id, created_by")
-      .eq("id", eventId)
-      .eq("created_by", user.id)
-      .single();
+    const result = await deleteEventCascade(eventId, user.id);
 
-    if (checkError || !eventCheck) {
-      alert("You can only delete events you created.");
+    if (!result.ok) {
+      alert(result.error || "Could not delete event.");
       setDeletingEventId(null);
       return;
     }
 
-    const { error: attendanceError } = await supabase
-      .from("event_attendance")
-      .delete()
-      .eq("event_id", eventId);
-
-    if (attendanceError) {
-      alert(attendanceError.message);
-      setDeletingEventId(null);
-      return;
-    }
-
-    const { error: savedError } = await supabase
-      .from("saved_events")
-      .delete()
-      .eq("event_id", eventId);
-
-    if (savedError) {
-      alert(savedError.message);
-      setDeletingEventId(null);
-      return;
-    }
-
-    const { error: reviewError } = await supabase
-      .from("reviews")
-      .delete()
-      .eq("event_id", eventId);
-
-    if (reviewError) {
-      alert(reviewError.message);
-      setDeletingEventId(null);
-      return;
-    }
-
-    const { error: eventError } = await supabase
-      .from("events")
-      .delete()
-      .eq("id", eventId)
-      .eq("created_by", user.id);
-
-    if (eventError) {
-      alert(eventError.message);
-      setDeletingEventId(null);
-      return;
-    }
-
-    alert("Event deleted successfully.");
+    setMyEvents((prev) => prev.filter((item) => item.id !== eventId));
     setDeletingEventId(null);
-    loadDashboard();
+  }
+
+  async function duplicateEvent(source: any) {
+    const { user } = await getAuthUser();
+    if (!user) {
+      window.location.href = "/login/organizer";
+      return;
+    }
+
+    setDuplicatingEventId(source.id);
+
+    const { data, error } = await duplicateEventRecord(source, user.id);
+
+    setDuplicatingEventId(null);
+
+    if (error || !data?.id) {
+      alert(error?.message || "Could not duplicate event.");
+      return;
+    }
+
+    window.location.href = `/dashboard/organizer/events/${data.id}/edit`;
   }
 
   async function logout() {
@@ -344,17 +317,13 @@ export default function OrganizerDashboardPage() {
         {loading ? (
           <p className="muted">Loading organizer events...</p>
         ) : myEvents.length === 0 ? (
-          <div className="emptyState">
-            <h3>No events yet</h3>
-            <p>
-              Create your first festival, fair, market, expo, or pop-up listing
-              to start receiving vendor applications.
-            </p>
-
-            <button onClick={() => (window.location.href = "/create-event")}>
-              Create Event
-            </button>
-          </div>
+          <PremiumEmptyState
+            eyebrow="Organizer Portfolio"
+            title="No events listed yet"
+            description="Create your first festival, fair, market, or expo listing to start receiving vendor applications."
+            actionLabel="Create Event"
+            onAction={() => (window.location.href = "/create-event")}
+          />
         ) : (
           <div className="cardGrid">
             {myEvents.map((event) => (
@@ -401,6 +370,23 @@ export default function OrganizerDashboardPage() {
 
                     <button
                       className="secondary"
+                      onClick={() =>
+                        (window.location.href = `/dashboard/organizer/events/${event.id}/edit`)
+                      }
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      className="secondary"
+                      disabled={duplicatingEventId === event.id}
+                      onClick={() => duplicateEvent(event)}
+                    >
+                      {duplicatingEventId === event.id ? "Duplicating..." : "Duplicate"}
+                    </button>
+
+                    <button
+                      className="secondary"
                       onClick={() => (window.location.href = "/advertise")}
                     >
                       Boost
@@ -430,13 +416,13 @@ export default function OrganizerDashboardPage() {
         </div>
 
         {applications.length === 0 ? (
-          <div className="emptyState">
-            <h3>No vendor applications yet</h3>
-            <p>
-              When vendors apply to your events, they will appear here for
-              review.
-            </p>
-          </div>
+          <PremiumEmptyState
+            eyebrow="Vendor Applications"
+            title="No applications yet"
+            description="When vendors apply to your events, their requests will appear here for approval, waitlist, or rejection."
+            actionLabel="Browse Public Events"
+            onAction={() => (window.location.href = "/events")}
+          />
         ) : (
           <div className="applicationGrid">
             {applications.map((application) => {
